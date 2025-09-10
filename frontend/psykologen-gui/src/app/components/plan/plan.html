@@ -1,0 +1,36 @@
+<div class="plan-container">
+  <div class="plan-header">
+    <h2>📋 Sessions-Plan</h2>
+    <div class="header-actions">
+      <button class="refresh-btn" (click)="refreshPlan()" [disabled]="isLoading">
+        <span *ngIf="!isLoading">🔄</span>
+        <span *ngIf="isLoading">⏳</span>
+      </button>
+      <span class="last-updated" *ngIf="lastUpdated">
+        Uppdaterad: {{ formatTimestamp() }}
+      </span>
+    </div>
+  </div>
+
+  <div class="plan-content">
+    <div *ngIf="isLoading && !lastUpdated" class="loading">
+      <p>Laddar plan...</p>
+    </div>
+
+    <div *ngIf="isPlanEmpty() && !isLoading" class="empty-plan">
+      <p>Ingen sessionsplan har skapats än.</p>
+      <p class="hint">Planen uppdateras automatiskt när samtalet pågår.</p>
+    </div>
+
+    <div *ngIf="!isPlanEmpty()" class="plan-text">
+      <pre>{{ plan }}</pre>
+    </div>
+  </div>
+
+  <div class="plan-footer">
+    <div class="auto-update-indicator">
+      <span class="indicator-dot" [class.active]="!isLoading"></span>
+      <span class="indicator-text">Uppdateras automatiskt var 5:e sekund</span>
+    </div>
+  </div>
+</div>

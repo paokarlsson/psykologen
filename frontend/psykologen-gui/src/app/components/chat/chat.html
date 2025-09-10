@@ -1,0 +1,67 @@
+<div class="chat-container">
+  <div class="chat-header">
+    <h2>🎤 Psykologen - Chat med Erik</h2>
+  </div>
+
+  <div class="chat-messages" #messagesContainer>
+    <div *ngIf="!isConversationStarted && messages.length === 0" class="welcome-message">
+      <p>Välkommen! Klicka på "Starta Samtal" för att börja din session med Erik.</p>
+      <button 
+        class="start-btn" 
+        (click)="startConversation()" 
+        [disabled]="isLoading">
+        <span *ngIf="!isLoading">Starta Samtal</span>
+        <span *ngIf="isLoading">Startar...</span>
+      </button>
+    </div>
+
+    <div *ngFor="let message of messages" 
+         class="message" 
+         [ngClass]="{'user-message': message.role === 'user', 'assistant-message': message.role === 'assistant'}">
+      <div class="message-header">
+        <span class="message-role">
+          {{ message.role === 'user' ? '👤 Du' : '🤖 Erik' }}
+        </span>
+        <span class="message-time">{{ formatTimestamp(message.timestamp) }}</span>
+      </div>
+      <div class="message-content">{{ message.content }}</div>
+    </div>
+
+    <div *ngIf="isLoading" class="loading-message">
+      <div class="message assistant-message">
+        <div class="message-header">
+          <span class="message-role">🤖 Erik</span>
+        </div>
+        <div class="message-content">
+          <div class="typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-input" *ngIf="isConversationStarted">
+    <div *ngIf="sessionComplete" class="session-complete">
+      <p>✅ Sessionen är avslutad. Tack för ditt besök!</p>
+    </div>
+    <div *ngIf="!sessionComplete" class="input-container">
+      <textarea 
+        #messageInput
+        [(ngModel)]="currentMessage"
+        (keydown)="onKeyPress($event)"
+        placeholder="Skriv ditt meddelande här..."
+        rows="3"
+        [disabled]="isLoading || sessionComplete"></textarea>
+      <button 
+        (click)="sendMessage()" 
+        [disabled]="!currentMessage.trim() || isLoading || sessionComplete"
+        class="send-btn">
+        <span *ngIf="!isLoading">Skicka</span>
+        <span *ngIf="isLoading">Skickar...</span>
+      </button>
+    </div>
+  </div>
+</div>

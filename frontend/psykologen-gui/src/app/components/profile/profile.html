@@ -1,0 +1,36 @@
+<div class="profile-container">
+  <div class="profile-header">
+    <h2>👤 Patient-Profil</h2>
+    <div class="header-actions">
+      <button class="refresh-btn" (click)="refreshProfile()" [disabled]="isLoading">
+        <span *ngIf="!isLoading">🔄</span>
+        <span *ngIf="isLoading">⏳</span>
+      </button>
+      <span class="last-updated" *ngIf="lastUpdated">
+        Uppdaterad: {{ formatTimestamp() }}
+      </span>
+    </div>
+  </div>
+
+  <div class="profile-content">
+    <div *ngIf="isLoading && !lastUpdated" class="loading">
+      <p>Laddar profil...</p>
+    </div>
+
+    <div *ngIf="isProfileEmpty() && !isLoading" class="empty-profile">
+      <p>Ingen patient-profil har skapats än.</p>
+      <p class="hint">Profilen uppdateras automatiskt när samtalet pågår.</p>
+    </div>
+
+    <div *ngIf="!isProfileEmpty()" class="profile-text">
+      <pre>{{ profile }}</pre>
+    </div>
+  </div>
+
+  <div class="profile-footer">
+    <div class="auto-update-indicator">
+      <span class="indicator-dot" [class.active]="!isLoading"></span>
+      <span class="indicator-text">Uppdateras automatiskt var 5:e sekund</span>
+    </div>
+  </div>
+</div>
