@@ -1,0 +1,19 @@
+services:
+  ubuntu-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ubuntu-ssh-dev
+    ports:
+      - "2222:22"  # Map host port 2222 to container port 22
+      - "4200:4200"  # Angular dev server (or other app)
+      - "8080:8080"  # Backend/API server (or other app)
+    volumes:
+      - ./backend:/workspace/backend  # Mount local workspace directory
+      - ./frontend:/workspace/frontend  # Mount local workspace directory
+      - ~/.ssh:/home/developer/.ssh:ro  # Mount SSH keys (optional)
+    environment:
+      - SSH_PASSWORD=devpassword  # Change this password!
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
