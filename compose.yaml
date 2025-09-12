@@ -1,4 +1,11 @@
 services:
+  docker-daemon:
+    image: docker:dind
+    privileged: true
+    ports:
+      - "2375:2375"
+    environment:
+      DOCKER_TLS_CERTDIR: ""
   ubuntu-dev:
     build:
       context: .
@@ -14,6 +21,9 @@ services:
       - ~/.ssh:/home/developer/.ssh:ro  # Mount SSH keys (optional)
     environment:
       - SSH_PASSWORD=devpassword  # Change this password!
+      - DOCKER_HOST=tcp://docker-daemon:2375      
     restart: unless-stopped
     stdin_open: true
     tty: true
+    depends_on:
+      - docker-daemon    
