@@ -1,4 +1,4 @@
 zscaler.crt
-frontend/node_modules
-frontend/.angular
-backend/target
+project/frontend/node_modules
+project/frontend/.angular
+project/backend/target

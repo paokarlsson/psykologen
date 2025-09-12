@@ -16,8 +16,7 @@ services:
       - "4200:4200"  # Angular dev server (or other app)
       - "8080:8080"  # Backend/API server (or other app)
     volumes:
-      - ./backend:/workspace/backend  # Mount local workspace directory
-      - ./frontend:/workspace/frontend  # Mount local workspace directory
+      - ./project:/workspace  # Mount local workspace directory
       - ~/.ssh:/home/developer/.ssh:ro  # Mount SSH keys (optional)
     environment:
       - SSH_PASSWORD=devpassword  # Change this password!

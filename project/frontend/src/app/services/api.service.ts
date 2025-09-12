@@ -2,12 +2,6 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
-
 export interface Message {
   role: string;
   content: string;
@@ -65,11 +59,4 @@ export class ApiService {
     return this.http.get<PlanResponse>(`${this.baseUrl}/plan`);
   }
 
-  getStatistics(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/statistics`);
-  }
-
-  checkHealth(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/health`);
-  }
 }

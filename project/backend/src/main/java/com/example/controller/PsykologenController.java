@@ -49,7 +49,6 @@ public class PsykologenController {
             response.put("message", erikResponse);
             response.put("role", "erik");
             
-            // Check if session should end
             if (erikResponse.contains("KLAR FÖR SKRIVNING")) {
                 response.put("sessionComplete", true);
             }
@@ -107,26 +106,4 @@ public class PsykologenController {
         }
     }
     
-    @GetMapping("/statistics")
-    public ResponseEntity<Map<String, Object>> getStatistics() {
-        Map<String, Object> response = new HashMap<>();
-        try {
-            Map<String, Object> stats = psykologenService.getStatistics();
-            response.put("success", true);
-            response.put("statistics", stats);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-        }
-    }
-    
-    @GetMapping("/health")
-    public ResponseEntity<Map<String, Object>> health() {
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", "OK");
-        response.put("service", "Psykologen API");
-        return ResponseEntity.ok(response);
-    }
 }

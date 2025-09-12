@@ -42,7 +42,6 @@ public class PsykologenService {
         this.sessionStartTime = System.currentTimeMillis();
         this.executor = Executors.newCachedThreadPool();
         
-        // Add system message
         Map<String, Object> systemMessage = new HashMap<>();
         systemMessage.put("role", "system");
         systemMessage.put("content", SystemPrompts.SYSTEM_PROMPT);
@@ -126,7 +125,6 @@ public class PsykologenService {
         String agentOpening = getAssistantResponse(openingResponse);
         updateTokenCount(openingResponse);
         
-        // Add agent's opening to conversation
         Map<String, Object> assistantMessage = new HashMap<>();
         assistantMessage.put("role", "assistant");
         assistantMessage.put("content", agentOpening);
@@ -140,7 +138,6 @@ public class PsykologenService {
     public String processMessage(String userInput) throws Exception {
         initializeSession();
         
-        // Add user message
         long currentTime = System.currentTimeMillis();
         Map<String, Object> userMessage = new HashMap<>();
         userMessage.put("role", "user");
@@ -149,10 +146,8 @@ public class PsykologenService {
         userMessage.put("session_time", currentTime - sessionStartTime);
         messages.add(userMessage);
         
-        // Process internal thoughts
         String newThoughts = processInternalThoughts(userInput);
         if (newThoughts != null && !newThoughts.startsWith("Inga")) {
-            // Add new thoughts to collection
             String[] thoughtLines = newThoughts.split("\n");
             for (String line : thoughtLines) {
                 line = line.trim();
@@ -164,10 +159,8 @@ public class PsykologenService {
             }
         }
         
-        // Get Erik's response
         String agentResponse = getErikResponse(userInput);
         
-        // Add agent response
         long responseTime = System.currentTimeMillis();
         Map<String, Object> assistantMessage = new HashMap<>();
         assistantMessage.put("role", "assistant");
@@ -290,21 +283,6 @@ public class PsykologenService {
         return new ArrayList<>(messages);
     }
     
-    public Map<String, Object> getStatistics() {
-        int totalTokens = totalInputTokens + totalOutputTokens;
-        int maxTokens = 128000;
-        
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("conversationCount", conversationCount);
-        stats.put("totalInputTokens", totalInputTokens);
-        stats.put("totalOutputTokens", totalOutputTokens);
-        stats.put("totalTokens", totalTokens);
-        stats.put("maxTokens", maxTokens);
-        stats.put("remainingTokens", maxTokens - totalTokens);
-        stats.put("usagePercentage", (totalTokens / (double) maxTokens) * 100);
-        
-        return stats;
-    }
     
     private void startBackgroundUpdates(String userInput, String agentResponse) {
         // Start profile update in background

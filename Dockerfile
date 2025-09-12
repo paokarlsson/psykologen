@@ -63,8 +63,11 @@ WORKDIR /home/developer
 # Create .ssh directory for the user
 RUN mkdir -p /home/developer/.ssh && chmod 700 /home/developer/.ssh
 
+
 # Switch back to root to start SSH service
 USER root
+
+RUN npm install -g @anthropic-ai/claude-code
 
 # Expose SSH port
 EXPOSE 22
