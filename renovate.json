@@ -1,0 +1,22 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "dryRun": false,
+    "repositories": [
+        "paokarlsson/psykologen"
+    ],
+    "enabledManagers": [
+        "maven",
+        "gradle",
+        "npm"
+    ],
+    "separateMultipleMajor": false,
+    "separateMinorPatch": false,
+    "prConcurrentLimit": 10,
+    "branchConcurrentLimit": 10,
+    "prHourlyLimit": 10,
+    "extends": [
+        "config:base"
+    ],
+    "groupName": "All Maven updates",
+    "separateMajorMinor": false
+}
