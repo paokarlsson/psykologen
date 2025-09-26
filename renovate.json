@@ -1,6 +1,6 @@
 {
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-    "dryRun": false,
+    "dryRun": null,
     "repositories": [
         "paokarlsson/psykologen"
     ],
@@ -15,7 +15,7 @@
     "branchConcurrentLimit": 10,
     "prHourlyLimit": 10,
     "extends": [
-        "config:base"
+        "config:recommended"
     ],
     "groupName": "All Maven updates",
     "separateMajorMinor": false
