@@ -28,25 +28,35 @@ Angular (frontend)  →  Spring Boot (backend)  →  OpenAI API
 
 Du behöver Java 21, Node.js, Maven och en OpenAI API-nyckel.
 
-**1. Sätt din API-nyckel**
-```bash
-echo "OPENAI_API_KEY=din_nyckel_här" > .env
-```
-
-**2. Starta backend**
+**1. Starta backend**
 ```bash
 cd backend
+echo "OPENAI_API_KEY=din_nyckel_här" > .env
 mvn spring-boot:run
 ```
+`.env` måste ligga i `backend/` — spring-dotenv letar i processens
+working directory, inte i repo-roten.
 Backend körs nu på `http://localhost:8080`.
 
-**3. Starta frontend**
+**2. Starta frontend**
 ```bash
 cd frontend
 npm install
 npm start
 ```
 Öppna `http://localhost:4200` i webbläsaren.
+
+### Alternativ: Docker Compose
+
+Vill du slippa installera Java/Node lokalt: skapa `backend/.env` som i
+steg 1 ovan, kör sedan
+```bash
+docker compose up
+```
+Backend och frontend körs i varsin container (officiella Maven- och
+Node-images, ingen egen Dockerfile) med koden volym-mountad, så
+ändringar du gör lokalt speglas direkt in. Port 5005 är öppen för att
+koppla på en JVM-debugger mot backend om du vill.
 
 ## Struktur
 

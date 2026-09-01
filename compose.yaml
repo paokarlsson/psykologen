@@ -1,0 +1,25 @@
+services:
+  backend:
+    image: maven:3.9-eclipse-temurin-21
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+      - maven-repo:/root/.m2
+    ports:
+      - "8080:8080"
+      - "5005:5005" # JVM debug port (jdwp), attach a debugger if you want to
+    command: >
+      mvn spring-boot:run
+      -Dspring-boot.run.jvmArguments="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+
+  frontend:
+    image: node:22
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "4200:4200"
+    command: sh -c "npm install && npm start -- --host 0.0.0.0"
+
+volumes:
+  maven-repo:
