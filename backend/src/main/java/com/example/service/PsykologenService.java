@@ -1,7 +1,9 @@
 package com.example.service;
 
+import com.example.MissingApiKeyException;
 import com.example.SystemPrompts;
 import com.google.gson.*;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -49,7 +51,14 @@ public class PsykologenService {
         
         cleanupSessionFiles();
     }
-    
+
+    @PostConstruct
+    private void validateApiKey() {
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new MissingApiKeyException();
+        }
+    }
+
     public void initializeSession() {
         if (apiKey == null || apiKey.isEmpty()) {
             throw new IllegalStateException("OPENAI_API_KEY must be set");
