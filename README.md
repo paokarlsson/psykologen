@@ -30,20 +30,19 @@ Du behöver Java 21, Node.js, Maven och en OpenAI API-nyckel.
 
 **1. Sätt din API-nyckel**
 ```bash
-cp .env.example .env
-# öppna .env och klistra in din OPENAI_API_KEY
+echo "OPENAI_API_KEY=din_nyckel_här" > .env
 ```
 
 **2. Starta backend**
 ```bash
-cd project/backend
+cd backend
 mvn spring-boot:run
 ```
 Backend körs nu på `http://localhost:8080`.
 
 **3. Starta frontend**
 ```bash
-cd project/frontend
+cd frontend
 npm install
 npm start
 ```
@@ -52,9 +51,8 @@ npm start
 ## Struktur
 
 ```
-project/
-├── backend/    Spring Boot API
-└── frontend/   Angular-app
+backend/    Spring Boot API
+frontend/   Angular-app
 ```
 
 ## Vad jag lärde mig / övade på
@@ -63,7 +61,6 @@ project/
 - Angular-komponenter och kommunikation mellan frontend och backend
 - Hantera hemligheter (API-nycklar) korrekt via miljövariabler istället
   för att hårdkoda dem
-- Automatiska beroende-uppdateringar med Renovate
 
 ## Status
 
