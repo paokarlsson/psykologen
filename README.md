@@ -49,11 +49,6 @@ npm start
 ```
 Öppna `http://localhost:4200` i webbläsaren.
 
-**Alternativt, med Docker:**
-```bash
-docker compose up
-```
-
 ## Struktur
 
 ```
