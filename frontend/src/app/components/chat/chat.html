@@ -3,6 +3,11 @@
     <h2>🎤 Psykologen - Chat med Erik</h2>
   </div>
 
+  <div *ngIf="backendError" class="backend-error">
+    <span>⚠️ {{ backendError }}</span>
+    <button (click)="retryConnection()">Försök igen</button>
+  </div>
+
   <div class="chat-messages" #messagesContainer>
     <div *ngIf="!isConversationStarted && messages.length === 0" class="welcome-message">
       <p>Välkommen! Klicka på "Starta Samtal" för att börja din session med Erik.</p>

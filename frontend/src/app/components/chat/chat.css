@@ -20,6 +20,33 @@
   font-size: 1.2rem;
 }
 
+.backend-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fff3cd;
+  color: #856404;
+  border-bottom: 1px solid #ffeeba;
+  font-size: 0.9rem;
+}
+
+.backend-error button {
+  background: #856404;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.backend-error button:hover {
+  background: #6b5003;
+}
+
 .chat-messages {
   flex: 1;
   overflow-y: auto;
