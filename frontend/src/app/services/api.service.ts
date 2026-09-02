@@ -32,6 +32,20 @@ export interface PlanResponse {
   plan: string;
 }
 
+export interface PromptSettingsResponse {
+  success: boolean;
+  useCustomPrompts: boolean;
+  prompts: Record<string, string>;
+  defaults: Record<string, string>;
+  sessionDurationMinutes: number;
+  defaultSessionDurationMinutes: number;
+}
+
+export interface SimpleResponse {
+  success: boolean;
+  error?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -58,6 +72,34 @@ export class ApiService {
 
   getPlan(): Observable<PlanResponse> {
     return this.http.get<PlanResponse>(`${this.baseUrl}/plan`);
+  }
+
+  /** Startar om samtalet helt blankt (ny historik, tom profil/plan). Rör inte promptinställningar. */
+  resetSession(): Observable<SimpleResponse> {
+    return this.http.post<SimpleResponse>(`${this.baseUrl}/reset`, {});
+  }
+
+  getPromptSettings(): Observable<PromptSettingsResponse> {
+    return this.http.get<PromptSettingsResponse>(`${this.baseUrl}/settings/prompts`);
+  }
+
+  /** Sparar egna texter för en eller flera promptnycklar. Slår samtidigt på användningen av dem. */
+  updatePrompts(updates: Record<string, string>): Observable<SimpleResponse> {
+    return this.http.put<SimpleResponse>(`${this.baseUrl}/settings/prompts`, updates);
+  }
+
+  /** Återställer en nyckel till standard, eller samtliga om ingen anges. */
+  resetPrompt(key?: string): Observable<SimpleResponse> {
+    return this.http.post<SimpleResponse>(`${this.baseUrl}/settings/prompts/reset`, key ? { key } : {});
+  }
+
+  setCustomPromptsEnabled(enabled: boolean): Observable<SimpleResponse> {
+    return this.http.put<SimpleResponse>(`${this.baseUrl}/settings/custom-prompts-enabled`, { enabled });
+  }
+
+  /** Sätter hur många minuter Erik ska planera samtalet mot. */
+  setSessionDuration(minutes: number): Observable<SimpleResponse> {
+    return this.http.put<SimpleResponse>(`${this.baseUrl}/settings/session-duration`, { minutes });
   }
 
 }

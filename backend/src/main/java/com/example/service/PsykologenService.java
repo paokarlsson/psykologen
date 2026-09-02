@@ -1,10 +1,12 @@
 package com.example.service;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.example.MissingApiKeyException;
-import com.example.SystemPrompts;
+import com.example.prompt.PromptStore;
 import com.example.prompt.PromptTemplates;
 import com.example.service.ai.AiClient;
 import com.example.service.ai.AiResponse;
@@ -29,14 +31,16 @@ public class PsykologenService {
     private final AiClient aiClient;
     private final SessionArtifactStore artifactStore;
     private final BackgroundSessionUpdater backgroundUpdater;
-    private final ConversationSession session;
+    private final PromptStore promptStore;
+    private volatile ConversationSession session;
 
     public PsykologenService(AiClient aiClient, SessionArtifactStore artifactStore,
-            BackgroundSessionUpdater backgroundUpdater) {
+            BackgroundSessionUpdater backgroundUpdater, PromptStore promptStore) {
         this.aiClient = aiClient;
         this.artifactStore = artifactStore;
         this.backgroundUpdater = backgroundUpdater;
-        this.session = new ConversationSession(SystemPrompts.SYSTEM_PROMPT);
+        this.promptStore = promptStore;
+        this.session = new ConversationSession(promptStore.getSystemPrompt());
 
         artifactStore.clear();
 
@@ -45,9 +49,52 @@ public class PsykologenService {
         }
     }
 
+    /**
+     * Startar om samtalet helt blankt: ny historik (med aktuell systemprompt),
+     * nollställd klocka och tankar, och tömd profil/plan. Rör inte sparade
+     * promptinställningar - bara själva samtalet.
+     */
+    public synchronized void resetSession() {
+        this.session = new ConversationSession(promptStore.getSystemPrompt());
+        artifactStore.clear();
+    }
+
+    /** Aktuella promptvärden + standardvärden + på/av-läge + sessionslängd, för GUI:t. */
+    public Map<String, Object> getPromptSettings() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("useCustomPrompts", promptStore.isUseCustomPrompts());
+        result.put("prompts", promptStore.currentValues());
+        result.put("defaults", PromptStore.defaults());
+        result.put("sessionDurationMinutes", promptStore.getSessionDurationMinutes());
+        result.put("defaultSessionDurationMinutes", PromptStore.DEFAULT_SESSION_DURATION_MINUTES);
+        return result;
+    }
+
+    /** Hur många minuter Erik ska planera samtalet mot (default 45). */
+    public void setSessionDurationMinutes(double minutes) {
+        promptStore.setSessionDurationMinutes(minutes);
+    }
+
+    /** Sparar egna texter för en eller flera promptnycklar (slår samtidigt på användningen av dem). */
+    public void updatePrompts(Map<String, String> updates) {
+        promptStore.update(updates);
+    }
+
+    public void resetPrompt(String key) {
+        promptStore.resetToDefault(key);
+    }
+
+    public void resetAllPrompts() {
+        promptStore.resetAllToDefault();
+    }
+
+    public void setCustomPromptsEnabled(boolean enabled) {
+        promptStore.setUseCustomPrompts(enabled);
+    }
+
     public String startConversation() throws Exception {
         List<ChatMessage> openingMessages = new ArrayList<>(session.messages());
-        openingMessages.add(ChatMessage.instruction(Role.USER, PromptTemplates.OPENING_INSTRUCTION));
+        openingMessages.add(ChatMessage.instruction(Role.USER, promptStore.getOpeningInstruction()));
 
         AiResponse openingResponse = aiClient.chat(openingMessages);
         session.recordUsage(openingResponse);
@@ -87,7 +134,8 @@ public class PsykologenService {
     }
 
     private String reflectOnInput(String userInput) throws Exception {
-        String prompt = PromptTemplates.thoughtReflection(userInput, session.thoughtsAsBulletText());
+        String prompt = PromptTemplates.thoughtReflection(
+                promptStore.getThoughtReflectionTemplate(), userInput, session.thoughtsAsBulletText());
 
         List<ChatMessage> request = new ArrayList<>(session.historyBeforeLastMessage());
         request.add(ChatMessage.instruction(Role.USER, prompt));
@@ -99,8 +147,9 @@ public class PsykologenService {
 
     private String respondAsErik(String userInput) throws Exception {
         String sessionPlan = artifactStore.readPlan().orElse("");
-        String prompt = PromptTemplates.erikResponse(
-                session.thoughtsAsBulletText(), sessionPlan, session.elapsedMinutes(), userInput);
+        String prompt = PromptTemplates.erikResponse(promptStore.getErikResponseTemplate(),
+                session.thoughtsAsBulletText(), sessionPlan, session.elapsedMinutes(),
+                promptStore.getSessionDurationMinutes(), userInput);
 
         List<ChatMessage> request = new ArrayList<>(session.historyBeforeLastMessage());
         request.add(ChatMessage.instruction(Role.USER, prompt));

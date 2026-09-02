@@ -110,4 +110,96 @@ public class PsykologenController {
         }
     }
 
+    /** Startar om samtalet helt blankt (ny historik, tom profil/plan). Rör inte promptinställningar. */
+    @PostMapping("/reset")
+    public ResponseEntity<Map<String, Object>> resetSession() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            psykologenService.resetSession();
+            response.put("success", true);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /** Nuvarande promptvärden + standardvärden + på/av-läge, för redigering i GUI:t. */
+    @GetMapping("/settings/prompts")
+    public ResponseEntity<Map<String, Object>> getPromptSettings() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            response.putAll(psykologenService.getPromptSettings());
+            response.put("success", true);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /** Sparar egna texter för en eller flera promptnycklar (body: { "systemPrompt": "...", ... }). */
+    @PutMapping("/settings/prompts")
+    public ResponseEntity<Map<String, Object>> updatePrompts(@RequestBody Map<String, String> updates) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            psykologenService.updatePrompts(updates);
+            response.put("success", true);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /** Återställer en nyckel (body: {"key": "systemPrompt"}) eller samtliga (tomt/utelämnat body) till standard. */
+    @PostMapping("/settings/prompts/reset")
+    public ResponseEntity<Map<String, Object>> resetPrompts(@RequestBody(required = false) Map<String, String> body) {
+        Map<String, Object> response = new HashMap<>();
+        String key = body == null ? null : body.get("key");
+        if (key == null || key.isBlank()) {
+            psykologenService.resetAllPrompts();
+        } else {
+            psykologenService.resetPrompt(key);
+        }
+        response.put("success", true);
+        return ResponseEntity.ok(response);
+    }
+
+    /** Slår av/på om de sparade egna promptarna faktiskt används (body: {"enabled": true|false}). */
+    @PutMapping("/settings/custom-prompts-enabled")
+    public ResponseEntity<Map<String, Object>> setCustomPromptsEnabled(@RequestBody Map<String, Boolean> body) {
+        Map<String, Object> response = new HashMap<>();
+        boolean enabled = Boolean.TRUE.equals(body.get("enabled"));
+        psykologenService.setCustomPromptsEnabled(enabled);
+        response.put("success", true);
+        response.put("enabled", enabled);
+        return ResponseEntity.ok(response);
+    }
+
+    /** Sätter hur många minuter Erik ska planera samtalet mot (body: {"minutes": 45}). */
+    @PutMapping("/settings/session-duration")
+    public ResponseEntity<Map<String, Object>> setSessionDuration(@RequestBody Map<String, Double> body) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Double minutes = body.get("minutes");
+            if (minutes == null) {
+                response.put("success", false);
+                response.put("error", "Fältet 'minutes' saknas.");
+                return ResponseEntity.badRequest().body(response);
+            }
+            psykologenService.setSessionDurationMinutes(minutes);
+            response.put("success", true);
+            response.put("sessionDurationMinutes", minutes);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
 }

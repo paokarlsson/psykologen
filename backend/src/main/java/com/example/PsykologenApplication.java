@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.Environment;
 
+import com.example.prompt.PromptStore;
 import com.example.service.BackgroundSessionUpdater;
 import com.example.service.PsykologenService;
 import com.example.service.ai.AiClient;
@@ -39,8 +40,9 @@ public class PsykologenApplication {
     private static PsykologenService buildPsykologenService(Environment env) {
         AiClient aiClient = buildAiClient(env);
         SessionArtifactStore artifactStore = new FileSessionArtifactStore();
-        BackgroundSessionUpdater backgroundUpdater = new BackgroundSessionUpdater(aiClient, artifactStore);
-        return new PsykologenService(aiClient, artifactStore, backgroundUpdater);
+        PromptStore promptStore = new PromptStore();
+        BackgroundSessionUpdater backgroundUpdater = new BackgroundSessionUpdater(aiClient, artifactStore, promptStore);
+        return new PsykologenService(aiClient, artifactStore, backgroundUpdater, promptStore);
     }
 
     /**
