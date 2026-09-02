@@ -3,70 +3,102 @@
     <h2>🎤 Psykologen - Chat med Erik</h2>
   </div>
 
-  <div *ngIf="backendError" class="backend-error">
-    <span>⚠️ {{ backendError }}</span>
-    <button (click)="retryConnection()">Försök igen</button>
-  </div>
+  @if (backendError) {
+    <div class="backend-error">
+      <span>⚠️ {{ backendError }}</span>
+      <button (click)="retryConnection()">Försök igen</button>
+    </div>
+  }
 
   <div class="chat-messages" #messagesContainer>
-    <div *ngIf="!isConversationStarted && messages.length === 0" class="welcome-message">
-      <p>Välkommen! Klicka på "Starta Samtal" för att börja din session med Erik.</p>
-      <button 
-        class="start-btn" 
-        (click)="startConversation()" 
-        [disabled]="isLoading">
-        <span *ngIf="!isLoading">Starta Samtal</span>
-        <span *ngIf="isLoading">Startar...</span>
-      </button>
-    </div>
-
-    <div *ngFor="let message of messages" 
-         class="message" 
-         [ngClass]="{'user-message': message.role === 'user', 'assistant-message': message.role === 'assistant'}">
-      <div class="message-header">
-        <span class="message-role">
-          {{ message.role === 'user' ? '👤 Du' : '🤖 Erik' }}
-        </span>
-        <span class="message-time">{{ formatTimestamp(message.timestamp) }}</span>
+    @if (!isConversationStarted && messages.length === 0) {
+      <div class="welcome-message">
+        <p>Välkommen! Klicka på "Starta Samtal" för att börja din session med Erik.</p>
+        <button
+          class="start-btn"
+          (click)="startConversation()"
+          [disabled]="isLoading">
+          @if (!isLoading) {
+            <span>Starta Samtal</span>
+          }
+          @if (isLoading) {
+            <span>Startar...</span>
+          }
+        </button>
       </div>
-      <div class="message-content">{{ message.content }}</div>
-    </div>
+    }
 
-    <div *ngIf="isLoading" class="loading-message">
-      <div class="message assistant-message">
-        <div class="message-header">
-          <span class="message-role">🤖 Erik</span>
-        </div>
-        <div class="message-content">
-          <div class="typing-indicator">
-            <span></span>
-            <span></span>
-            <span></span>
+    @for (message of messages; track message; let i = $index) {
+      <div
+        class="message"
+         [ngClass]="{
+           'user-message': message.role === 'user',
+           'assistant-message': message.role === 'assistant',
+           'group-start': isNewGroup(i)
+         }">
+        @if (isNewGroup(i)) {
+          <div class="message-header">
+            <span class="avatar" [ngClass]="message.role === 'user' ? 'avatar-user' : 'avatar-assistant'">
+              {{ message.role === 'user' ? '👤' : '🤖' }}
+            </span>
+            <span class="message-role">{{ message.role === 'user' ? 'Du' : 'Erik' }}</span>
+          </div>
+        }
+        <div class="message-content">{{ message.content }}</div>
+        @if (isLastInGroup(i)) {
+          <div class="message-time">{{ formatTimestamp(message.timestamp) }}</div>
+        }
+      </div>
+    }
+
+    @if (isLoading) {
+      <div class="loading-message">
+        <div class="message assistant-message group-start">
+          <div class="message-header">
+            <span class="avatar avatar-assistant">🤖</span>
+            <span class="message-role">Erik</span>
+          </div>
+          <div class="message-content">
+            <div class="typing-indicator">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    }
   </div>
 
-  <div class="chat-input" *ngIf="isConversationStarted">
-    <div *ngIf="sessionComplete" class="session-complete">
-      <p>✅ Sessionen är avslutad. Tack för ditt besök!</p>
+  @if (isConversationStarted) {
+    <div class="chat-input">
+      @if (sessionComplete) {
+        <div class="session-complete">
+          <p>✅ Sessionen är avslutad. Tack för ditt besök!</p>
+        </div>
+      }
+      @if (!sessionComplete) {
+        <div class="input-container">
+          <textarea
+            #messageInput
+            [(ngModel)]="currentMessage"
+            (keydown)="onKeyPress($event)"
+            placeholder="Skriv ditt meddelande här..."
+            rows="3"
+          [disabled]="isLoading || sessionComplete"></textarea>
+          <button
+            (click)="sendMessage()"
+            [disabled]="!currentMessage.trim() || isLoading || sessionComplete"
+            class="send-btn">
+            @if (!isLoading) {
+              <span>Skicka</span>
+            }
+            @if (isLoading) {
+              <span>Skickar...</span>
+            }
+          </button>
+        </div>
+      }
     </div>
-    <div *ngIf="!sessionComplete" class="input-container">
-      <textarea 
-        #messageInput
-        [(ngModel)]="currentMessage"
-        (keydown)="onKeyPress($event)"
-        placeholder="Skriv ditt meddelande här..."
-        rows="3"
-        [disabled]="isLoading || sessionComplete"></textarea>
-      <button 
-        (click)="sendMessage()" 
-        [disabled]="!currentMessage.trim() || isLoading || sessionComplete"
-        class="send-btn">
-        <span *ngIf="!isLoading">Skicka</span>
-        <span *ngIf="isLoading">Skickar...</span>
-      </button>
-    </div>
-  </div>
+  }
 </div>

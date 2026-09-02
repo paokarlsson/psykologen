@@ -1,12 +1,12 @@
 import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService, Message, MessageResponse } from '../../services/api.service';
 
 @Component({
   selector: 'app-chat',
-  imports: [CommonModule, FormsModule],
+  imports: [NgClass, FormsModule],
   templateUrl: './chat.html',
   styleUrl: './chat.css'
 })
@@ -154,6 +154,16 @@ export class Chat implements OnInit, AfterViewInit {
   formatTimestamp(timestamp?: number): string {
     if (!timestamp) return '';
     return new Date(timestamp).toLocaleTimeString();
+  }
+
+  isNewGroup(index: number): boolean {
+    if (index === 0) return true;
+    return this.messages[index].role !== this.messages[index - 1].role;
+  }
+
+  isLastInGroup(index: number): boolean {
+    if (index === this.messages.length - 1) return true;
+    return this.messages[index].role !== this.messages[index + 1].role;
   }
 
   private scrollToBottom(): void {
