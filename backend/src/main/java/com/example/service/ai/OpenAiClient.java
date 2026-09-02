@@ -1,24 +1,24 @@
 package com.example.service.ai;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
-import java.util.Map;
+
+import com.example.session.ChatMessage;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 /**
- * {@link AiClient} backed by OpenAI's Chat Completions API.
+ * {@link AiClient} backad av OpenAIs Chat Completions API.
+ *
+ * En vanlig, ramverksfri klass: API-nyckeln kommer in via konstruktorn.
+ * Wiring sker i {@code com.example.config.AppConfig}.
  */
-@Component("openaiClient")
 public class OpenAiClient implements AiClient {
 
     private static final String MODEL = "gpt-4o-mini";
@@ -26,8 +26,11 @@ public class OpenAiClient implements AiClient {
     private static final Gson gson = new Gson();
     private static final HttpClient httpClient = HttpClient.newHttpClient();
 
-    @Value("${OPENAI_API_KEY:}")
-    private String apiKey;
+    private final String apiKey;
+
+    public OpenAiClient(String apiKey) {
+        this.apiKey = apiKey;
+    }
 
     @Override
     public String providerName() {
@@ -45,15 +48,15 @@ public class OpenAiClient implements AiClient {
     }
 
     @Override
-    public AiResponse chat(List<Map<String, Object>> messages) throws Exception {
+    public AiResponse chat(List<ChatMessage> messages) throws Exception {
         JsonObject requestBody = new JsonObject();
         requestBody.addProperty("model", MODEL);
 
         JsonArray messagesArray = new JsonArray();
-        for (Map<String, Object> msg : messages) {
+        for (ChatMessage msg : messages) {
             JsonObject msgNode = new JsonObject();
-            msgNode.addProperty("role", (String) msg.get("role"));
-            msgNode.addProperty("content", (String) msg.get("content"));
+            msgNode.addProperty("role", msg.role().wireValue());
+            msgNode.addProperty("content", msg.content());
             messagesArray.add(msgNode);
         }
         requestBody.add("messages", messagesArray);

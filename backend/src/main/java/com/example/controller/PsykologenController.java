@@ -1,22 +1,26 @@
 package com.example.controller;
 
-import com.example.service.PsykologenService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import com.example.service.PsykologenService;
+import com.example.session.ChatMessage;
 
 @RestController
 @RequestMapping("/api/psykologen")
 @CrossOrigin(origins = "*")
 public class PsykologenController {
-    
-    @Autowired
-    private PsykologenService psykologenService;
-    
+
+    private final PsykologenService psykologenService;
+
+    public PsykologenController(PsykologenService psykologenService) {
+        this.psykologenService = psykologenService;
+    }
+
     @PostMapping("/start")
     public ResponseEntity<Map<String, Object>> startConversation() {
         Map<String, Object> response = new HashMap<>();
@@ -32,7 +36,7 @@ public class PsykologenController {
             return ResponseEntity.badRequest().body(response);
         }
     }
-    
+
     @PostMapping("/message")
     public ResponseEntity<Map<String, Object>> sendMessage(@RequestBody Map<String, String> request) {
         Map<String, Object> response = new HashMap<>();
@@ -43,16 +47,16 @@ public class PsykologenController {
                 response.put("error", "Message cannot be empty");
                 return ResponseEntity.badRequest().body(response);
             }
-            
+
             String erikResponse = psykologenService.processMessage(userInput);
             response.put("success", true);
             response.put("message", erikResponse);
             response.put("role", "erik");
-            
+
             if (erikResponse.contains("KLAR FÖR SKRIVNING")) {
                 response.put("sessionComplete", true);
             }
-            
+
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("success", false);
@@ -60,12 +64,12 @@ public class PsykologenController {
             return ResponseEntity.badRequest().body(response);
         }
     }
-    
+
     @GetMapping("/conversation")
     public ResponseEntity<Map<String, Object>> getConversation() {
         Map<String, Object> response = new HashMap<>();
         try {
-            List<Map<String, Object>> conversation = psykologenService.getConversation();
+            List<ChatMessage> conversation = psykologenService.getConversation();
             response.put("success", true);
             response.put("conversation", conversation);
             return ResponseEntity.ok(response);
@@ -75,7 +79,7 @@ public class PsykologenController {
             return ResponseEntity.badRequest().body(response);
         }
     }
-    
+
     @GetMapping("/profile")
     public ResponseEntity<Map<String, Object>> getProfile() {
         Map<String, Object> response = new HashMap<>();
@@ -90,7 +94,7 @@ public class PsykologenController {
             return ResponseEntity.badRequest().body(response);
         }
     }
-    
+
     @GetMapping("/plan")
     public ResponseEntity<Map<String, Object>> getPlan() {
         Map<String, Object> response = new HashMap<>();
@@ -105,5 +109,5 @@ public class PsykologenController {
             return ResponseEntity.badRequest().body(response);
         }
     }
-    
+
 }
