@@ -13,6 +13,7 @@ import com.example.service.ai.AiResponse;
 import com.example.session.ChatMessage;
 import com.example.session.ConversationSession;
 import com.example.session.Role;
+import com.example.storage.HistoryEntry;
 import com.example.storage.SessionArtifactStore;
 
 /**
@@ -50,9 +51,9 @@ public class PsykologenService {
     }
 
     /**
-     * Startar om samtalet helt blankt: ny historik (med aktuell systemprompt),
-     * nollställd klocka och tankar, och tömd profil/plan. Rör inte sparade
-     * promptinställningar - bara själva samtalet.
+     * Startar om samtalet helt blankt: ny samtalshistorik (med aktuell
+     * systemprompt), nollställd klocka och tankar, och tömd profil/plan/
+     * ändringslogg. Rör inte sparade promptinställningar - bara själva samtalet.
      */
     public synchronized void resetSession() {
         this.session = new ConversationSession(promptStore.getSystemPrompt());
@@ -131,6 +132,11 @@ public class PsykologenService {
 
     public List<ChatMessage> getConversation() {
         return session.messages();
+    }
+
+    /** Ändringshistoriken för profil och plan, nyast först. */
+    public List<HistoryEntry> getHistory() {
+        return artifactStore.readHistory();
     }
 
     private String reflectOnInput(String userInput) throws Exception {

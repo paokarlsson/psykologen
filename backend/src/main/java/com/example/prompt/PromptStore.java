@@ -101,7 +101,7 @@ public class PromptStore {
                 Patient: {{userInput}}
                 Psykolog Erik: {{agentResponse}}
 
-                Uppdatera ENDAST profilen för PATIENTEN med NYA FAKTA som framkommer. Inkludera:
+                Uppdatera profilen för PATIENTEN med NYA FAKTA som framkommer. Inkludera:
                 - Personliga detaljer om patienten (ålder, jobb, familj, etc.)
                 - Patientens intressen och hobbies
                 - Patientens problem eller utmaningar
@@ -110,7 +110,13 @@ public class PromptStore {
 
                 VIKTIGT: Samla endast information om PATIENTEN, inte om psykologen Erik.
 
-                Skriv en uppdaterad patient-profil i markdown-format med tydlig struktur:
+                Svara i EXAKT detta format, med de två rubrikraderna ordagrant (ändra inget i dem):
+
+                ===ÄNDRINGAR===
+                [Kort punktlista med ENDAST det som är NYTT eller ÄNDRAT sedan förra versionen. Om en tidigare slutsats reviderades, skriv det tydligt, t.ex. "Reviderad hypotes: ångest → troligen stress". Om inget nytt: skriv "Inga förändringar."]
+
+                ===DOKUMENT===
+                [Hela den uppdaterade patient-profilen i markdown, enligt strukturen nedan]
 
                 # PATIENT-PROFIL
 
@@ -157,8 +163,15 @@ public class PromptStore {
                 - Om progression är långsam: korta ner planen, fokusera på 1-2 huvudpunkter
                 - Om tid börjar ta slut: anpassa "Nästa Steg" för snabb avslutning
                 - Var realistisk om vad som hinns med
+                - Anpassa hela planen baserat på progression och tid kvar
 
-                Format i markdown:
+                Svara i EXAKT detta format, med de två rubrikraderna ordagrant (ändra inget i dem):
+
+                ===ÄNDRINGAR===
+                [Kort punktlista med ENDAST det som ändrades i planen sedan förra versionen, t.ex. ändrad prioritering, nytt fokusområde, eller kortare "Nästa Steg" pga tidsbrist. Om inget nytt: skriv "Inga förändringar."]
+
+                ===DOKUMENT===
+                [Hela den uppdaterade sessionsplanen i markdown, enligt strukturen nedan]
 
                 # SESSIONSPLAN
 
@@ -179,8 +192,6 @@ public class PromptStore {
 
                 ## Anteckningar för Erik
                 [specifika råd: prioritera, korta ner, eller förbereda avslutning]
-
-                VIKTIGT: Anpassa hela planen baserat på progression och tid kvar!
                 """);
 
     private final ObjectMapper mapper = new ObjectMapper();

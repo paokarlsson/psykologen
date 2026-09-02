@@ -1,0 +1,34 @@
+<div class="history-widget">
+  <button class="history-toggle" (click)="toggleOpen()" [attr.aria-expanded]="isOpen">
+    <span>📜 Historik</span>
+    <span class="chevron" [ngClass]="{ open: isOpen }">▾</span>
+  </button>
+
+  @if (isOpen) {
+    <div class="history-panel">
+      @if (isLoading) {
+        <p class="hint">Laddar...</p>
+      }
+
+      @if (errorMessage) {
+        <div class="banner banner-error">⚠️ {{ errorMessage }}</div>
+      }
+
+      @if (!isLoading && !errorMessage && entries.length === 0) {
+        <p class="hint">Inga ändringar loggade än. Profilen/planen uppdateras i bakgrunden efter varje meddelande.</p>
+      }
+
+      <div class="timeline">
+        @for (entry of entries; track entry.timestamp + entry.type) {
+          <div class="timeline-entry" [ngClass]="entry.type">
+            <div class="timeline-header">
+              <span class="type-badge">{{ typeLabel(entry) }}</span>
+              <span class="timeline-time">{{ formatTime(entry) }} · {{ entry.elapsedMinutes.toFixed(1) }} min in</span>
+            </div>
+            <div class="timeline-change">{{ entry.change }}</div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

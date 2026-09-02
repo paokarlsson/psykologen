@@ -21,6 +21,12 @@
   right: 1.5rem;
 }
 
+.app-history {
+  position: absolute;
+  top: 1rem;
+  left: 1.5rem;
+}
+
 .app-header h1 {
   margin: 0 0 0.5rem 0;
   font-size: 1.8rem;

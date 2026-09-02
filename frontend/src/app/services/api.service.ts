@@ -46,6 +46,18 @@ export interface SimpleResponse {
   error?: string;
 }
 
+export interface HistoryEntryDto {
+  type: 'profile' | 'plan';
+  timestamp: number;
+  elapsedMinutes: number;
+  change: string;
+}
+
+export interface HistoryResponse {
+  success: boolean;
+  history: HistoryEntryDto[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -100,6 +112,11 @@ export class ApiService {
   /** Sätter hur många minuter Erik ska planera samtalet mot. */
   setSessionDuration(minutes: number): Observable<SimpleResponse> {
     return this.http.put<SimpleResponse>(`${this.baseUrl}/settings/session-duration`, { minutes });
+  }
+
+  /** Ändringshistoriken för profil och plan (vad som reviderades och när), nyast först. */
+  getHistory(): Observable<HistoryResponse> {
+    return this.http.get<HistoryResponse>(`${this.baseUrl}/history`);
   }
 
 }

@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.example.service.PsykologenService;
 import com.example.session.ChatMessage;
+import com.example.storage.HistoryEntry;
 
 @RestController
 @RequestMapping("/api/psykologen")
@@ -110,7 +111,23 @@ public class PsykologenController {
         }
     }
 
-    /** Startar om samtalet helt blankt (ny historik, tom profil/plan). Rör inte promptinställningar. */
+    /** Ändringshistoriken för profil och plan (vad som reviderades och när), nyast först. */
+    @GetMapping("/history")
+    public ResponseEntity<Map<String, Object>> getHistory() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            List<HistoryEntry> history = psykologenService.getHistory();
+            response.put("success", true);
+            response.put("history", history);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /** Startar om samtalet helt blankt (ny samtalshistorik, tom profil/plan/ändringslogg). Rör inte promptinställningar. */
     @PostMapping("/reset")
     public ResponseEntity<Map<String, Object>> resetSession() {
         Map<String, Object> response = new HashMap<>();

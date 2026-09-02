@@ -32,17 +32,17 @@ const FIELD_META: { key: string; label: string; description: string }[] = [
   {
     key: 'erikResponse',
     label: 'Svarsmall (det Erik säger till dig)',
-    description: 'Platshållare: {{currentThoughts}}, {{sessionPlan}}, {{sessionTimeMinutes}}, {{userInput}}'
+    description: 'Platshållare: {{currentThoughts}}, {{sessionPlan}}, {{sessionTimeMinutes}}, {{sessionDurationMinutes}}, {{remainingMinutes}}, {{userInput}}'
   },
   {
     key: 'profileUpdate',
     label: 'Profiluppdatering (analys av dig som patient)',
-    description: 'Platshållare: {{existingProfile}}, {{userInput}}, {{agentResponse}}'
+    description: 'Måste svara i två delar, rubrikerna ordagrant: "===ÄNDRINGAR===" (kort ändringslogg - visas under Historik) följt av "===DOKUMENT===" (hela profilen). Tar du bort rubrikerna loggas ingen historik den turen. Platshållare: {{existingProfile}}, {{userInput}}, {{agentResponse}}'
   },
   {
     key: 'planUpdate',
     label: 'Planuppdatering (sessionsplanen)',
-    description: 'Platshållare: {{existingPlan}}, {{userInput}}, {{agentResponse}}, {{timingAnalysis}}, {{elapsedMinutes}}'
+    description: 'Måste svara i två delar, rubrikerna ordagrant: "===ÄNDRINGAR===" (kort ändringslogg - visas under Historik) följt av "===DOKUMENT===" (hela planen). Tar du bort rubrikerna loggas ingen historik den turen. Platshållare: {{existingPlan}}, {{userInput}}, {{agentResponse}}, {{timingAnalysis}}, {{elapsedMinutes}}, {{sessionDurationMinutes}}, {{remainingMinutes}}'
   },
 ];
 
