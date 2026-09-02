@@ -1,3 +1,9 @@
+:host {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+
 .profile-container {
   display: flex;
   flex-direction: column;
