@@ -1,63 +1,38 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
+import { map } from 'rxjs';
 import { ApiService } from '../../services/api.service';
-import { interval, Subscription } from 'rxjs';
+import { pollingResource } from '../../shared/polling-resource';
+
+const EMPTY_PROFILE = 'Ingen profil skapad än.';
 
 @Component({
   selector: 'app-profile',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './profile.html',
   styleUrl: './profile.css'
 })
-export class Profile implements OnInit, OnDestroy {
-  profile: string = 'Ingen profil skapad än.';
-  isLoading: boolean = false;
-  lastUpdated?: Date;
-  private updateSubscription?: Subscription;
+export class Profile {
+  private readonly apiService = inject(ApiService);
 
-  constructor(private apiService: ApiService) { }
+  private readonly profileResource = pollingResource(
+    () => this.apiService.getProfile().pipe(map((response) => response.profile)),
+    EMPTY_PROFILE
+  );
 
-  ngOnInit(): void {
-    this.loadProfile();
-    // Auto-refresh every 5 seconds
-    this.updateSubscription = interval(5000).subscribe(() => {
-      this.loadProfile();
-    });
-  }
-
-  ngOnDestroy(): void {
-    if (this.updateSubscription) {
-      this.updateSubscription.unsubscribe();
-    }
-  }
-
-  loadProfile(): void {
-    this.isLoading = true;
-    this.apiService.getProfile().subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.profile = response.profile;
-          this.lastUpdated = new Date();
-        }
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error loading profile:', error);
-        this.isLoading = false;
-      }
-    });
-  }
+  readonly profile = this.profileResource.value;
+  readonly isLoading = this.profileResource.isLoading;
+  readonly lastUpdated = this.profileResource.lastUpdated;
 
   refreshProfile(): void {
-    this.loadProfile();
+    this.profileResource.refresh();
   }
 
   formatTimestamp(): string {
-    if (!this.lastUpdated) return '';
-    return this.lastUpdated.toLocaleTimeString();
+    const lastUpdated = this.lastUpdated();
+    return lastUpdated ? lastUpdated.toLocaleTimeString() : '';
   }
 
   isProfileEmpty(): boolean {
-    return this.profile === 'Ingen profil skapad än.' || this.profile.trim().length === 0;
+    return this.profile().trim().length === 0 || this.profile() === EMPTY_PROFILE;
   }
 }
