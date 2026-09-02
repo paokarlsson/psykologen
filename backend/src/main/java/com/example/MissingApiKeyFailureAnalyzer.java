@@ -12,11 +12,14 @@ public class MissingApiKeyFailureAnalyzer extends AbstractFailureAnalyzer<Missin
 
     @Override
     protected FailureAnalysis analyze(Throwable rootFailure, MissingApiKeyException cause) {
+        String envVar = cause.getEnvVar();
+        String provider = cause.getProvider();
         return new FailureAnalysis(
-                "OPENAI_API_KEY är inte satt, så Psykologen-backend kan inte prata med OpenAI.",
+                envVar + " är inte satt, så Psykologen-backend kan inte prata med " + provider + ".",
                 "Sätt din nyckel innan du startar backend, t.ex.:\n"
-                        + "  - Skapa backend/.env med raden OPENAI_API_KEY=din_nyckel_här, eller\n"
-                        + "  - export OPENAI_API_KEY=din_nyckel_här i terminalen du kör mvn spring-boot:run från.",
+                        + "  - Skapa backend/.env med raden " + envVar + "=din_nyckel_här, eller\n"
+                        + "  - export " + envVar + "=din_nyckel_här i terminalen du kör mvn spring-boot:run från.\n"
+                        + "Eller byt leverantör: sätt AI_PROVIDER=openai / AI_PROVIDER=anthropic.",
                 cause);
     }
 }
