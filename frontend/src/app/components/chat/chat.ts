@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService, Message, MessageResponse } from '../../services/api.service';
 
 @Component({
@@ -18,6 +19,7 @@ export class Chat implements OnInit, AfterViewInit {
   isConversationStarted: boolean = false;
   isLoading: boolean = false;
   sessionComplete: boolean = false;
+  backendError: string | null = null;
 
   constructor(private apiService: ApiService) { }
   
@@ -34,6 +36,7 @@ export class Chat implements OnInit, AfterViewInit {
 
   startConversation(): void {
     this.isLoading = true;
+    this.backendError = null;
     this.apiService.startConversation().subscribe({
       next: (response: MessageResponse) => {
         if (response.success) {
@@ -53,8 +56,9 @@ export class Chat implements OnInit, AfterViewInit {
         }
         this.isLoading = false;
       },
-      error: (error) => {
+      error: (error: HttpErrorResponse) => {
         console.error('Error starting conversation:', error);
+        this.backendError = this.describeError(error);
         this.isLoading = false;
       }
     });
@@ -75,7 +79,8 @@ export class Chat implements OnInit, AfterViewInit {
     const messageToSend = this.currentMessage;
     this.currentMessage = '';
     this.isLoading = true;
-    
+    this.backendError = null;
+
     // Scroll to bottom after adding user message
     setTimeout(() => this.scrollToBottom(), 0);
 
@@ -87,7 +92,7 @@ export class Chat implements OnInit, AfterViewInit {
             content: response.message,
             timestamp: Date.now()
           });
-          
+
           if (response.sessionComplete) {
             this.sessionComplete = true;
           }
@@ -101,8 +106,9 @@ export class Chat implements OnInit, AfterViewInit {
         }
         this.isLoading = false;
       },
-      error: (error) => {
+      error: (error: HttpErrorResponse) => {
         console.error('Error sending message:', error);
+        this.backendError = this.describeError(error);
         this.isLoading = false;
       }
     });
@@ -111,6 +117,7 @@ export class Chat implements OnInit, AfterViewInit {
   loadConversation(): void {
     this.apiService.getConversation().subscribe({
       next: (response) => {
+        this.backendError = null;
         if (response.success && response.conversation.length > 1) {
           // Filter out system message and set messages
           this.messages = response.conversation.filter(msg => msg.role !== 'system');
@@ -119,10 +126,22 @@ export class Chat implements OnInit, AfterViewInit {
           setTimeout(() => this.scrollToBottom(), 100);
         }
       },
-      error: (error) => {
+      error: (error: HttpErrorResponse) => {
         console.error('Error loading conversation:', error);
+        this.backendError = this.describeError(error);
       }
     });
+  }
+
+  retryConnection(): void {
+    this.loadConversation();
+  }
+
+  private describeError(error: HttpErrorResponse): string {
+    if (error.status === 0) {
+      return 'Kan inte nå backend. Kontrollera att den är startad (t.ex. "cd backend && mvn spring-boot:run" eller "docker compose up").';
+    }
+    return `Backend svarade med ett fel (${error.status}). Försök igen om en stund.`;
   }
 
   onKeyPress(event: KeyboardEvent): void {

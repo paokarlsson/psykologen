@@ -28,38 +28,41 @@ Angular (frontend)  →  Spring Boot (backend)  →  OpenAI API
 
 Du behöver Java 21, Node.js, Maven och en OpenAI API-nyckel.
 
-**1. Sätt din API-nyckel**
+**1. Starta backend**
 ```bash
-cp .env.example .env
-# öppna .env och klistra in din OPENAI_API_KEY
-```
-
-**2. Starta backend**
-```bash
-cd project/backend
+cd backend
+echo "OPENAI_API_KEY=din_nyckel_här" > .env
 mvn spring-boot:run
 ```
+`.env` måste ligga i `backend/` — spring-dotenv letar i processens
+working directory, inte i repo-roten.
 Backend körs nu på `http://localhost:8080`.
 
-**3. Starta frontend**
+**2. Starta frontend**
 ```bash
-cd project/frontend
+cd frontend
 npm install
 npm start
 ```
 Öppna `http://localhost:4200` i webbläsaren.
 
-**Alternativt, med Docker:**
+### Alternativ: Docker Compose
+
+Vill du slippa installera Java/Node lokalt: skapa `backend/.env` som i
+steg 1 ovan, kör sedan
 ```bash
 docker compose up
 ```
+Backend och frontend körs i varsin container (officiella Maven- och
+Node-images, ingen egen Dockerfile) med koden volym-mountad, så
+ändringar du gör lokalt speglas direkt in. Port 5005 är öppen för att
+koppla på en JVM-debugger mot backend om du vill.
 
 ## Struktur
 
 ```
-project/
-├── backend/    Spring Boot API
-└── frontend/   Angular-app
+backend/    Spring Boot API
+frontend/   Angular-app
 ```
 
 ## Vad jag lärde mig / övade på
@@ -68,7 +71,6 @@ project/
 - Angular-komponenter och kommunikation mellan frontend och backend
 - Hantera hemligheter (API-nycklar) korrekt via miljövariabler istället
   för att hårdkoda dem
-- Automatiska beroende-uppdateringar med Renovate
 
 ## Status
 

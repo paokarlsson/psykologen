@@ -1,28 +1,25 @@
 services:
-  docker-daemon:
-    image: docker:dind
-    privileged: true
-    ports:
-      - "2375:2375"
-    environment:
-      DOCKER_TLS_CERTDIR: ""
-  ubuntu-dev:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: ubuntu-ssh-dev
-    ports:
-      - "2222:22"  # Map host port 2222 to container port 22
-      - "4200:4200"  # Angular dev server (or other app)
-      - "8080:8080"  # Backend/API server (or other app)
+  backend:
+    image: maven:3.9-eclipse-temurin-21
+    working_dir: /app
     volumes:
-      - ./project:/workspace  # Mount local workspace directory
-      - ~/.ssh:/home/developer/.ssh:ro  # Mount SSH keys (optional)
-    environment:
-      - SSH_PASSWORD=devpassword  # Change this password!
-      - DOCKER_HOST=tcp://docker-daemon:2375      
-    restart: unless-stopped
-    stdin_open: true
-    tty: true
-    depends_on:
-      - docker-daemon    
+      - ./backend:/app
+      - maven-repo:/root/.m2
+    ports:
+      - "8080:8080"
+      - "5005:5005" # JVM debug port (jdwp), attach a debugger if you want to
+    command: >
+      mvn spring-boot:run
+      -Dspring-boot.run.jvmArguments="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+
+  frontend:
+    image: node:22
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "4200:4200"
+    command: sh -c "npm install && npm start -- --host 0.0.0.0"
+
+volumes:
+  maven-repo:
