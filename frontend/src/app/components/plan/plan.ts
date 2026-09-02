@@ -1,63 +1,38 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
+import { map } from 'rxjs';
 import { ApiService } from '../../services/api.service';
-import { interval, Subscription } from 'rxjs';
+import { pollingResource } from '../../shared/polling-resource';
+
+const EMPTY_PLAN = 'Ingen plan skapad än.';
 
 @Component({
   selector: 'app-plan',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './plan.html',
   styleUrl: './plan.css'
 })
-export class Plan implements OnInit, OnDestroy {
-  plan: string = 'Ingen plan skapad än.';
-  isLoading: boolean = false;
-  lastUpdated?: Date;
-  private updateSubscription?: Subscription;
+export class Plan {
+  private readonly apiService = inject(ApiService);
 
-  constructor(private apiService: ApiService) { }
+  private readonly planResource = pollingResource(
+    () => this.apiService.getPlan().pipe(map((response) => response.plan)),
+    EMPTY_PLAN
+  );
 
-  ngOnInit(): void {
-    this.loadPlan();
-    // Auto-refresh every 5 seconds
-    this.updateSubscription = interval(5000).subscribe(() => {
-      this.loadPlan();
-    });
-  }
-
-  ngOnDestroy(): void {
-    if (this.updateSubscription) {
-      this.updateSubscription.unsubscribe();
-    }
-  }
-
-  loadPlan(): void {
-    this.isLoading = true;
-    this.apiService.getPlan().subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.plan = response.plan;
-          this.lastUpdated = new Date();
-        }
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error loading plan:', error);
-        this.isLoading = false;
-      }
-    });
-  }
+  readonly plan = this.planResource.value;
+  readonly isLoading = this.planResource.isLoading;
+  readonly lastUpdated = this.planResource.lastUpdated;
 
   refreshPlan(): void {
-    this.loadPlan();
+    this.planResource.refresh();
   }
 
   formatTimestamp(): string {
-    if (!this.lastUpdated) return '';
-    return this.lastUpdated.toLocaleTimeString();
+    const lastUpdated = this.lastUpdated();
+    return lastUpdated ? lastUpdated.toLocaleTimeString() : '';
   }
 
   isPlanEmpty(): boolean {
-    return this.plan === 'Ingen plan skapad än.' || this.plan.trim().length === 0;
+    return this.plan().trim().length === 0 || this.plan() === EMPTY_PLAN;
   }
 }
