@@ -1,38 +1,41 @@
 package com.example.service.ai;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.anthropic.client.AnthropicClient;
 import com.anthropic.client.okhttp.AnthropicOkHttpClient;
 import com.anthropic.models.messages.Message;
 import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.MessageParam;
 import com.anthropic.models.messages.TextBlock;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import com.example.session.ChatMessage;
+import com.example.session.Role;
 
 /**
- * {@link AiClient} backed by Anthropic's Messages API. Unlike OpenAI,
- * Anthropic has no "system" role in {@code messages} - the system
- * prompt is a separate top-level field, and the first turn must be
- * "user". This adapter splits any {@code role: "system"} entries out
- * into the top-level system prompt, and - since this app's opening
- * line is spoken by the assistant with no preceding user turn stored
- * in history - prepends a minimal synthetic user turn when needed so
- * the conversation still starts with "user".
+ * {@link AiClient} backad av Anthropics Messages API. Till skillnad från
+ * OpenAI har Anthropic ingen "system"-roll i {@code messages} - system-
+ * prompten är ett separat toppnivåfält, och första turen måste vara
+ * "user". Den här adaptern delar ut ev. {@code role: "system"}-poster i
+ * toppnivå-systemprompten, och - eftersom appens öppningsreplik sägs av
+ * assistenten utan föregående user-tur i historiken - lägger till en
+ * minimal syntetisk user-tur vid behov så konversationen fortfarande
+ * börjar med "user".
+ *
+ * En vanlig, ramverksfri klass: API-nyckeln kommer in via konstruktorn.
+ * Wiring sker i {@link com.example.PsykologenApplication}.
  */
-@Component("anthropicClient")
 public class AnthropicChatClient implements AiClient {
 
     private static final String MODEL = "claude-haiku-4-5"; // billig modell för test
     private static final long MAX_TOKENS = 16000L;
 
-    @Value("${ANTHROPIC_API_KEY:}")
-    private String apiKey;
-
+    private final String apiKey;
     private volatile AnthropicClient client;
+
+    public AnthropicChatClient(String apiKey) {
+        this.apiKey = apiKey;
+    }
 
     @Override
     public String providerName() {
@@ -61,23 +64,21 @@ public class AnthropicChatClient implements AiClient {
     }
 
     @Override
-    public AiResponse chat(List<Map<String, Object>> messages) throws Exception {
+    public AiResponse chat(List<ChatMessage> messages) throws Exception {
         StringBuilder systemPrompt = new StringBuilder();
         List<MessageParam> conversation = new ArrayList<>();
 
-        for (Map<String, Object> msg : messages) {
-            String role = (String) msg.get("role");
-            String content = (String) msg.get("content");
-            if ("system".equals(role)) {
+        for (ChatMessage msg : messages) {
+            if (msg.role() == Role.SYSTEM) {
                 if (systemPrompt.length() > 0) {
                     systemPrompt.append("\n\n");
                 }
-                systemPrompt.append(content);
+                systemPrompt.append(msg.content());
             } else {
-                MessageParam.Role paramRole = "assistant".equals(role)
+                MessageParam.Role paramRole = msg.role() == Role.ASSISTANT
                         ? MessageParam.Role.ASSISTANT
                         : MessageParam.Role.USER;
-                conversation.add(MessageParam.builder().role(paramRole).content(content).build());
+                conversation.add(MessageParam.builder().role(paramRole).content(msg.content()).build());
             }
         }
 

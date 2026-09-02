@@ -4,4 +4,6 @@ frontend/dist
 backend/target
 backend/profile.md
 backend/plan.md
+backend/prompts.json
+backend/history.json
 .env
