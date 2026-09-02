@@ -8,7 +8,7 @@ import com.example.session.ChatMessage;
  * En chat-completion-leverantör. {@link com.example.service.PsykologenService}
  * pratar bara med detta interface, aldrig direkt med OpenAI eller
  * Anthropic, så den aktiva leverantören kan bytas (se
- * {@code com.example.config.AppConfig}) utan att röra affärslogiken.
+ * {@link com.example.PsykologenApplication}) utan att röra affärslogiken.
  */
 public interface AiClient {
 

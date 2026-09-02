@@ -23,7 +23,7 @@ import com.example.session.Role;
  * börjar med "user".
  *
  * En vanlig, ramverksfri klass: API-nyckeln kommer in via konstruktorn.
- * Wiring sker i {@code com.example.config.AppConfig}.
+ * Wiring sker i {@link com.example.PsykologenApplication}.
  */
 public class AnthropicChatClient implements AiClient {
 

@@ -17,7 +17,7 @@ import com.google.gson.JsonParser;
  * {@link AiClient} backad av OpenAIs Chat Completions API.
  *
  * En vanlig, ramverksfri klass: API-nyckeln kommer in via konstruktorn.
- * Wiring sker i {@code com.example.config.AppConfig}.
+ * Wiring sker i {@link com.example.PsykologenApplication}.
  */
 public class OpenAiClient implements AiClient {
 

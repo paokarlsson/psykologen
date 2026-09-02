@@ -19,7 +19,7 @@ import com.example.storage.SessionArtifactStore;
  * triggar bakgrundsuppdatering av profil/plan efter varje meddelande.
  *
  * En vanlig, ramverksfri klass - all koppling till Spring sker i
- * {@code com.example.config.AppConfig}. Att API-nyckeln saknas upptäcks
+ * {@link com.example.PsykologenApplication}. Att API-nyckeln saknas upptäcks
  * redan här i konstruktorn (istället för i en separat
  * {@code @PostConstruct}-metod), så bean-skapandet failar direkt om
  * leverantören inte är konfigurerad.
