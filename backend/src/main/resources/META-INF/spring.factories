@@ -1,2 +1,3 @@
 org.springframework.boot.diagnostics.FailureAnalyzer=\
-com.example.MissingApiKeyFailureAnalyzer
+com.example.MissingApiKeyFailureAnalyzer,\
+com.example.auth.InvalidUsersFailureAnalyzer

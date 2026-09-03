@@ -5,7 +5,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.example.MissingApiKeyException;
 import com.example.prompt.PromptStore;
 import com.example.prompt.PromptTemplates;
 import com.example.service.ai.AiClient;
@@ -22,10 +21,11 @@ import com.example.storage.SessionArtifactStore;
  * triggar bakgrundsuppdatering av profil/plan efter varje meddelande.
  *
  * En vanlig, ramverksfri klass - all koppling till Spring sker i
- * {@link com.example.PsykologenApplication}. Att API-nyckeln saknas upptäcks
- * redan här i konstruktorn (istället för i en separat
- * {@code @PostConstruct}-metod), så bean-skapandet failar direkt om
- * leverantören inte är konfigurerad.
+ * {@link com.example.PsykologenApplication}. Det finns en instans per
+ * inloggad användare, utdelad av
+ * {@link com.example.service.UserSessionRegistry}: allt tillstånd nedan
+ * (samtal, artefakter, promptar) hör till en enskild användare och får aldrig
+ * delas mellan konton.
  */
 public class PsykologenService {
 
@@ -43,11 +43,10 @@ public class PsykologenService {
         this.promptStore = promptStore;
         this.session = new ConversationSession(promptStore.getSystemPrompt());
 
+        // Ett nystartat samtal ska inte ärva profil/plan från en tidigare körning.
+        // Att AI-nyckeln finns kontrolleras vid uppstart i PsykologenApplication,
+        // eftersom den här konstruktorn numera körs först vid inloggning.
         artifactStore.clear();
-
-        if (!aiClient.isConfigured()) {
-            throw new MissingApiKeyException(aiClient.providerName(), aiClient.requiredEnvVar());
-        }
     }
 
     /**
