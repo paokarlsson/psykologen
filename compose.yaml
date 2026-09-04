@@ -1,6 +1,6 @@
 services:
   backend:
-    image: maven:3.9-eclipse-temurin-21
+    image: maven:3.9-eclipse-temurin-25
     working_dir: /app
     volumes:
       - ./backend:/app

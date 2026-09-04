@@ -119,7 +119,7 @@ public class SecurityConfig {
     /**
      * Ser till att {@code XSRF-TOKEN}-cookien faktiskt skickas ut.
      *
-     * Spring Security 6 skjuter upp genereringen av CSRF-token tills någon
+     * Spring Security skjuter upp genereringen av CSRF-token tills någon
      * läser den, och {@link CookieCsrfTokenRepository} sätter cookien först i
      * samma stund. Utan det här filtret får frontend därför aldrig någon
      * cookie att skicka tillbaka, och varje POST/PUT skulle svara 403.

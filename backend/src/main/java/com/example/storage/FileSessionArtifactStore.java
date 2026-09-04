@@ -9,8 +9,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * {@link SessionArtifactStore} som lagrar profil, plan och ändringshistorik
@@ -28,6 +29,11 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
     private final Path planPath;
     private final Path historyPath;
 
+    /**
+     * Jackson 3 (det Spring Boot 4 använder) kastar {@link JacksonException}
+     * okontrollerat, medan {@link java.nio.file.Files} fortfarande kastar
+     * {@link IOException} - därför fångas båda där JSON läses och skrivs.
+     */
     private final ObjectMapper mapper = new ObjectMapper();
     private final Object historyLock = new Object();
 
@@ -69,7 +75,7 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
             entries.add(entry);
             try {
                 Files.writeString(historyPath, mapper.writeValueAsString(entries));
-            } catch (IOException e) {
+            } catch (IOException | JacksonException e) {
                 // Tyst felhantering - historikloggning får aldrig krascha samtalet
             }
         }
@@ -90,7 +96,7 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
                 return mapper.readValue(Files.readString(historyPath), new TypeReference<List<HistoryEntry>>() {
                 });
             }
-        } catch (IOException e) {
+        } catch (IOException | JacksonException e) {
             // Ignorera korrupt/oläsbar fil, kör vidare med tom historik
         }
         return List.of();

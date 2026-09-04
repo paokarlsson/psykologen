@@ -6,7 +6,8 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Håller alla redigerbara AI-promptar: systempersonan (Erik) och de fyra
@@ -194,6 +195,11 @@ public class PromptStore {
                 [specifika råd: prioritera, korta ner, eller förbereda avslutning]
                 """);
 
+    /**
+     * Jackson 3 (det Spring Boot 4 använder) kastar {@link JacksonException}
+     * okontrollerat, medan {@link java.nio.file.Files} fortfarande kastar
+     * {@link IOException} - därför fångas båda där JSON läses och skrivs.
+     */
     private final ObjectMapper mapper = new ObjectMapper();
     private final Path storePath;
     private final Map<String, String> customPrompts;
@@ -306,7 +312,7 @@ public class PromptStore {
         try {
             Files.writeString(storePath, mapper.writerWithDefaultPrettyPrinter()
                     .writeValueAsString(new Persisted(useCustomPrompts, customPrompts, sessionDurationMinutes)));
-        } catch (IOException e) {
+        } catch (IOException | JacksonException e) {
             // Tyst felhantering - att spara promptinställningar ska inte krascha appen
         }
     }
@@ -316,7 +322,7 @@ public class PromptStore {
             if (Files.exists(storePath)) {
                 return mapper.readValue(Files.readString(storePath), Persisted.class);
             }
-        } catch (IOException e) {
+        } catch (IOException | JacksonException e) {
             // Ignorera korrupt/oläsbar fil - kör vidare med standardvärden
         }
         return new Persisted(false, Map.of(), null);

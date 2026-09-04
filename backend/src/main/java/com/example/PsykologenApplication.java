@@ -4,11 +4,12 @@ import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.springframework.beans.factory.BeanRegistrar;
+import org.springframework.beans.factory.BeanRegistry;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.Environment;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.example.auth.AuthProperties;
 import com.example.auth.LoginAttemptTracker;
@@ -52,19 +53,41 @@ public class PsykologenApplication {
 
     public static void main(String[] args) {
         SpringApplication app = new SpringApplication(PsykologenApplication.class);
-        app.addInitializers(context -> {
-            GenericApplicationContext ctx = (GenericApplicationContext) context;
-            Environment env = ctx.getEnvironment();
-
-            ctx.registerBean(UserSessionRegistry.class, () -> buildSessionRegistry(env));
-            ctx.registerBean(AuthProperties.class, () -> AuthProperties.fromEnvironment(env));
-            ctx.registerBean(LoginAttemptTracker.class, LoginAttemptTracker::new);
-            // PasswordEncoder ägs av SecurityConfig; hämtas när bönan faktiskt
-            // skapas, inte här när definitionen registreras.
-            ctx.registerBean(PasswordHashRunner.class,
-                    () -> new PasswordHashRunner(ctx.getBean(PasswordEncoder.class), ctx));
-        });
+        app.addInitializers(context -> ((GenericApplicationContext) context).register(new ApplicationBeans()));
         app.run(args);
+    }
+
+    /**
+     * Registreringarna, samlade i en {@link BeanRegistrar} - Spring Frameworks
+     * eget sätt att registrera bönor programmatiskt. {@link Environment}
+     * räcks in, så konfigurationen läses härifrån utan {@code @Value} eller
+     * {@code @ConfigurationProperties} på klasserna själva.
+     *
+     * De två första bönorna byggs av en {@code supplier}: det är där
+     * objektgrafen nedan sätts ihop med vanlig {@code new}. De två sista har
+     * inget att konfigurera, så Spring instansierar dem via deras
+     * konstruktorer - {@link PasswordHashRunner} får därmed sin
+     * {@code PasswordEncoder} (ägd av {@link com.example.auth.SecurityConfig})
+     * och kontexten när bönan faktiskt skapas, inte här när definitionen
+     * registreras.
+     *
+     * Registrarn dras in från {@code main()} och inte med {@code @Import} på
+     * klassen ovan. Det är avsiktligt: ett {@code @Import} hade blivit en del
+     * av kontextkonfigurationen och därmed körts även under
+     * {@code @SpringBootTest}, där testet bygger sin egen objektgraf mot en
+     * temporär katalog och en fejkad {@link AiClient}.
+     */
+    static class ApplicationBeans implements BeanRegistrar {
+
+        @Override
+        public void register(BeanRegistry registry, Environment env) {
+            registry.registerBean(UserSessionRegistry.class,
+                    spec -> spec.supplier(context -> buildSessionRegistry(env)));
+            registry.registerBean(AuthProperties.class,
+                    spec -> spec.supplier(context -> AuthProperties.fromEnvironment(env)));
+            registry.registerBean(LoginAttemptTracker.class);
+            registry.registerBean(PasswordHashRunner.class);
+        }
     }
 
     private static UserSessionRegistry buildSessionRegistry(Environment env) {

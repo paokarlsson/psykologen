@@ -54,7 +54,7 @@ Saknas konton vägrar backend starta och berättar vad som behöver göras.
 
 ## Kom igång
 
-Du behöver Java 21, Node.js, Maven och en API-nyckel (Anthropic eller OpenAI).
+Du behöver Java 25, Node.js, Maven och en API-nyckel (Anthropic eller OpenAI).
 
 **1. Starta backend**
 ```bash
