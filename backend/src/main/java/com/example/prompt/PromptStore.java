@@ -9,20 +9,6 @@ import java.util.Map;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
-/**
- * Håller alla redigerbara AI-promptar: systempersonan (Erik) och de fyra
- * instruktionsmallarna som {@link com.example.service.PsykologenService} och
- * {@link com.example.service.BackgroundSessionUpdater} bygger sina AI-anrop
- * från. Standardtexterna är hårdkodade härnere; via GUI:t kan valfri
- * delmängd skrivas över, brytaren {@code useCustomPrompts} slås av/på utan
- * att tappa bort de egna texterna, och allt kan återställas till standard.
- *
- * Persisteras till {@code prompts.json} i användarens egen katalog - samma
- * mönster och samma baskatalog som profile.md/plan.md i
- * {@link com.example.storage.FileSessionArtifactStore} - så ändringar
- * överlever en omstart av backend, och en användares egna promptar aldrig
- * skriver över någon annans.
- */
 public class PromptStore {
 
     public static final String SYSTEM_PROMPT = "systemPrompt";
@@ -32,7 +18,6 @@ public class PromptStore {
     public static final String PROFILE_UPDATE = "profileUpdate";
     public static final String PLAN_UPDATE = "planUpdate";
 
-    /** Standard sessionslängd i minuter - hur länge Erik planerar samtalet mot. */
     public static final double DEFAULT_SESSION_DURATION_MINUTES = 45.0;
 
     private static final Map<String, String> DEFAULTS = Map.of(
@@ -195,11 +180,6 @@ public class PromptStore {
                 [specifika råd: prioritera, korta ner, eller förbereda avslutning]
                 """);
 
-    /**
-     * Jackson 3 (det Spring Boot 4 använder) kastar {@link JacksonException}
-     * okontrollerat, medan {@link java.nio.file.Files} fortfarande kastar
-     * {@link IOException} - därför fångas båda där JSON läses och skrivs.
-     */
     private final ObjectMapper mapper = new ObjectMapper();
     private final Path storePath;
     private final Map<String, String> customPrompts;
@@ -216,7 +196,6 @@ public class PromptStore {
                 : DEFAULT_SESSION_DURATION_MINUTES;
     }
 
-    /** De hårdkodade standardtexterna, nyckel per prompt - används av GUI:t för "återställ"-knappar. */
     public static Map<String, String> defaults() {
         return DEFAULTS;
     }
@@ -225,7 +204,6 @@ public class PromptStore {
         return useCustomPrompts;
     }
 
-    /** Slår av/på om de sparade egna texterna faktiskt används, utan att röra dem. */
     public void setUseCustomPrompts(boolean enabled) {
         this.useCustomPrompts = enabled;
         persist();
@@ -259,7 +237,6 @@ public class PromptStore {
         return sessionDurationMinutes;
     }
 
-    /** Hur länge Erik ska planera samtalet mot. Skickas med i erikResponse/planUpdate-mallarna. */
     public void setSessionDurationMinutes(double minutes) {
         if (minutes <= 0) {
             throw new IllegalArgumentException("Sessionslängden måste vara större än 0 minuter.");
@@ -268,7 +245,6 @@ public class PromptStore {
         persist();
     }
 
-    /** Effektiv text just nu för samtliga nycklar - för att visa i GUI:t. */
     public Map<String, String> currentValues() {
         Map<String, String> result = new LinkedHashMap<>();
         for (String key : DEFAULTS.keySet()) {
@@ -284,7 +260,6 @@ public class PromptStore {
         return DEFAULTS.get(key);
     }
 
-    /** Sparar egna texter för en eller flera nycklar och slår automatiskt på användningen av dem. */
     public void update(Map<String, String> updates) {
         for (String key : updates.keySet()) {
             if (!DEFAULTS.containsKey(key)) {
@@ -313,7 +288,7 @@ public class PromptStore {
             Files.writeString(storePath, mapper.writerWithDefaultPrettyPrinter()
                     .writeValueAsString(new Persisted(useCustomPrompts, customPrompts, sessionDurationMinutes)));
         } catch (IOException | JacksonException e) {
-            // Tyst felhantering - att spara promptinställningar ska inte krascha appen
+            // Att spara promptinställningar ska inte krascha appen
         }
     }
 
@@ -323,13 +298,13 @@ public class PromptStore {
                 return mapper.readValue(Files.readString(storePath), Persisted.class);
             }
         } catch (IOException | JacksonException e) {
-            // Ignorera korrupt/oläsbar fil - kör vidare med standardvärden
+            // Korrupt fil: kör vidare med standardvärden
         }
         return new Persisted(false, Map.of(), null);
     }
 
-    /** {@code sessionDurationMinutes} är en boxad {@link Double} (inte primitiv) så en äldre
-     * prompts.json utan fältet kan skiljas från en som uttryckligen sparat 0 - se konstruktorn. */
+    // sessionDurationMinutes är boxad så en äldre prompts.json utan fältet kan
+    // skiljas från en som uttryckligen sparat 0 - se konstruktorn.
     private record Persisted(boolean useCustomPrompts, Map<String, String> customPrompts,
             Double sessionDurationMinutes) {
     }

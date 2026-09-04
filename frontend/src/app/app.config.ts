@@ -11,9 +11,7 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideHttpClient(
-      // Namnen matchar det Spring Security sätter respektive förväntar sig.
-      // Fungerar tack vare att allt går via samma origin (proxy.conf.js) -
-      // Angular skickar bara XSRF-headern på same-origin-anrop.
+      // Angular skickar bara XSRF-headern på same-origin-anrop, därav proxy.conf.js.
       withXsrfConfiguration({ cookieName: 'XSRF-TOKEN', headerName: 'X-XSRF-TOKEN' }),
       withInterceptors([authInterceptor]),
     ),

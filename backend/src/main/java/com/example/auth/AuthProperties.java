@@ -8,33 +8,9 @@ import java.util.regex.Pattern;
 
 import org.springframework.core.env.Environment;
 
-/**
- * De konton som får logga in, lästa från konfigurationen (i praktiken
- * {@code backend/.env}, som redan är gitignorerad och används för
- * AI-nyckeln):
- *
- * <pre>
- * APP_AUTH_USERS_0_USERNAME=pao
- * APP_AUTH_USERS_0_PASSWORDHASH={bcrypt}$2a$10$...
- * </pre>
- *
- * Inga lösenord i klartext lagras någonstans - bara BCrypt-hashar, som
- * genereras med {@link PasswordHashRunner}.
- *
- * En vanlig klass utan {@code @ConfigurationProperties}: värdena läses med
- * {@link Environment#getProperty} i
- * {@link com.example.PsykologenApplication}, samma sätt som AI-nyckeln redan
- * läses där. Klassen känner därmed inte till Spring alls.
- *
- * {@link #validate()} körs vid uppstart. Att användarnamnet valideras hårt
- * ({@link #USERNAME_PATTERN}) är inte kosmetika: namnet används som
- * katalognamn för användarens egen lagring, så ett namn med {@code ../} i
- * hade betytt katalogtraversering. Genom att avvisa det vid uppstart kan det
- * aldrig nå {@code Path.resolve()}.
- */
 public class AuthProperties {
 
-    /** Bara gemener, siffror, bindestreck och understreck - se klassens javadoc. */
+    /** Namnet blir katalognamn för användarens lagring - inga tecken som tillåter katalogtraversering. */
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[a-z0-9_-]{3,32}$");
 
     private final List<User> users;
@@ -43,10 +19,6 @@ public class AuthProperties {
         this.users = List.copyOf(users);
     }
 
-    /**
-     * Läser {@code APP_AUTH_USERS_<n>_USERNAME}/{@code _PASSWORDHASH} med
-     * början på 0 och slutar vid första numret som saknar användarnamn.
-     */
     public static AuthProperties fromEnvironment(Environment env) {
         List<User> found = new ArrayList<>();
         for (int i = 0;; i++) {
@@ -63,7 +35,6 @@ public class AuthProperties {
         return users;
     }
 
-    /** Kastar {@link InvalidUsersException} om kontona inte går att använda. */
     public void validate() {
         if (users.isEmpty()) {
             throw new InvalidUsersException("Inga konton är konfigurerade.");

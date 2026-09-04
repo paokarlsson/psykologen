@@ -14,12 +14,6 @@ import com.example.session.Role;
 import com.example.storage.HistoryEntry;
 import com.example.storage.SessionArtifactStore;
 
-/**
- * Uppdaterar patient-profilen och sessionsplanen i bakgrunden efter varje
- * meddelande, utan att blockera svaret till frontend. Fel sväljs tyst
- * (precis som tidigare) - ett misslyckat bakgrundsjobb ska aldrig störa
- * det pågående samtalet.
- */
 public class BackgroundSessionUpdater {
 
     private final AiClient aiClient;
@@ -27,11 +21,6 @@ public class BackgroundSessionUpdater {
     private final PromptStore promptStore;
     private final ExecutorService executor;
 
-    /**
-     * {@code executor} skickas in i stället för att skapas här, eftersom det
-     * finns en updater per inloggad användare - en egen trådpool per konto
-     * vore ren spill. Alla användare delar samma pool.
-     */
     public BackgroundSessionUpdater(AiClient aiClient, SessionArtifactStore artifactStore,
             PromptStore promptStore, ExecutorService executor) {
         this.aiClient = aiClient;
@@ -56,7 +45,7 @@ public class BackgroundSessionUpdater {
             artifactStore.writeProfile(parsed.document());
             logChange(HistoryEntry.PROFILE, session, parsed);
         } catch (Exception e) {
-            // Tyst felhantering, precis som tidigare
+            // Ett misslyckat bakgrundsjobb får aldrig störa samtalet
         }
     }
 
@@ -74,11 +63,10 @@ public class BackgroundSessionUpdater {
             artifactStore.writePlan(parsed.document());
             logChange(HistoryEntry.PLAN, session, parsed);
         } catch (Exception e) {
-            // Tyst felhantering, precis som tidigare
+            // Ett misslyckat bakgrundsjobb får aldrig störa samtalet
         }
     }
 
-    /** Loggar bara faktiska förändringar - tom/"inga förändringar"-changelog skräpar inte ner historiken. */
     private void logChange(String type, ConversationSession session, ChangelogResponse parsed) {
         if (parsed.hasNoChange()) {
             return;

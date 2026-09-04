@@ -39,15 +39,6 @@ import com.example.session.ChatMessage;
 import com.example.storage.FileSessionArtifactStore;
 import com.example.storage.SessionArtifactStore;
 
-/**
- * Att API:t faktiskt kräver inloggning, och att två inloggade användare inte
- * kommer åt varandras samtalsdata.
- *
- * Testet bygger sitt eget {@link UserSessionRegistry} med en fejkad
- * {@link AiClient} och en temporär katalog. Det går tack vare att
- * {@link PsykologenService} och dess samarbetare är ramverksfria klasser utan
- * annoteringar - ingen produktionskod behöver ändras för att kunna testas.
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import(AuthenticationTest.TestBeans.class)
@@ -61,13 +52,6 @@ class AuthenticationTest {
     @Autowired
     private MockMvc mockMvc;
 
-    /**
-     * Hasharna räknas fram här i stället för att hårdkodas, så testet
-     * verifierar samma väg som produktionen: lösenord in, BCrypt-hash i
-     * konfigurationen, verifiering vid inloggning. Nycklarna skrivs i
-     * env-var-form eftersom AuthProperties läser dem så, utan relaxed
-     * binding från @ConfigurationProperties.
-     */
     @DynamicPropertySource
     static void authProperties(DynamicPropertyRegistry registry) {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
@@ -93,14 +77,9 @@ class AuthenticationTest {
                 .andExpect(jsonPath("$.success").value(false));
     }
 
-    /**
-     * Första besöket har ingen session ännu - inloggningen måste skapa en, inte
-     * förutsätta att den finns. (Regression: {@code changeSessionId()} kastar
-     * {@code IllegalStateException} när ingen session finns, vilket gjorde att
-     * varje förstagångsinloggning från en webbläsare misslyckades.)
-     */
     @Test
     void inloggningFungerarUtanBefintligSession() throws Exception {
+        // Regression: changeSessionId() kastar när ingen session finns.
         mockMvc.perform(post("/api/auth/login")
                 .with(csrf())
                 .contentType("application/json")
@@ -118,18 +97,13 @@ class AuthenticationTest {
                 .andExpect(jsonPath("$.username").value("anna"));
     }
 
-    /**
-     * Kärnan i hela ändringen: profil, plan och samtal hör till en enskild
-     * användare. Går det här testet sönder är användarseparationen borta,
-     * oavsett om inloggningen fortfarande fungerar.
-     */
     @Test
     void anvandareSerInteVarandrasProfil() throws Exception {
         MockHttpSession annasSession = login("anna", ANNA_PASSWORD);
         MockHttpSession bosSession = login("bosse", BO_PASSWORD);
 
-        // Först efter inloggning finns användarens katalog - PsykologenService
-        // tömmer den när den skapas, så en profil skriven innan dess vore borta.
+        // Katalogen finns först efter inloggning: PsykologenService tömmer den när
+        // den skapas, så en profil skriven innan dess vore borta.
         mockMvc.perform(get("/api/psykologen/profile").session(annasSession)).andExpect(status().isOk());
         mockMvc.perform(get("/api/psykologen/profile").session(bosSession)).andExpect(status().isOk());
 
@@ -182,11 +156,6 @@ class AuthenticationTest {
     @TestConfiguration
     static class TestBeans {
 
-        /**
-         * {@link AuthProperties} och {@link LoginAttemptTracker} registreras i
-         * {@code main()} och bär inga annoteringar, så de måste byggas här av
-         * samma skäl som registret nedan.
-         */
         @Bean
         AuthProperties authProperties(Environment environment) {
             return AuthProperties.fromEnvironment(environment);
@@ -197,12 +166,6 @@ class AuthenticationTest {
             return new LoginAttemptTracker();
         }
 
-        /**
-         * Samma objektgraf som {@link com.example.PsykologenApplication} bygger,
-         * men mot en temporär katalog och utan riktiga AI-anrop. Registret
-         * registreras där via en initializer i {@code main()}, som inte körs
-         * under test - därför byggs det här.
-         */
         @Bean
         UserSessionRegistry userSessionRegistry() {
             AiClient aiClient = new FakeAiClient();

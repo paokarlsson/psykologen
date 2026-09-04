@@ -2,24 +2,13 @@ import { DestroyRef, Signal, inject, signal } from '@angular/core';
 import { Observable, Subject, interval, startWith, switchMap } from 'rxjs';
 
 export interface PollingResource<T> {
-  /** Senast hämtade värde. */
   readonly value: Signal<T>;
-  /** True medan en hämtning pågår. */
   readonly isLoading: Signal<boolean>;
-  /** Tidpunkt för senast lyckade hämtning, om någon. */
   readonly lastUpdated: Signal<Date | undefined>;
-  /** Hämta direkt, utan att vänta på nästa polling-intervall. */
   refresh(): void;
 }
 
-/**
- * Kör `fetch()` direkt och sedan upprepat var `intervalMs` millisekund, tills
- * komponenten som skapade resursen förstörs. Tänkt att anropas i ett fält-
- * initierare (injection context), t.ex. `private readonly x = pollingResource(...)`.
- *
- * Ersätter den upprepade ngOnInit/ngOnDestroy/interval/Subscription-koden som
- * annars behövs i varje komponent som pollar backend.
- */
+/** Anropas i en fältinitierare (injection context), inte i en metod - använder `inject()`. */
 export function pollingResource<T>(
   fetch: () => Observable<T>,
   initialValue: T,

@@ -13,17 +13,6 @@ import com.example.service.UserSessionRegistry;
 import com.example.session.ChatMessage;
 import com.example.storage.HistoryEntry;
 
-/**
- * Samtliga endpoints kräver inloggning (se {@link com.example.auth.SecurityConfig})
- * och arbetar mot den inloggade användarens egen {@link PsykologenService},
- * utdelad av {@link UserSessionRegistry}. Ingen endpoint tar emot ett
- * användarnamn från klienten - identiteten kommer alltid från sessionen, så
- * en användare kan inte be om någon annans samtal.
- *
- * Ingen {@code @CrossOrigin} här: frontend nås via Angulars dev-proxy och
- * ligger därmed på samma origin. Ett CORS-jokertecken hade dessutom varit
- * oförenligt med den cookie inloggningen bygger på.
- */
 @RestController
 @RequestMapping("/api/psykologen")
 public class PsykologenController {
@@ -128,7 +117,6 @@ public class PsykologenController {
         }
     }
 
-    /** Ändringshistoriken för profil och plan (vad som reviderades och när), nyast först. */
     @GetMapping("/history")
     public ResponseEntity<Map<String, Object>> getHistory(Authentication auth) {
         Map<String, Object> response = new HashMap<>();
@@ -144,7 +132,6 @@ public class PsykologenController {
         }
     }
 
-    /** Startar om samtalet helt blankt (ny samtalshistorik, tom profil/plan/ändringslogg). Rör inte promptinställningar. */
     @PostMapping("/reset")
     public ResponseEntity<Map<String, Object>> resetSession(Authentication auth) {
         Map<String, Object> response = new HashMap<>();
@@ -159,7 +146,6 @@ public class PsykologenController {
         }
     }
 
-    /** Nuvarande promptvärden + standardvärden + på/av-läge, för redigering i GUI:t. */
     @GetMapping("/settings/prompts")
     public ResponseEntity<Map<String, Object>> getPromptSettings(Authentication auth) {
         Map<String, Object> response = new HashMap<>();
@@ -174,7 +160,6 @@ public class PsykologenController {
         }
     }
 
-    /** Sparar egna texter för en eller flera promptnycklar (body: { "systemPrompt": "...", ... }). */
     @PutMapping("/settings/prompts")
     public ResponseEntity<Map<String, Object>> updatePrompts(Authentication auth,
             @RequestBody Map<String, String> updates) {
@@ -190,7 +175,6 @@ public class PsykologenController {
         }
     }
 
-    /** Återställer en nyckel (body: {"key": "systemPrompt"}) eller samtliga (tomt/utelämnat body) till standard. */
     @PostMapping("/settings/prompts/reset")
     public ResponseEntity<Map<String, Object>> resetPrompts(Authentication auth,
             @RequestBody(required = false) Map<String, String> body) {
@@ -205,7 +189,6 @@ public class PsykologenController {
         return ResponseEntity.ok(response);
     }
 
-    /** Slår av/på om de sparade egna promptarna faktiskt används (body: {"enabled": true|false}). */
     @PutMapping("/settings/custom-prompts-enabled")
     public ResponseEntity<Map<String, Object>> setCustomPromptsEnabled(Authentication auth,
             @RequestBody Map<String, Boolean> body) {
@@ -217,7 +200,6 @@ public class PsykologenController {
         return ResponseEntity.ok(response);
     }
 
-    /** Sätter hur många minuter Erik ska planera samtalet mot (body: {"minutes": 45}). */
     @PutMapping("/settings/session-duration")
     public ResponseEntity<Map<String, Object>> setSessionDuration(Authentication auth,
             @RequestBody Map<String, Double> body) {

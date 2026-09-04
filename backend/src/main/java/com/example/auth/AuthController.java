@@ -23,13 +23,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-/**
- * Inloggning, utloggning och "vem är jag?".
- *
- * Egna endpoints i stället för Spring Securitys inbyggda {@code formLogin}:
- * den svarar med redirects, vilket passar en server-renderad app men inte en
- * SPA som vill ha JSON och statuskoder.
- */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -64,16 +57,13 @@ public class AuthController {
         } catch (AuthenticationException e) {
             attemptTracker.recordFailure(username);
             result.put("success", false);
-            // Medvetet samma svar oavsett om användarnamnet finns eller inte -
-            // annars går kontonamn att kartlägga genom att prova sig fram.
+            // Samma svar oavsett om användarnamnet finns - annars går konton att kartlägga.
             result.put("error", "Fel användarnamn eller lösenord.");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(result);
         }
 
-        // Nytt sessions-id vid inloggning, så ett id som en angripare hunnit
-        // plantera i webbläsaren inte blir giltigt efteråt. Bara om det finns
-        // en session att byta ut - changeSessionId() kastar annars, och en
-        // session som skapas först vid saveContext() nedan är ändå ny.
+        // Nytt sessions-id skyddar mot session fixation. changeSessionId() kastar
+        // om ingen session finns, och en session som skapas först nedan är ändå ny.
         if (request.getSession(false) != null) {
             request.changeSessionId();
         }
@@ -99,12 +89,6 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("success", true));
     }
 
-    /**
-     * Vem den nuvarande sessionen tillhör. Frontend anropar den vid
-     * sidladdning för att avgöra om en giltig session redan finns, i stället
-     * för att visa inloggningsformuläret för någon som redan är inloggad.
-     * Kräver inloggning, så en utgången session ger 401 här.
-     */
     @GetMapping("/me")
     public ResponseEntity<Map<String, Object>> me(Authentication authentication) {
         return ResponseEntity.ok(Map.of("success", true, "username", authentication.getName()));

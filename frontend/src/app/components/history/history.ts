@@ -3,12 +3,6 @@ import { NgClass } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService, HistoryEntryDto } from '../../services/api.service';
 
-/**
- * Ändringslogg för profil och plan: en tidslinje över vad som reviderades
- * och när, byggd från "===ÄNDRINGAR==="-sektionen i varje profil-/plan-
- * uppdatering (se {@code ChangelogResponse} på backend). Kollapsad panel
- * som hämtar historiken först när den öppnas, precis som Inställningar.
- */
 @Component({
   selector: 'app-history',
   imports: [NgClass],

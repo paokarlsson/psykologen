@@ -3,11 +3,6 @@ package com.example;
 import org.springframework.boot.diagnostics.AbstractFailureAnalyzer;
 import org.springframework.boot.diagnostics.FailureAnalysis;
 
-/**
- * Turns a {@link MissingApiKeyException} into a readable startup error
- * (registered via META-INF/spring.factories), instead of a raw stack
- * trace or a confusing failure the first time someone tries to chat.
- */
 public class MissingApiKeyFailureAnalyzer extends AbstractFailureAnalyzer<MissingApiKeyException> {
 
     @Override

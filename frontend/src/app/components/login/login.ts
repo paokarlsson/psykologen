@@ -29,7 +29,6 @@ export class Login {
 
     this.auth.login(this.username.trim(), this.password).subscribe({
       next: () => {
-        // Lösenordet ska inte ligga kvar i komponentens tillstånd efteråt.
         this.password = '';
         this.isLoading.set(false);
       },
@@ -41,7 +40,6 @@ export class Login {
     });
   }
 
-  /** Backend skickar med ett läsbart fel (fel lösenord respektive låst konto). */
   private describeError(error: HttpErrorResponse): string {
     const body = error.error as LoginResponse | null;
     if (body?.error) {
