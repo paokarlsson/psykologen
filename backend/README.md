@@ -4,7 +4,7 @@ Spring Boot-backend för Psykologen-applikationen.
 
 ## Förutsättningar
 
-- Java 21
+- Java 25
 - Maven
 
 ## Konfiguration
@@ -57,8 +57,8 @@ JAR-filen skapas i `target/` mappen.
 
 ## Teknologier
 
-- Spring Boot 3.5.6
+- Spring Boot 4.1.1
 - Spring Security (inloggning, CSRF)
-- Java 21
+- Java 25
 - Maven
 - Gson för JSON-hantering
