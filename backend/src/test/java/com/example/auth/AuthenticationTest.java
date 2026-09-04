@@ -22,6 +22,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.env.Environment;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -63,15 +64,17 @@ class AuthenticationTest {
     /**
      * Hasharna räknas fram här i stället för att hårdkodas, så testet
      * verifierar samma väg som produktionen: lösenord in, BCrypt-hash i
-     * konfigurationen, verifiering vid inloggning.
+     * konfigurationen, verifiering vid inloggning. Nycklarna skrivs i
+     * env-var-form eftersom AuthProperties läser dem så, utan relaxed
+     * binding från @ConfigurationProperties.
      */
     @DynamicPropertySource
     static void authProperties(DynamicPropertyRegistry registry) {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        registry.add("app.auth.users[0].username", () -> "anna");
-        registry.add("app.auth.users[0].password-hash", () -> "{bcrypt}" + encoder.encode(ANNA_PASSWORD));
-        registry.add("app.auth.users[1].username", () -> "bosse");
-        registry.add("app.auth.users[1].password-hash", () -> "{bcrypt}" + encoder.encode(BO_PASSWORD));
+        registry.add("APP_AUTH_USERS_0_USERNAME", () -> "anna");
+        registry.add("APP_AUTH_USERS_0_PASSWORDHASH", () -> "{bcrypt}" + encoder.encode(ANNA_PASSWORD));
+        registry.add("APP_AUTH_USERS_1_USERNAME", () -> "bosse");
+        registry.add("APP_AUTH_USERS_1_PASSWORDHASH", () -> "{bcrypt}" + encoder.encode(BO_PASSWORD));
     }
 
     @Test
@@ -178,6 +181,21 @@ class AuthenticationTest {
 
     @TestConfiguration
     static class TestBeans {
+
+        /**
+         * {@link AuthProperties} och {@link LoginAttemptTracker} registreras i
+         * {@code main()} och bär inga annoteringar, så de måste byggas här av
+         * samma skäl som registret nedan.
+         */
+        @Bean
+        AuthProperties authProperties(Environment environment) {
+            return AuthProperties.fromEnvironment(environment);
+        }
+
+        @Bean
+        LoginAttemptTracker loginAttemptTracker() {
+            return new LoginAttemptTracker();
+        }
 
         /**
          * Samma objektgraf som {@link com.example.PsykologenApplication} bygger,

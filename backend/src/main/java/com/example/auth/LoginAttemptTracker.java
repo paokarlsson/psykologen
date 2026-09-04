@@ -5,8 +5,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.springframework.stereotype.Component;
-
 /**
  * Enkel spärr mot lösenordsgissning: efter {@link #MAX_ATTEMPTS} misslyckade
  * försök i rad låses användarnamnet i {@link #LOCKOUT}.
@@ -21,8 +19,10 @@ import org.springframework.stereotype.Component;
  * användarnamn. För den här appen är det rätt avvägning; ligger den någon
  * gång öppet på internet hör IP-baserad begränsning hemma i en reverse proxy
  * framför.
+ *
+ * Ramverksfri klass - byggs och kopplas in i
+ * {@link com.example.PsykologenApplication}, inte via {@code @Component}.
  */
-@Component
 public class LoginAttemptTracker {
 
     private static final int MAX_ATTEMPTS = 5;

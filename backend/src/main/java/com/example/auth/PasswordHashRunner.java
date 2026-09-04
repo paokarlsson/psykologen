@@ -5,7 +5,6 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
 
 /**
  * Litet hjälpmedel för att skapa lösenordshashar till {@code backend/.env}:
@@ -22,8 +21,10 @@ import org.springframework.stereotype.Component;
  * Notera att lösenordet syns i kommandoraden och därmed i skalets historik.
  * För ett labbprojekt är det acceptabelt; radera raden ur historiken om
  * lösenordet används någon annanstans.
+ *
+ * Registreras i {@link com.example.PsykologenApplication} i stället för att
+ * annoteras med {@code @Component}.
  */
-@Component
 public class PasswordHashRunner implements ApplicationRunner {
 
     static final String OPTION = "hash-password";

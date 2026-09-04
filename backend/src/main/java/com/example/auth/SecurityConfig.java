@@ -3,7 +3,6 @@ package com.example.auth;
 import java.io.IOException;
 
 import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -45,7 +44,6 @@ import jakarta.servlet.http.HttpServletResponse;
  * medvetet undantag från appens composition root.
  */
 @Configuration
-@EnableConfigurationProperties(AuthProperties.class)
 public class SecurityConfig {
 
     @Bean
@@ -75,8 +73,8 @@ public class SecurityConfig {
 
         InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
         for (AuthProperties.User configured : properties.getUsers()) {
-            UserDetails user = User.withUsername(configured.getUsername())
-                    .password(configured.getPasswordHash())
+            UserDetails user = User.withUsername(configured.username())
+                    .password(configured.passwordHash())
                     .roles("USER")
                     .build();
             manager.createUser(user);

@@ -8,7 +8,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.Environment;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.example.auth.AuthProperties;
+import com.example.auth.LoginAttemptTracker;
+import com.example.auth.PasswordHashRunner;
 import com.example.prompt.PromptStore;
 import com.example.service.BackgroundSessionUpdater;
 import com.example.service.PsykologenService;
@@ -20,22 +24,24 @@ import com.example.storage.FileSessionArtifactStore;
 import com.example.storage.SessionArtifactStore;
 
 /**
- * Startpunkt - och samtidigt appens composition root. Hela objektgrafen
- * under {@link com.example.controller.PsykologenController} byggs här med
- * vanlig {@code new}, utan någon {@code @Configuration}/{@code @Bean}: bara
- * {@link UserSessionRegistry} registreras som Spring-bean, eftersom det är
- * det enda controllern faktiskt behöver ha injicerat. Allt annat
+ * Startpunkt - och samtidigt appens composition root. Objektgrafen byggs här
+ * med vanlig {@code new} och registreras med {@code registerBean}: de klasser
+ * som Spring behöver kunna injicera ({@link UserSessionRegistry},
+ * {@link AuthProperties}, {@link LoginAttemptTracker},
+ * {@link PasswordHashRunner}) blir bönor utan att veta om det, och resten
  * ({@link AiClient}, {@link SessionArtifactStore}, {@link BackgroundSessionUpdater})
  * är lokala variabler i {@link #buildPsykologenService}, aldrig kända av
- * Spring - de är medvetet ramverksfria klasser utan
- * {@code @Component}/{@code @Autowired}/{@code @Value} på sig själva.
+ * Spring. Ingen av dem bär {@code @Component}/{@code @Autowired}/
+ * {@code @Value}/{@code @ConfigurationProperties} på sig själv - konfiguration
+ * läses med {@link Environment#getProperty} härifrån.
  *
- * Undantaget från den regeln är {@link com.example.auth.SecurityConfig}, som
- * är en riktig {@code @Configuration}. Spring Securitys filterkedja byggs via
- * en {@code HttpSecurity}-builder som ramverket självt äger, och att tvinga in
+ * Enda undantaget är {@link com.example.auth.SecurityConfig}, som är en riktig
+ * {@code @Configuration}. Spring Securitys filterkedja byggs via en
+ * {@code HttpSecurity}-builder som ramverket självt äger, och att tvinga in
  * den här hade gjort konfigurationen svårare att läsa än den vinst det gav.
  * Autentisering är dessutom ett ramverksansvar från början, till skillnad från
- * samtalslogiken ovan.
+ * samtalslogiken ovan. Controllerklasserna räknas inte som undantag: en
+ * {@code @RestController} är en HTTP-ändpunkt, inte en del av objektgrafen.
  *
  * {@link AiClient} och trådpoolen är tillståndslösa respektive delbara och
  * byggs därför en gång och delas av alla användare, medan varje användare får
@@ -48,7 +54,15 @@ public class PsykologenApplication {
         SpringApplication app = new SpringApplication(PsykologenApplication.class);
         app.addInitializers(context -> {
             GenericApplicationContext ctx = (GenericApplicationContext) context;
-            ctx.registerBean(UserSessionRegistry.class, () -> buildSessionRegistry(ctx.getEnvironment()));
+            Environment env = ctx.getEnvironment();
+
+            ctx.registerBean(UserSessionRegistry.class, () -> buildSessionRegistry(env));
+            ctx.registerBean(AuthProperties.class, () -> AuthProperties.fromEnvironment(env));
+            ctx.registerBean(LoginAttemptTracker.class, LoginAttemptTracker::new);
+            // PasswordEncoder ägs av SecurityConfig; hämtas när bönan faktiskt
+            // skapas, inte här när definitionen registreras.
+            ctx.registerBean(PasswordHashRunner.class,
+                    () -> new PasswordHashRunner(ctx.getBean(PasswordEncoder.class), ctx));
         });
         app.run(args);
     }
