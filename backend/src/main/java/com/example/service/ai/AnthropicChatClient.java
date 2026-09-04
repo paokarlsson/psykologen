@@ -12,19 +12,6 @@ import com.anthropic.models.messages.TextBlock;
 import com.example.session.ChatMessage;
 import com.example.session.Role;
 
-/**
- * {@link AiClient} backad av Anthropics Messages API. Till skillnad från
- * OpenAI har Anthropic ingen "system"-roll i {@code messages} - system-
- * prompten är ett separat toppnivåfält, och första turen måste vara
- * "user". Den här adaptern delar ut ev. {@code role: "system"}-poster i
- * toppnivå-systemprompten, och - eftersom appens öppningsreplik sägs av
- * assistenten utan föregående user-tur i historiken - lägger till en
- * minimal syntetisk user-tur vid behov så konversationen fortfarande
- * börjar med "user".
- *
- * En vanlig, ramverksfri klass: API-nyckeln kommer in via konstruktorn.
- * Wiring sker i {@link com.example.PsykologenApplication}.
- */
 public class AnthropicChatClient implements AiClient {
 
     private static final String MODEL = "claude-haiku-4-5"; // billig modell för test
@@ -82,6 +69,8 @@ public class AnthropicChatClient implements AiClient {
             }
         }
 
+        // Anthropic kräver att första turen är "user", men appens öppningsreplik
+        // kommer från assistenten.
         if (!conversation.isEmpty() && conversation.get(0).role() == MessageParam.Role.ASSISTANT) {
             conversation.add(0, MessageParam.builder()
                     .role(MessageParam.Role.USER)

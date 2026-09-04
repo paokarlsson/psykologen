@@ -17,15 +17,12 @@ export class App {
   readonly auth = inject(AuthService);
 
   constructor() {
-    // Avgör direkt vid sidladdning om det redan finns en giltig session, så
-    // den som är inloggad inte möts av inloggningsformuläret i onödan.
     this.auth.checkSession();
   }
 
   logout(): void {
     this.auth.logout().subscribe({
-      // Misslyckas anropet är sessionen ändå slut lokalt sett - interceptorn
-      // har redan nollställt användaren vid 401.
+      // Misslyckas anropet är sessionen ändå slut lokalt sett.
       error: () => this.auth.markLoggedOut(),
     });
   }

@@ -7,7 +7,7 @@ services:
       - maven-repo:/root/.m2
     ports:
       - "8080:8080"
-      - "5005:5005" # JVM debug port (jdwp), attach a debugger if you want to
+      - "5005:5005" # JVM debug (jdwp)
     command: >
       mvn spring-boot:run
       -Dspring-boot.run.jvmArguments="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
@@ -20,8 +20,7 @@ services:
     ports:
       - "4200:4200"
     environment:
-      # Dev-proxyn (proxy.conf.js) körs i den här containern, inte i webbläsaren,
-      # så localhost:8080 hade pekat på containern själv i stället för på backend.
+      # Dev-proxyn körs i den här containern, så localhost hade pekat på fel maskin.
       - BACKEND_URL=http://backend:8080
     command: sh -c "npm install && npm start -- --host 0.0.0.0"
 

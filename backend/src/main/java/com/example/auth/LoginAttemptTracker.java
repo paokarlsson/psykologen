@@ -6,22 +6,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Enkel spärr mot lösenordsgissning: efter {@link #MAX_ATTEMPTS} misslyckade
- * försök i rad låses användarnamnet i {@link #LOCKOUT}.
- *
- * Utan den här är ett kort lösenord knäckbart på minuter, vilket hade gjort
- * resten av inloggningen meningslös. Räknaren ligger i minnet och nollställs
- * vid omstart - fullt tillräckligt för en app med en handfull konton, och
- * utan nya beroenden.
- *
- * Räkningen sker per användarnamn, inte per IP: det skyddar ett känt konto
- * mot gissning, men bromsar inte någon som sprider försöken över många
- * användarnamn. För den här appen är det rätt avvägning; ligger den någon
- * gång öppet på internet hör IP-baserad begränsning hemma i en reverse proxy
- * framför.
- *
- * Ramverksfri klass - byggs och kopplas in i
- * {@link com.example.PsykologenApplication}, inte via {@code @Component}.
+ * Spärr mot lösenordsgissning. Räknas per användarnamn, inte per IP - IP-spärr hör
+ * hemma i en reverse proxy framför.
  */
 public class LoginAttemptTracker {
 
@@ -30,7 +16,6 @@ public class LoginAttemptTracker {
 
     private final Map<String, Attempts> attempts = new ConcurrentHashMap<>();
 
-    /** True om användarnamnet är låst just nu och inte ens ska få lösenordet prövat. */
     public boolean isLocked(String username) {
         Attempts current = attempts.get(username);
         if (current == null) {
@@ -57,7 +42,6 @@ public class LoginAttemptTracker {
         attempts.remove(username);
     }
 
-    /** Minuter kvar av låsningen, avrundat uppåt - för felmeddelandet till användaren. */
     public long minutesRemaining(String username) {
         Attempts current = attempts.get(username);
         if (current == null) {

@@ -39,7 +39,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- MockMvc och dess autokonfiguration ligger i en egen modul sedan Spring Boot 4. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc-test</artifactId>

@@ -15,18 +15,6 @@ import com.example.session.Role;
 import com.example.storage.HistoryEntry;
 import com.example.storage.SessionArtifactStore;
 
-/**
- * Orkestrerar ett terapisamtal: pratar med {@link AiClient} för varje tur,
- * håller reda på tillståndet via en {@link ConversationSession}, och
- * triggar bakgrundsuppdatering av profil/plan efter varje meddelande.
- *
- * En vanlig, ramverksfri klass - all koppling till Spring sker i
- * {@link com.example.PsykologenApplication}. Det finns en instans per
- * inloggad användare, utdelad av
- * {@link com.example.service.UserSessionRegistry}: allt tillstånd nedan
- * (samtal, artefakter, promptar) hör till en enskild användare och får aldrig
- * delas mellan konton.
- */
 public class PsykologenService {
 
     private final AiClient aiClient;
@@ -44,22 +32,14 @@ public class PsykologenService {
         this.session = new ConversationSession(promptStore.getSystemPrompt());
 
         // Ett nystartat samtal ska inte ärva profil/plan från en tidigare körning.
-        // Att AI-nyckeln finns kontrolleras vid uppstart i PsykologenApplication,
-        // eftersom den här konstruktorn numera körs först vid inloggning.
         artifactStore.clear();
     }
 
-    /**
-     * Startar om samtalet helt blankt: ny samtalshistorik (med aktuell
-     * systemprompt), nollställd klocka och tankar, och tömd profil/plan/
-     * ändringslogg. Rör inte sparade promptinställningar - bara själva samtalet.
-     */
     public synchronized void resetSession() {
         this.session = new ConversationSession(promptStore.getSystemPrompt());
         artifactStore.clear();
     }
 
-    /** Aktuella promptvärden + standardvärden + på/av-läge + sessionslängd, för GUI:t. */
     public Map<String, Object> getPromptSettings() {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("useCustomPrompts", promptStore.isUseCustomPrompts());
@@ -70,12 +50,10 @@ public class PsykologenService {
         return result;
     }
 
-    /** Hur många minuter Erik ska planera samtalet mot (default 45). */
     public void setSessionDurationMinutes(double minutes) {
         promptStore.setSessionDurationMinutes(minutes);
     }
 
-    /** Sparar egna texter för en eller flera promptnycklar (slår samtidigt på användningen av dem). */
     public void updatePrompts(Map<String, String> updates) {
         promptStore.update(updates);
     }
@@ -133,7 +111,6 @@ public class PsykologenService {
         return session.messages();
     }
 
-    /** Ändringshistoriken för profil och plan, nyast först. */
     public List<HistoryEntry> getHistory() {
         return artifactStore.readHistory();
     }

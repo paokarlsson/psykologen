@@ -24,7 +24,6 @@ export class Chat implements OnInit, AfterViewInit {
   constructor(private apiService: ApiService) { }
   
   ngAfterViewInit(): void {
-    // Focus input field when it becomes available
     if (this.isConversationStarted && this.messageInput) {
       setTimeout(() => this.messageInput.nativeElement.focus(), 100);
     }
@@ -46,7 +45,6 @@ export class Chat implements OnInit, AfterViewInit {
             content: response.message,
             timestamp: Date.now()
           });
-          // Focus input field and scroll to bottom after conversation starts
           setTimeout(() => {
             if (this.messageInput) {
               this.messageInput.nativeElement.focus();
@@ -69,7 +67,6 @@ export class Chat implements OnInit, AfterViewInit {
       return;
     }
 
-    // Add user message to chat
     this.messages.push({
       role: 'user',
       content: this.currentMessage,
@@ -81,7 +78,6 @@ export class Chat implements OnInit, AfterViewInit {
     this.isLoading = true;
     this.backendError = null;
 
-    // Scroll to bottom after adding user message
     setTimeout(() => this.scrollToBottom(), 0);
 
     this.apiService.sendMessage(messageToSend).subscribe({
@@ -96,7 +92,6 @@ export class Chat implements OnInit, AfterViewInit {
           if (response.sessionComplete) {
             this.sessionComplete = true;
           }
-          // Focus input field and scroll to bottom after receiving response
           setTimeout(() => {
             if (this.messageInput) {
               this.messageInput.nativeElement.focus();
@@ -119,10 +114,8 @@ export class Chat implements OnInit, AfterViewInit {
       next: (response) => {
         this.backendError = null;
         if (response.success && response.conversation.length > 1) {
-          // Filter out system message and set messages
           this.messages = response.conversation.filter(msg => msg.role !== 'system');
           this.isConversationStarted = this.messages.length > 0;
-          // Scroll to bottom after loading conversation
           setTimeout(() => this.scrollToBottom(), 100);
         }
       },

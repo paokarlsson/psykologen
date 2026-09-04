@@ -2,22 +2,11 @@ package com.example.prompt;
 
 import java.util.Map;
 
-/**
- * Fyller i de redigerbara promptmallarna från {@link PromptStore} med
- * konkreta värden. Mallarna använder {@code {{namn}}}-platshållare istället
- * för {@code String.format}s positionella {@code %s} - dels så ordningen
- * inte spelar någon roll, dels så att en mall som redigerats i GUI:t (t.ex.
- * med en platshållare borttagen eller kvarglömd) aldrig kan krascha ett
- * AI-anrop, bara resultera i lite sämre kontext.
- *
- * Ren textgenerering - inga sidoeffekter, inga AI-anrop, ingen I/O.
- */
 public final class PromptTemplates {
 
     private PromptTemplates() {
     }
 
-    /** Ersätter varje {@code {{key}}} i mallen med motsvarande värde ur `vars`. */
     public static String render(String template, Map<String, String> vars) {
         String result = template;
         for (Map.Entry<String, String> entry : vars.entrySet()) {

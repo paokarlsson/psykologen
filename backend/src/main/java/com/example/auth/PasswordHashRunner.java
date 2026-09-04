@@ -7,23 +7,11 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
- * Litet hjälpmedel för att skapa lösenordshashar till {@code backend/.env}:
+ * Skriver ut en lösenordshash till {@code backend/.env}:
  *
  * <pre>
  * mvn spring-boot:run -Dspring-boot.run.arguments=--hash-password=ditt_lösenord
  * </pre>
- *
- * En {@link ApplicationRunner} i stället för ett eget {@code main} eller en
- * ny Maven-plugin: den får rätt {@link PasswordEncoder} injicerad, så hashen
- * garanterat skapas med samma inställningar som inloggningen sedan verifierar
- * mot.
- *
- * Notera att lösenordet syns i kommandoraden och därmed i skalets historik.
- * För ett labbprojekt är det acceptabelt; radera raden ur historiken om
- * lösenordet används någon annanstans.
- *
- * Registreras i {@link com.example.PsykologenApplication} i stället för att
- * annoteras med {@code @Component}.
  */
 public class PasswordHashRunner implements ApplicationRunner {
 
@@ -56,8 +44,7 @@ public class PasswordHashRunner implements ApplicationRunner {
             System.out.println();
         }
 
-        // Appen startades bara för att skapa en hash - lämna inte en server
-        // igång som ändå inte har några konton att logga in med.
+        // Appen startades bara för att skapa en hash, inte för att köra vidare.
         System.exit(SpringApplication.exit(applicationContext, () -> 0));
     }
 }

@@ -13,12 +13,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-/**
- * {@link AiClient} backad av OpenAIs Chat Completions API.
- *
- * En vanlig, ramverksfri klass: API-nyckeln kommer in via konstruktorn.
- * Wiring sker i {@link com.example.PsykologenApplication}.
- */
 public class OpenAiClient implements AiClient {
 
     private static final String MODEL = "gpt-4o-mini";

@@ -5,11 +5,6 @@ import java.util.List;
 import com.example.session.ChatMessage;
 import com.example.session.Role;
 
-/**
- * Bygger en textsammanfattning av samtalets tidslinje, som skickas med i
- * prompten för sessionsplan-uppdateringen så AI:n kan bedöma tempo och
- * engagemang.
- */
 final class TimingAnalyzer {
 
     private TimingAnalyzer() {
@@ -18,7 +13,7 @@ final class TimingAnalyzer {
     static String describe(List<ChatMessage> messages) {
         StringBuilder analysis = new StringBuilder("SAMTALSHISTORIK MED TIDSSTÄMPLAR:\n");
 
-        for (int i = 1; i < messages.size(); i++) { // Skip system message
+        for (int i = 1; i < messages.size(); i++) { // Hoppa över systemmeddelandet
             ChatMessage message = messages.get(i);
             String role = message.role() == Role.USER ? "Patient" : "Erik";
             double sessionMinutes = message.sessionTimeMs() / 60000.0;

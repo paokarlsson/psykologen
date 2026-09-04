@@ -13,27 +13,12 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
-/**
- * {@link SessionArtifactStore} som lagrar profil, plan och ändringshistorik
- * som filer (profile.md / plan.md / history.json) i en angiven baskatalog.
- *
- * Baskatalogen är per användare - {@code data/users/&lt;användarnamn&gt;} - så
- * två inloggade användare aldrig kan läsa eller skriva över varandras
- * artefakter. Användarnamnet valideras vid uppstart av
- * {@link com.example.auth.AuthProperties}, så det som når {@code resolve()}
- * här kan aldrig innehålla katalogtraversering.
- */
 public class FileSessionArtifactStore implements SessionArtifactStore {
 
     private final Path profilePath;
     private final Path planPath;
     private final Path historyPath;
 
-    /**
-     * Jackson 3 (det Spring Boot 4 använder) kastar {@link JacksonException}
-     * okontrollerat, medan {@link java.nio.file.Files} fortfarande kastar
-     * {@link IOException} - därför fångas båda där JSON läses och skrivs.
-     */
     private final ObjectMapper mapper = new ObjectMapper();
     private final Object historyLock = new Object();
 
@@ -76,7 +61,7 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
             try {
                 Files.writeString(historyPath, mapper.writeValueAsString(entries));
             } catch (IOException | JacksonException e) {
-                // Tyst felhantering - historikloggning får aldrig krascha samtalet
+                // Historikloggning får aldrig krascha samtalet
             }
         }
     }
@@ -97,7 +82,7 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
                 });
             }
         } catch (IOException | JacksonException e) {
-            // Ignorera korrupt/oläsbar fil, kör vidare med tom historik
+            // Korrupt fil: kör vidare med tom historik
         }
         return List.of();
     }
@@ -115,7 +100,7 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
                 return Optional.of(Files.readString(path));
             }
         } catch (IOException e) {
-            // Ignorera läsfel, precis som tidigare
+            // Ignorera läsfel
         }
         return Optional.empty();
     }
@@ -132,7 +117,7 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
         try {
             Files.deleteIfExists(path);
         } catch (IOException e) {
-            // Ignorera städfel, precis som tidigare
+            // Ignorera städfel
         }
     }
 }

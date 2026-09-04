@@ -3,11 +3,6 @@ package com.example.auth;
 import org.springframework.boot.diagnostics.AbstractFailureAnalyzer;
 import org.springframework.boot.diagnostics.FailureAnalysis;
 
-/**
- * Turns an {@link InvalidUsersException} into a readable startup error
- * (registered via META-INF/spring.factories), instead of a raw stack trace
- * the first time someone tries to log in.
- */
 public class InvalidUsersFailureAnalyzer extends AbstractFailureAnalyzer<InvalidUsersException> {
 
     @Override

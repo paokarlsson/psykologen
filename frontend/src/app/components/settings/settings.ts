@@ -12,7 +12,6 @@ interface PromptField {
   default: string;
 }
 
-/** Statiska etiketter/beskrivningar per promptnyckel - själva texten kommer från backend. */
 const FIELD_META: { key: string; label: string; description: string }[] = [
   {
     key: 'systemPrompt',
@@ -46,11 +45,6 @@ const FIELD_META: { key: string; label: string; description: string }[] = [
   },
 ];
 
-/**
- * Inställningspanel: redigera samtliga AI-promptar, slå av/på om de egna
- * texterna används, och starta om samtalet blankt. Kollapsad by default -
- * hämtar bara promptinställningarna när panelen faktiskt öppnas.
- */
 @Component({
   selector: 'app-settings',
   imports: [FormsModule, NgClass],
@@ -115,7 +109,7 @@ export class Settings {
       },
       error: () => {
         this.errorMessage = 'Kunde inte ändra inställningen.';
-        this.useCustomPrompts = !enabled; // rulla tillbaka UI:t till verkligt läge
+        this.useCustomPrompts = !enabled;
       }
     });
   }

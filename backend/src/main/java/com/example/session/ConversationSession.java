@@ -5,12 +5,6 @@ import java.util.List;
 
 import com.example.service.ai.AiResponse;
 
-/**
- * Allt muterbart tillstånd för ett pågående terapisamtal: meddelande-
- * historik, terapeutens inre reflektioner, tokenräknare och tidtagning.
- * En ren tillståndsklass - ingen I/O, inga AI-anrop; det sköter
- * {@link com.example.service.PsykologenService} och dess samarbetare.
- */
 public class ConversationSession {
 
     private final List<ChatMessage> messages = new ArrayList<>();
@@ -25,16 +19,10 @@ public class ConversationSession {
         messages.add(ChatMessage.instruction(Role.SYSTEM, systemPrompt));
     }
 
-    /** Hela historiken, som en oföränderlig ögonblicksbild. */
     public List<ChatMessage> messages() {
         return List.copyOf(messages);
     }
 
-    /**
-     * Historiken utan det senast tillagda meddelandet - används för att
-     * bygga ett tillfälligt AI-anrop där sista turen ersätts med ett eget
-     * instruktionsmeddelande, istället för att skicka den råa användartexten.
-     */
     public List<ChatMessage> historyBeforeLastMessage() {
         return List.copyOf(messages.subList(0, messages.size() - 1));
     }
@@ -56,7 +44,6 @@ public class ConversationSession {
         return String.join("\n", internalThoughts.stream().map(t -> "- " + t).toList());
     }
 
-    /** Tolkar en rå, radbruten text med nya tankar (t.ex. "- observation") och lägger till dem. */
     public void addThoughtLines(String rawThoughts) {
         if (rawThoughts == null || rawThoughts.startsWith("Inga")) {
             return;
