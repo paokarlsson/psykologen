@@ -1,0 +1,35 @@
+<div class="login-page">
+  <form class="login-card" (ngSubmit)="submit()">
+    <h1>🎤 Psykologen</h1>
+    <p class="subtitle">Logga in för att fortsätta ditt samtal</p>
+
+    @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+    }
+
+    <label for="username">Användarnamn</label>
+    <input
+      id="username"
+      name="username"
+      type="text"
+      autocomplete="username"
+      autofocus
+      [(ngModel)]="username"
+      [disabled]="isLoading()"
+    />
+
+    <label for="password">Lösenord</label>
+    <input
+      id="password"
+      name="password"
+      type="password"
+      autocomplete="current-password"
+      [(ngModel)]="password"
+      [disabled]="isLoading()"
+    />
+
+    <button type="submit" [disabled]="isLoading() || !username.trim() || !password">
+      {{ isLoading() ? 'Loggar in…' : 'Logga in' }}
+    </button>
+  </form>
+</div>

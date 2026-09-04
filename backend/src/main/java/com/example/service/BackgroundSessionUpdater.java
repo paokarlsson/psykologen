@@ -2,7 +2,6 @@ package com.example.service;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import com.example.prompt.ChangelogResponse;
 import com.example.prompt.PromptStore;
@@ -26,12 +25,19 @@ public class BackgroundSessionUpdater {
     private final AiClient aiClient;
     private final SessionArtifactStore artifactStore;
     private final PromptStore promptStore;
-    private final ExecutorService executor = Executors.newCachedThreadPool();
+    private final ExecutorService executor;
 
-    public BackgroundSessionUpdater(AiClient aiClient, SessionArtifactStore artifactStore, PromptStore promptStore) {
+    /**
+     * {@code executor} skickas in i stället för att skapas här, eftersom det
+     * finns en updater per inloggad användare - en egen trådpool per konto
+     * vore ren spill. Alla användare delar samma pool.
+     */
+    public BackgroundSessionUpdater(AiClient aiClient, SessionArtifactStore artifactStore,
+            PromptStore promptStore, ExecutorService executor) {
         this.aiClient = aiClient;
         this.artifactStore = artifactStore;
         this.promptStore = promptStore;
+        this.executor = executor;
     }
 
     public void triggerUpdates(ConversationSession session, String userInput, String agentResponse) {

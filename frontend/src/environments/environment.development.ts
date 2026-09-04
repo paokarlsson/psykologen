@@ -1,4 +1,5 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:8080/api/psykologen',
+  // Se kommentaren i environment.ts - går via proxy.conf.js till backend.
+  apiUrl: '/api/psykologen',
 };

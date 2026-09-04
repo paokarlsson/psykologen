@@ -16,9 +16,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * delmängd skrivas över, brytaren {@code useCustomPrompts} slås av/på utan
  * att tappa bort de egna texterna, och allt kan återställas till standard.
  *
- * Persisteras till {@code prompts.json} i arbetskatalogen - samma mönster
- * som profile.md/plan.md i {@link com.example.storage.FileSessionArtifactStore}
- * - så ändringar överlever en omstart av backend.
+ * Persisteras till {@code prompts.json} i användarens egen katalog - samma
+ * mönster och samma baskatalog som profile.md/plan.md i
+ * {@link com.example.storage.FileSessionArtifactStore} - så ändringar
+ * överlever en omstart av backend, och en användares egna promptar aldrig
+ * skriver över någon annans.
  */
 public class PromptStore {
 
@@ -28,8 +30,6 @@ public class PromptStore {
     public static final String ERIK_RESPONSE = "erikResponse";
     public static final String PROFILE_UPDATE = "profileUpdate";
     public static final String PLAN_UPDATE = "planUpdate";
-
-    private static final Path STORE_PATH = Path.of("prompts.json");
 
     /** Standard sessionslängd i minuter - hur länge Erik planerar samtalet mot. */
     public static final double DEFAULT_SESSION_DURATION_MINUTES = 45.0;
@@ -195,11 +195,13 @@ public class PromptStore {
                 """);
 
     private final ObjectMapper mapper = new ObjectMapper();
+    private final Path storePath;
     private final Map<String, String> customPrompts;
     private boolean useCustomPrompts;
     private double sessionDurationMinutes;
 
-    public PromptStore() {
+    public PromptStore(Path baseDir) {
+        this.storePath = baseDir.resolve("prompts.json");
         Persisted loaded = load();
         this.customPrompts = new LinkedHashMap<>(loaded.customPrompts());
         this.useCustomPrompts = loaded.useCustomPrompts();
@@ -302,7 +304,7 @@ public class PromptStore {
 
     private void persist() {
         try {
-            Files.writeString(STORE_PATH, mapper.writerWithDefaultPrettyPrinter()
+            Files.writeString(storePath, mapper.writerWithDefaultPrettyPrinter()
                     .writeValueAsString(new Persisted(useCustomPrompts, customPrompts, sessionDurationMinutes)));
         } catch (IOException e) {
             // Tyst felhantering - att spara promptinställningar ska inte krascha appen
@@ -311,8 +313,8 @@ public class PromptStore {
 
     private Persisted load() {
         try {
-            if (Files.exists(STORE_PATH)) {
-                return mapper.readValue(Files.readString(STORE_PATH), Persisted.class);
+            if (Files.exists(storePath)) {
+                return mapper.readValue(Files.readString(storePath), Persisted.class);
             }
         } catch (IOException e) {
             // Ignorera korrupt/oläsbar fil - kör vidare med standardvärden

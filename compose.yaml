@@ -19,6 +19,10 @@ services:
       - ./frontend:/app
     ports:
       - "4200:4200"
+    environment:
+      # Dev-proxyn (proxy.conf.js) körs i den här containern, inte i webbläsaren,
+      # så localhost:8080 hade pekat på containern själv i stället för på backend.
+      - BACKEND_URL=http://backend:8080
     command: sh -c "npm install && npm start -- --host 0.0.0.0"
 
 volumes:

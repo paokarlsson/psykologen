@@ -5,28 +5,44 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.service.PsykologenService;
+import com.example.service.UserSessionRegistry;
 import com.example.session.ChatMessage;
 import com.example.storage.HistoryEntry;
 
+/**
+ * Samtliga endpoints kräver inloggning (se {@link com.example.auth.SecurityConfig})
+ * och arbetar mot den inloggade användarens egen {@link PsykologenService},
+ * utdelad av {@link UserSessionRegistry}. Ingen endpoint tar emot ett
+ * användarnamn från klienten - identiteten kommer alltid från sessionen, så
+ * en användare kan inte be om någon annans samtal.
+ *
+ * Ingen {@code @CrossOrigin} här: frontend nås via Angulars dev-proxy och
+ * ligger därmed på samma origin. Ett CORS-jokertecken hade dessutom varit
+ * oförenligt med den cookie inloggningen bygger på.
+ */
 @RestController
 @RequestMapping("/api/psykologen")
-@CrossOrigin(origins = "*")
 public class PsykologenController {
 
-    private final PsykologenService psykologenService;
+    private final UserSessionRegistry registry;
 
-    public PsykologenController(PsykologenService psykologenService) {
-        this.psykologenService = psykologenService;
+    public PsykologenController(UserSessionRegistry registry) {
+        this.registry = registry;
+    }
+
+    private PsykologenService serviceFor(Authentication auth) {
+        return registry.forUser(auth.getName());
     }
 
     @PostMapping("/start")
-    public ResponseEntity<Map<String, Object>> startConversation() {
+    public ResponseEntity<Map<String, Object>> startConversation(Authentication auth) {
         Map<String, Object> response = new HashMap<>();
         try {
-            String opening = psykologenService.startConversation();
+            String opening = serviceFor(auth).startConversation();
             response.put("success", true);
             response.put("message", opening);
             response.put("role", "erik");
@@ -39,7 +55,8 @@ public class PsykologenController {
     }
 
     @PostMapping("/message")
-    public ResponseEntity<Map<String, Object>> sendMessage(@RequestBody Map<String, String> request) {
+    public ResponseEntity<Map<String, Object>> sendMessage(Authentication auth,
+            @RequestBody Map<String, String> request) {
         Map<String, Object> response = new HashMap<>();
         try {
             String userInput = request.get("message");
@@ -49,7 +66,7 @@ public class PsykologenController {
                 return ResponseEntity.badRequest().body(response);
             }
 
-            String erikResponse = psykologenService.processMessage(userInput);
+            String erikResponse = serviceFor(auth).processMessage(userInput);
             response.put("success", true);
             response.put("message", erikResponse);
             response.put("role", "erik");
@@ -67,10 +84,10 @@ public class PsykologenController {
     }
 
     @GetMapping("/conversation")
-    public ResponseEntity<Map<String, Object>> getConversation() {
+    public ResponseEntity<Map<String, Object>> getConversation(Authentication auth) {
         Map<String, Object> response = new HashMap<>();
         try {
-            List<ChatMessage> conversation = psykologenService.getConversation();
+            List<ChatMessage> conversation = serviceFor(auth).getConversation();
             response.put("success", true);
             response.put("conversation", conversation);
             return ResponseEntity.ok(response);
@@ -82,10 +99,10 @@ public class PsykologenController {
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<Map<String, Object>> getProfile() {
+    public ResponseEntity<Map<String, Object>> getProfile(Authentication auth) {
         Map<String, Object> response = new HashMap<>();
         try {
-            String profile = psykologenService.getProfile();
+            String profile = serviceFor(auth).getProfile();
             response.put("success", true);
             response.put("profile", profile);
             return ResponseEntity.ok(response);
@@ -97,10 +114,10 @@ public class PsykologenController {
     }
 
     @GetMapping("/plan")
-    public ResponseEntity<Map<String, Object>> getPlan() {
+    public ResponseEntity<Map<String, Object>> getPlan(Authentication auth) {
         Map<String, Object> response = new HashMap<>();
         try {
-            String plan = psykologenService.getPlan();
+            String plan = serviceFor(auth).getPlan();
             response.put("success", true);
             response.put("plan", plan);
             return ResponseEntity.ok(response);
@@ -113,10 +130,10 @@ public class PsykologenController {
 
     /** Ändringshistoriken för profil och plan (vad som reviderades och när), nyast först. */
     @GetMapping("/history")
-    public ResponseEntity<Map<String, Object>> getHistory() {
+    public ResponseEntity<Map<String, Object>> getHistory(Authentication auth) {
         Map<String, Object> response = new HashMap<>();
         try {
-            List<HistoryEntry> history = psykologenService.getHistory();
+            List<HistoryEntry> history = serviceFor(auth).getHistory();
             response.put("success", true);
             response.put("history", history);
             return ResponseEntity.ok(response);
@@ -129,10 +146,10 @@ public class PsykologenController {
 
     /** Startar om samtalet helt blankt (ny samtalshistorik, tom profil/plan/ändringslogg). Rör inte promptinställningar. */
     @PostMapping("/reset")
-    public ResponseEntity<Map<String, Object>> resetSession() {
+    public ResponseEntity<Map<String, Object>> resetSession(Authentication auth) {
         Map<String, Object> response = new HashMap<>();
         try {
-            psykologenService.resetSession();
+            serviceFor(auth).resetSession();
             response.put("success", true);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -144,10 +161,10 @@ public class PsykologenController {
 
     /** Nuvarande promptvärden + standardvärden + på/av-läge, för redigering i GUI:t. */
     @GetMapping("/settings/prompts")
-    public ResponseEntity<Map<String, Object>> getPromptSettings() {
+    public ResponseEntity<Map<String, Object>> getPromptSettings(Authentication auth) {
         Map<String, Object> response = new HashMap<>();
         try {
-            response.putAll(psykologenService.getPromptSettings());
+            response.putAll(serviceFor(auth).getPromptSettings());
             response.put("success", true);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -159,10 +176,11 @@ public class PsykologenController {
 
     /** Sparar egna texter för en eller flera promptnycklar (body: { "systemPrompt": "...", ... }). */
     @PutMapping("/settings/prompts")
-    public ResponseEntity<Map<String, Object>> updatePrompts(@RequestBody Map<String, String> updates) {
+    public ResponseEntity<Map<String, Object>> updatePrompts(Authentication auth,
+            @RequestBody Map<String, String> updates) {
         Map<String, Object> response = new HashMap<>();
         try {
-            psykologenService.updatePrompts(updates);
+            serviceFor(auth).updatePrompts(updates);
             response.put("success", true);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
@@ -174,13 +192,14 @@ public class PsykologenController {
 
     /** Återställer en nyckel (body: {"key": "systemPrompt"}) eller samtliga (tomt/utelämnat body) till standard. */
     @PostMapping("/settings/prompts/reset")
-    public ResponseEntity<Map<String, Object>> resetPrompts(@RequestBody(required = false) Map<String, String> body) {
+    public ResponseEntity<Map<String, Object>> resetPrompts(Authentication auth,
+            @RequestBody(required = false) Map<String, String> body) {
         Map<String, Object> response = new HashMap<>();
         String key = body == null ? null : body.get("key");
         if (key == null || key.isBlank()) {
-            psykologenService.resetAllPrompts();
+            serviceFor(auth).resetAllPrompts();
         } else {
-            psykologenService.resetPrompt(key);
+            serviceFor(auth).resetPrompt(key);
         }
         response.put("success", true);
         return ResponseEntity.ok(response);
@@ -188,10 +207,11 @@ public class PsykologenController {
 
     /** Slår av/på om de sparade egna promptarna faktiskt används (body: {"enabled": true|false}). */
     @PutMapping("/settings/custom-prompts-enabled")
-    public ResponseEntity<Map<String, Object>> setCustomPromptsEnabled(@RequestBody Map<String, Boolean> body) {
+    public ResponseEntity<Map<String, Object>> setCustomPromptsEnabled(Authentication auth,
+            @RequestBody Map<String, Boolean> body) {
         Map<String, Object> response = new HashMap<>();
         boolean enabled = Boolean.TRUE.equals(body.get("enabled"));
-        psykologenService.setCustomPromptsEnabled(enabled);
+        serviceFor(auth).setCustomPromptsEnabled(enabled);
         response.put("success", true);
         response.put("enabled", enabled);
         return ResponseEntity.ok(response);
@@ -199,7 +219,8 @@ public class PsykologenController {
 
     /** Sätter hur många minuter Erik ska planera samtalet mot (body: {"minutes": 45}). */
     @PutMapping("/settings/session-duration")
-    public ResponseEntity<Map<String, Object>> setSessionDuration(@RequestBody Map<String, Double> body) {
+    public ResponseEntity<Map<String, Object>> setSessionDuration(Authentication auth,
+            @RequestBody Map<String, Double> body) {
         Map<String, Object> response = new HashMap<>();
         try {
             Double minutes = body.get("minutes");
@@ -208,7 +229,7 @@ public class PsykologenController {
                 response.put("error", "Fältet 'minutes' saknas.");
                 return ResponseEntity.badRequest().body(response);
             }
-            psykologenService.setSessionDurationMinutes(minutes);
+            serviceFor(auth).setSessionDurationMinutes(minutes);
             response.put("success", true);
             response.put("sessionDurationMinutes", minutes);
             return ResponseEntity.ok(response);

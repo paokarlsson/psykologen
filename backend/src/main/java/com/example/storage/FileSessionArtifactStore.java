@@ -14,36 +14,52 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * {@link SessionArtifactStore} som lagrar profil, plan och ändringshistorik
- * som filer i arbetskatalogen (profile.md / plan.md / history.json) - samma
- * platser som användes direkt i {@code PsykologenService} tidigare.
+ * som filer (profile.md / plan.md / history.json) i en angiven baskatalog.
+ *
+ * Baskatalogen är per användare - {@code data/users/&lt;användarnamn&gt;} - så
+ * två inloggade användare aldrig kan läsa eller skriva över varandras
+ * artefakter. Användarnamnet valideras vid uppstart av
+ * {@link com.example.auth.AuthProperties}, så det som når {@code resolve()}
+ * här kan aldrig innehålla katalogtraversering.
  */
 public class FileSessionArtifactStore implements SessionArtifactStore {
 
-    private static final Path PROFILE_PATH = Path.of("profile.md");
-    private static final Path PLAN_PATH = Path.of("plan.md");
-    private static final Path HISTORY_PATH = Path.of("history.json");
+    private final Path profilePath;
+    private final Path planPath;
+    private final Path historyPath;
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final Object historyLock = new Object();
 
+    public FileSessionArtifactStore(Path baseDir) {
+        this.profilePath = baseDir.resolve("profile.md");
+        this.planPath = baseDir.resolve("plan.md");
+        this.historyPath = baseDir.resolve("history.json");
+        try {
+            Files.createDirectories(baseDir);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Kunde inte skapa lagringskatalogen " + baseDir, e);
+        }
+    }
+
     @Override
     public Optional<String> readProfile() {
-        return read(PROFILE_PATH);
+        return read(profilePath);
     }
 
     @Override
     public void writeProfile(String content) {
-        write(PROFILE_PATH, content);
+        write(profilePath, content);
     }
 
     @Override
     public Optional<String> readPlan() {
-        return read(PLAN_PATH);
+        return read(planPath);
     }
 
     @Override
     public void writePlan(String content) {
-        write(PLAN_PATH, content);
+        write(planPath, content);
     }
 
     @Override
@@ -52,7 +68,7 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
             List<HistoryEntry> entries = new ArrayList<>(readHistoryUnlocked());
             entries.add(entry);
             try {
-                Files.writeString(HISTORY_PATH, mapper.writeValueAsString(entries));
+                Files.writeString(historyPath, mapper.writeValueAsString(entries));
             } catch (IOException e) {
                 // Tyst felhantering - historikloggning får aldrig krascha samtalet
             }
@@ -70,8 +86,8 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
 
     private List<HistoryEntry> readHistoryUnlocked() {
         try {
-            if (Files.exists(HISTORY_PATH)) {
-                return mapper.readValue(Files.readString(HISTORY_PATH), new TypeReference<List<HistoryEntry>>() {
+            if (Files.exists(historyPath)) {
+                return mapper.readValue(Files.readString(historyPath), new TypeReference<List<HistoryEntry>>() {
                 });
             }
         } catch (IOException e) {
@@ -82,9 +98,9 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
 
     @Override
     public void clear() {
-        deleteIfExists(PROFILE_PATH);
-        deleteIfExists(PLAN_PATH);
-        deleteIfExists(HISTORY_PATH);
+        deleteIfExists(profilePath);
+        deleteIfExists(planPath);
+        deleteIfExists(historyPath);
     }
 
     private Optional<String> read(Path path) {
