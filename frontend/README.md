@@ -4,8 +4,8 @@ Angular-frontend för Psykologen-applikationen.
 
 ## Förutsättningar
 
-- Node.js
-- npm
+- Node.js 24 LTS (eller 22.22.3+/26+)
+- npm 12
 - Angular CLI
 
 ## Installera dependencies
@@ -43,7 +43,7 @@ ng test
 
 ## Teknologier
 
-- Angular 20.2.0
-- TypeScript 5.9.2
-- RxJS 7.8.0
+- Angular 22.1
+- TypeScript 6.0
+- RxJS 7.8
 - Karma & Jasmine för testning

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -49,6 +49,7 @@ const FIELD_META: { key: string; label: string; description: string }[] = [
   selector: 'app-settings',
   imports: [FormsModule, NgClass],
   templateUrl: './settings.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './settings.css'
 })
 export class Settings {

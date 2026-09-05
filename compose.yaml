@@ -13,7 +13,7 @@ services:
       -Dspring-boot.run.jvmArguments="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
 
   frontend:
-    image: node:22
+    image: node:24
     working_dir: /app
     volumes:
       - ./frontend:/app
@@ -22,7 +22,7 @@ services:
     environment:
       # Dev-proxyn körs i den här containern, så localhost hade pekat på fel maskin.
       - BACKEND_URL=http://backend:8080
-    command: sh -c "npm install && npm start -- --host 0.0.0.0"
+    command: sh -c "npm install -g npm@12 && npm install && npm start -- --host 0.0.0.0"
 
 volumes:
   maven-repo:

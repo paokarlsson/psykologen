@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, ChangeDetectionStrategy } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -8,6 +8,7 @@ import { ApiService, Message, MessageResponse } from '../../services/api.service
   selector: 'app-chat',
   imports: [NgClass, FormsModule],
   templateUrl: './chat.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './chat.css'
 })
 export class Chat implements OnInit, AfterViewInit {

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService, HistoryEntryDto } from '../../services/api.service';
@@ -7,6 +7,7 @@ import { ApiService, HistoryEntryDto } from '../../services/api.service';
   selector: 'app-history',
   imports: [NgClass],
   templateUrl: './history.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './history.css'
 })
 export class History {
