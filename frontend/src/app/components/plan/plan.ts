@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { map } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { pollingResource } from '../../shared/polling-resource';
@@ -9,6 +9,7 @@ const EMPTY_PLAN = 'Ingen plan skapad än.';
   selector: 'app-plan',
   imports: [],
   templateUrl: './plan.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './plan.css'
 })
 export class Plan {

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { map } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { pollingResource } from '../../shared/polling-resource';
@@ -9,6 +9,7 @@ const EMPTY_PROFILE = 'Ingen profil skapad än.';
   selector: 'app-profile',
   imports: [],
   templateUrl: './profile.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './profile.css'
 })
 export class Profile {
