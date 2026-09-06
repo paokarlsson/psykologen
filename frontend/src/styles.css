@@ -7,12 +7,54 @@
   --color-danger-text: #842029;
   --color-success-bg: #d1e7dd;
   --color-success-text: #0f5132;
+
+  /* Kortens identitetsfärger - tidigare hårdkodade i respektive komponent */
+  --color-chat: #4a90e2;
+  --color-profile: #1e7a34;
+  --color-plan: #b35a10;
+
+  --color-surface: #fff;
+  --color-page: #f5f6fa;
+  --color-border: #e9ecef;
+  --color-text: #333;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+
+  --radius: 8px;
+  --radius-sm: 6px;
+  --radius-pill: 20px;
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-panel: 0 8px 24px rgba(0, 0, 0, 0.25);
+
+  /* Minsta träffyta för touch. Skalets mått ligger här så att app.css och
+     komponenternas paneler räknar på samma tal. */
+  --tap-min: 44px;
+  --rail-w: 240px;
+  --rail-w-narrow: 64px;
+  --bar-h: 56px;
 }
 
 body {
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #f5f6fa;
+  background: var(--color-page);
+}
+
+button {
+  min-height: var(--tap-min);
+  font-family: inherit;
+}
+
+/* Under 16px zoomar iOS in automatiskt när fältet får fokus. */
+input,
+textarea,
+select {
+  font-size: 1rem;
+  font-family: inherit;
 }
 
 /* Delad av history/settings/login - se docs/gui-granskning.md, punkt 13 */
