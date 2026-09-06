@@ -3,8 +3,10 @@
   (click)="toggleOpen()"
   [attr.aria-expanded]="isOpen"
   aria-controls="history-panel"
+  aria-label="Historik"
 >
-  <span>📜 Historik</span>
+  <span aria-hidden="true">📜</span>
+  <span class="label">Historik</span>
   <span class="chevron" [ngClass]="{ open: isOpen }">▾</span>
 </button>
 
@@ -16,6 +18,11 @@
     tabindex="-1"
     (keydown.escape)="close()"
   >
+    <header>
+      <h2>Historik</h2>
+      <button type="button" (click)="close()" aria-label="Stäng historik">✕</button>
+    </header>
+
     @if (isLoading) {
       <app-loading-spinner label="Laddar historik…" />
     }

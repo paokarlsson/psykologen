@@ -3,42 +3,50 @@
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
 }
 
+/* Kortets identitetsfärg ligger som kant i stället för som fylld platta -
+   skalets rail bär numera den enda stora färgytan. */
 header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
-  background: #b35a10;
-  color: white;
-  border-radius: 8px 8px 0 0;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-top: 3px solid var(--color-plan);
+  border-bottom: 1px solid var(--color-border);
+  border-radius: var(--radius) var(--radius) 0 0;
 }
 
 h2 {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-3);
 }
 
 .last-updated {
   font-size: 0.85rem;
-  opacity: 0.9;
+  color: var(--color-muted-text);
 }
 
+/* Ingen min-height - kortet ska krympa med skalet, som är låst till
+   viewporthöjden och inte får scrolla. */
 .plan-content {
   flex: 1;
-  padding: 1rem;
+  padding: var(--space-4);
   overflow-y: auto;
-  min-height: 300px;
+  min-height: 0;
 }
 
 .loading {
@@ -100,7 +108,7 @@ footer {
 }
 
 .indicator-dot.active {
-  background: #b35a10;
+  background: var(--color-plan);
   animation: pulse 2s ease-in-out infinite;
 }
 

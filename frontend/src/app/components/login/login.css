@@ -3,17 +3,30 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  padding: 1.5rem;
+  min-height: 100dvh; /* Immun mot att adressfältet växer och krymper. */
+  padding: var(--space-5);
+  box-sizing: border-box;
 }
 
 form {
   display: flex;
   flex-direction: column;
   width: min(380px, 100%);
-  background: white;
+  box-sizing: border-box;
+  background: var(--color-surface);
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   padding: 2rem;
+}
+
+@media (max-width: 899px) {
+  :host {
+    padding: var(--space-4);
+  }
+
+  form {
+    padding: var(--space-5);
+  }
 }
 
 h1 {
@@ -38,12 +51,12 @@ label {
 }
 
 input {
+  min-height: var(--tap-min);
+  box-sizing: border-box;
   padding: 10px 12px;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-4);
   border: 1px solid #d8dae0;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-family: inherit;
+  border-radius: var(--radius-sm);
 }
 
 input:focus {

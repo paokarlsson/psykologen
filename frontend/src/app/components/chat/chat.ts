@@ -161,7 +161,8 @@ export class Chat implements OnInit, AfterViewInit {
     return this.messages[index].role !== this.messages[index + 1].role;
   }
 
-  private scrollToBottom(): void {
+  /** Publik för att skalet ska kunna scrolla om efter att chatten varit dold. */
+  scrollToBottom(): void {
     if (this.messagesContainer) {
       const container = this.messagesContainer.nativeElement;
       container.scrollTop = container.scrollHeight;

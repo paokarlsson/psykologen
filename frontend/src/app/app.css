@@ -1,98 +1,126 @@
+/* Skalet är ett grid med två chrome-element: <header> (vertikal rail på
+   stora skärmar, toppbar på små) och bottenflikarna, som bara finns på
+   mobil. Headern flyttas mellan grid-områden i stället för att dupliceras -
+   history och settings har hårdkodade panel-id:n och tål bara en instans. */
 :host {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   height: 100vh;
+  height: 100dvh; /* Immun mot att adressfältet växer och krymper. */
+  grid-template-columns: var(--rail-w) 1fr;
+  grid-template-areas: 'chrome main';
+}
+
+/* Utloggat läge har inget skal - låt vyn spänna över hela griden. */
+.app-loading,
+app-login {
+  grid-column: 1 / -1;
+}
+
+.app-loading {
+  margin: auto;
+  color: var(--color-muted-text);
 }
 
 .skip-link {
   position: absolute;
   top: -3rem;
-  left: 1rem;
+  left: var(--space-4);
   z-index: 100;
   background: #1c1c1c;
   color: white;
-  padding: 0.6rem 1rem;
-  border-radius: 6px;
+  padding: 0.6rem var(--space-4);
+  border-radius: var(--radius-sm);
   font-weight: 600;
   text-decoration: none;
   transition: top 0.15s ease;
 }
 
 .skip-link:focus {
-  top: 1rem;
+  top: var(--space-4);
   outline: 3px solid white;
   outline-offset: 2px;
 }
 
+/* --- Rail / toppbar --------------------------------------------------- */
+
 header {
+  grid-area: chrome;
   position: relative;
-  background: linear-gradient(135deg, var(--color-accent-light) 0%, var(--color-accent) 100%);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: linear-gradient(160deg, var(--color-accent-light) 0%, var(--color-accent) 100%);
   color: white;
-  text-align: center;
-  padding: 2rem;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-app-settings {
-  position: absolute;
-  top: 1rem;
-  right: 1.5rem;
-}
-
-app-history {
-  position: absolute;
-  top: 1rem;
-  left: 1.5rem;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  /* Historik- och inställningspanelerna fälls ut ur headern och får inte klippas. */
+  overflow: visible;
 }
 
 h1 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.8rem;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: 1.15rem;
   font-weight: 600;
 }
 
+h1 span[aria-hidden] {
+  font-size: 1.5rem;
+}
+
+header nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Kontoraden trycks till railens botten. */
 header p {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
   margin: 0;
-  opacity: 0.9;
-  font-size: 1rem;
-}
-
-.app-loading {
-  margin: auto;
-  color: #777;
-}
-
-.app-session {
-  margin-top: 0.6rem;
+  margin-top: auto;
   font-size: 0.85rem;
+}
+
+header p > .label {
   opacity: 0.85;
 }
 
 /* Utloggningsknappen - träffar inte togglarna i app-history/app-settings,
    de bär sina egna komponenters _ngcontent-attribut. */
 header button {
-  margin-left: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.4);
   color: white;
-  padding: 3px 12px;
-  border-radius: 20px;
+  padding: var(--space-2) 14px;
+  border-radius: var(--radius-pill);
   cursor: pointer;
-  font-size: 0.8rem;
-  font-family: inherit;
+  font-size: 0.95rem;
 }
 
 header button:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 
+/* --- Innehållsyta ------------------------------------------------------ */
+
 main {
-  flex: 1;
+  grid-area: main;
   display: grid;
-  grid-template-columns: 1fr 400px;
-  gap: 1.5rem;
-  padding: 1.5rem;
+  grid-template-columns: 1fr 380px;
+  gap: var(--space-5);
+  padding: var(--space-5);
   overflow: hidden;
+  min-height: 0;
 }
 
 app-chat {
@@ -102,7 +130,7 @@ app-chat {
 aside {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: var(--space-5);
   min-height: 0;
 }
 
@@ -111,32 +139,142 @@ aside > * {
   min-height: 0;
 }
 
-@media (max-width: 1024px) {
-  main {
-    grid-template-columns: 1fr 350px;
-  }
+/* Bottenflikarna - :host > nav skiljer dem från verktygsnav:en i headern. */
+:host > nav {
+  display: none;
 }
 
-@media (max-width: 768px) {
-  main {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
-  }
+/* --- Ikonrail: railen tappar etiketterna men behåller sin plats -------- */
 
-  aside {
-    flex-direction: row;
-    gap: 1rem;
-  }
-
-  aside > * {
-    min-height: 300px;
+@media (max-width: 1149px) {
+  :host {
+    grid-template-columns: var(--rail-w-narrow);
   }
 
   header {
-    padding: 1rem;
+    align-items: center;
+    padding: var(--space-4) var(--space-2);
   }
 
+  /* .label märker text som viker undan när det saknas bredd. Samma klass
+     och brytpunkt används av togglarna i app-history och app-settings. */
+  .label {
+    display: none;
+  }
+
+  header button {
+    padding: var(--space-2);
+    justify-content: center;
+  }
+
+  header p {
+    align-items: center;
+  }
+
+  main {
+    grid-template-columns: 1fr 320px;
+  }
+}
+
+/* --- Mobil: toppbar, en panel i taget, bottenflikar -------------------- */
+
+@media (max-width: 899px) {
+  :host {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+      'chrome'
+      'main'
+      'viewbar';
+  }
+
+  header {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--bar-h);
+    padding: var(--space-2) var(--space-3);
+    padding-top: calc(var(--space-2) + env(safe-area-inset-top));
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Toppbaren är bred nog för ordmärket, till skillnad från ikonrailen. */
   h1 {
-    font-size: 1.4rem;
+    font-size: 1rem;
+  }
+
+  h1 .label {
+    display: inline;
+  }
+
+  header nav {
+    flex-direction: row;
+    margin-left: auto;
+  }
+
+  header p {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 0;
+  }
+
+  main {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: var(--space-3);
+  }
+
+  /* Panelerna ligger kvar i DOM:en - att växla med display i stället för
+     @if bevarar komponenternas tillstånd och låter profil/plan fortsätta
+     polla, så att de redan är aktuella när man byter flik. */
+  main[data-view='chat'] aside {
+    display: none;
+  }
+
+  main[data-view='profile'] app-chat,
+  main[data-view='profile'] app-plan {
+    display: none;
+  }
+
+  main[data-view='plan'] app-chat,
+  main[data-view='plan'] app-profile {
+    display: none;
+  }
+
+  :host > nav {
+    grid-area: viewbar;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  :host > nav button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-height: var(--bar-h);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    font-size: 0.7rem;
+    color: var(--color-muted-text);
+  }
+
+  :host > nav span[aria-hidden] {
+    font-size: 1.15rem;
+  }
+
+  :host > nav button[aria-current] {
+    color: var(--color-accent);
+    box-shadow: inset 0 2px 0 var(--color-accent);
+  }
+
+  :host > nav button:focus-visible {
+    outline: 3px solid var(--color-focus-ring);
+    outline-offset: -3px;
   }
 }

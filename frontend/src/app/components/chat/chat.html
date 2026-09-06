@@ -85,13 +85,10 @@
         <button
           (click)="sendMessage()"
           [disabled]="!currentMessage.trim() || isLoading || sessionComplete"
+          [attr.aria-label]="isLoading ? 'Skickar' : 'Skicka'"
           class="send-btn">
-          @if (!isLoading) {
-            <span>Skicka</span>
-          }
-          @if (isLoading) {
-            <span>Skickar...</span>
-          }
+          <span class="label">{{ isLoading ? 'Skickar...' : 'Skicka' }}</span>
+          <span aria-hidden="true">➤</span>
         </button>
       </div>
     }

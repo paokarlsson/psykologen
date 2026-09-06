@@ -1,5 +1,5 @@
-/* app.css sätter position: absolute på värdelementet; relative gäller när
-   komponenten står för sig själv. Båda ger panelen ett containing block. */
+/* Värdelementet ligger i normalt flöde i skalets rail och ger panelen sitt
+   containing block själv. */
 :host {
   display: block;
   position: relative;
@@ -13,8 +13,8 @@
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.4);
   color: white;
-  padding: 8px 14px;
-  border-radius: 20px;
+  padding: var(--space-2) 14px;
+  border-radius: var(--radius-pill);
   cursor: pointer;
   font-size: 0.95rem;
 }
@@ -32,18 +32,19 @@
   transform: rotate(180deg);
 }
 
+/* Rail: panelen fälls ut åt höger, bredvid knappen. */
 :host > section {
   position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  width: min(480px, 90vw);
-  max-height: 75vh;
+  top: 0;
+  left: calc(100% + var(--space-2));
+  width: min(480px, 40vw);
+  max-height: 80vh;
   overflow-y: auto;
-  background: white;
-  color: #333;
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-  padding: 1rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-panel);
+  padding: var(--space-4);
   text-align: left;
 }
 
@@ -52,11 +53,64 @@
   outline-offset: -3px;
 }
 
-@media (max-width: 480px) {
+:host > section > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+:host > section > header h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+:host > section > header button {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 0 var(--space-2);
+  font-size: 1rem;
+  color: var(--color-muted-text);
+}
+
+/* Ikonrail: knappen krymper till sin ikon, samma brytpunkt som app.css. */
+@media (max-width: 1149px) {
+  :host > button {
+    justify-content: center;
+    padding: var(--space-2);
+  }
+
+  .label,
+  .chevron {
+    display: none;
+  }
+}
+
+/* Toppbar: panelen läggs fast strax under baren i nästan full bredd.
+   fixed så att den varken klipps av eller trycker isär baren. */
+@media (max-width: 899px) {
   :host > section {
-    width: min(340px, 92vw);
-    max-height: 65vh;
-    padding: 0.75rem;
+    position: fixed;
+    top: calc(var(--bar-h) + env(safe-area-inset-top) + var(--space-2));
+    left: var(--space-2);
+    right: var(--space-2);
+    width: auto;
+    max-height: calc(100dvh - var(--bar-h) - 5rem);
+    overscroll-behavior: contain;
+    padding: var(--space-3);
+  }
+
+  /* Promptrutorna är i monospace och mindre än 16px, vilket får iOS att
+     zooma in vid fokus. */
+  textarea {
+    font-size: 1rem;
+  }
+
+  .duration-row,
+  .prompt-field-actions {
+    flex-wrap: wrap;
   }
 }
 
@@ -99,11 +153,12 @@
 }
 
 .duration-input {
-  width: 80px;
+  width: 6rem;
+  min-height: var(--tap-min);
   padding: 6px 8px;
   border: 1px solid #ced4da;
-  border-radius: 6px;
-  font-size: 0.9rem;
+  border-radius: var(--radius-sm);
+  box-sizing: border-box;
 }
 
 .duration-row button {
@@ -145,9 +200,10 @@
 dialog {
   border: none;
   border-radius: 10px;
-  padding: 1.5rem;
-  max-width: 360px;
-  color: #333;
+  padding: var(--space-5);
+  width: min(360px, calc(100vw - 2rem));
+  box-sizing: border-box;
+  color: var(--color-text);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
 }
 
