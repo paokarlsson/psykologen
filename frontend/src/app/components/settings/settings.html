@@ -1,105 +1,100 @@
-<div class="settings-widget">
-  <button
-    #toggleBtn
-    class="settings-toggle"
-    (click)="toggleOpen()"
-    [attr.aria-expanded]="isOpen"
-    aria-controls="settings-panel"
+<button
+  #toggleBtn
+  (click)="toggleOpen()"
+  [attr.aria-expanded]="isOpen"
+  aria-controls="settings-panel"
+>
+  <span>⚙️ Inställningar</span>
+  <span class="chevron" [ngClass]="{ open: isOpen }">▾</span>
+</button>
+
+@if (isOpen) {
+  <section
+    #panel
+    id="settings-panel"
+    aria-label="Inställningar"
+    tabindex="-1"
+    (keydown.escape)="close()"
   >
-    <span>⚙️ Inställningar</span>
-    <span class="chevron" [ngClass]="{ open: isOpen }">▾</span>
-  </button>
+    @if (isLoading) {
+      <app-loading-spinner label="Laddar inställningar…" />
+    }
 
-  @if (isOpen) {
-    <div
-      #panel
-      class="settings-panel"
-      id="settings-panel"
-      role="region"
-      aria-label="Inställningar"
-      tabindex="-1"
-      (keydown.escape)="close()"
-    >
-      @if (isLoading) {
-        <app-loading-spinner label="Laddar inställningar…" />
-      }
+    @if (errorMessage) {
+      <div class="banner banner-error" role="alert">⚠️ {{ errorMessage }}</div>
+    }
+    @if (statusMessage) {
+      <div class="banner banner-status" role="status">✅ {{ statusMessage }}</div>
+    }
 
-      @if (errorMessage) {
-        <div class="banner banner-error" role="alert">⚠️ {{ errorMessage }}</div>
-      }
-      @if (statusMessage) {
-        <div class="banner banner-status" role="status">✅ {{ statusMessage }}</div>
-      }
+    @if (!isLoading) {
+      <div class="section">
+        <label class="switch-row">
+          <input type="checkbox" [(ngModel)]="useCustomPrompts" (change)="onToggleCustomPrompts()" />
+          <span>Använd egna promptar</span>
+        </label>
+        <p class="hint">
+          Av: Erik kör med standardtexterna nedan, oavsett vad du sparat.
+          På: dina sparade texter används istället för standard.
+        </p>
+      </div>
 
-      @if (!isLoading) {
-        <div class="section">
-          <label class="switch-row">
-            <input type="checkbox" [(ngModel)]="useCustomPrompts" (change)="onToggleCustomPrompts()" />
-            <span>Använd egna promptar</span>
-          </label>
-          <p class="hint">
-            Av: Erik kör med standardtexterna nedan, oavsett vad du sparat.
-            På: dina sparade texter används istället för standard.
-          </p>
+      <div class="section">
+        <label class="duration-label" for="session-duration">Sessionslängd (minuter)</label>
+        <div class="duration-row">
+          <input
+            type="number"
+            id="session-duration"
+            class="duration-input"
+            min="1"
+            step="5"
+            [(ngModel)]="sessionDurationMinutes" />
+          <button class="primary-btn" (click)="saveSessionDuration()" [disabled]="isSavingDuration">
+            {{ isSavingDuration ? 'Sparar...' : 'Spara' }}
+          </button>
+          <button class="secondary-btn" (click)="resetSessionDuration()" [disabled]="!isDurationModified()">
+            Återställ ({{ defaultSessionDurationMinutes }} min)
+          </button>
         </div>
+        <p class="hint">Hur länge Erik planerar samtalet mot - styr takten i sessionsplanen. Default: 45 minuter.</p>
+      </div>
 
-        <div class="section">
-          <label class="duration-label" for="session-duration">Sessionslängd (minuter)</label>
-          <div class="duration-row">
-            <input
-              type="number"
-              id="session-duration"
-              class="duration-input"
-              min="1"
-              step="5"
-              [(ngModel)]="sessionDurationMinutes" />
-            <button class="primary-btn" (click)="saveSessionDuration()" [disabled]="isSavingDuration">
-              {{ isSavingDuration ? 'Sparar...' : 'Spara' }}
-            </button>
-            <button class="secondary-btn" (click)="resetSessionDuration()" [disabled]="!isDurationModified()">
-              Återställ ({{ defaultSessionDurationMinutes }} min)
-            </button>
-          </div>
-          <p class="hint">Hur länge Erik planerar samtalet mot - styr takten i sessionsplanen. Default: 45 minuter.</p>
+      <div class="section">
+        <button class="danger-btn" (click)="confirmResetDialog.showModal()">🔄 Starta om session (blankt)</button>
+        <p class="hint">Rensar samtalshistorik, profil och plan. Rör inte dina promptar.</p>
+      </div>
+
+      <dialog #confirmResetDialog>
+        <h3>Starta om sessionen?</h3>
+        <p>Samtalshistorik, profil och plan raderas. Dina promptar påverkas inte.</p>
+        <div class="dialog-actions">
+          <button type="button" class="secondary-btn" (click)="confirmResetDialog.close()">Avbryt</button>
+          <button type="button" class="danger-btn" (click)="confirmResetDialog.close(); resetSession()">Starta om</button>
         </div>
+      </dialog>
 
-        <div class="section">
-          <button class="danger-btn" (click)="confirmResetDialog.showModal()">🔄 Starta om session (blankt)</button>
-          <p class="hint">Rensar samtalshistorik, profil och plan. Rör inte dina promptar.</p>
-        </div>
-
-        <dialog #confirmResetDialog class="confirm-dialog">
-          <h3>Starta om sessionen?</h3>
-          <p>Samtalshistorik, profil och plan raderas. Dina promptar påverkas inte.</p>
-          <div class="dialog-actions">
-            <button type="button" class="secondary-btn" (click)="confirmResetDialog.close()">Avbryt</button>
-            <button type="button" class="danger-btn" (click)="confirmResetDialog.close(); resetSession()">Starta om</button>
-          </div>
-        </dialog>
-
-        <div class="prompt-list">
-          @for (field of fields; track field.key) {
-            <div class="prompt-field">
-              <div class="prompt-field-header">
-                <strong>{{ field.label }}</strong>
-                @if (isModified(field)) {
-                  <span class="badge">ändrad</span>
-                }
-              </div>
-              <p class="hint">{{ field.description }}</p>
-              <textarea [(ngModel)]="field.value" rows="6" spellcheck="false" [attr.aria-label]="field.label"></textarea>
-              <div class="prompt-field-actions">
-                <button (click)="save(field)" [disabled]="savingKey === field.key">
-                  {{ savingKey === field.key ? 'Sparar...' : 'Spara' }}
-                </button>
-                <button class="secondary-btn" (click)="resetField(field)" [disabled]="!isModified(field)">
-                  Återställ till standard
-                </button>
-              </div>
+      <div class="prompt-list">
+        @for (field of fields; track field.key) {
+          <div class="prompt-field">
+            <div class="prompt-field-header">
+              <strong>{{ field.label }}</strong>
+              @if (isModified(field)) {
+                <span class="badge">ändrad</span>
+              }
             </div>
-          }
-        </div>
-      }
-    </div>
-  }
-</div>
+            <p class="hint">{{ field.description }}</p>
+            <textarea [(ngModel)]="field.value" rows="6" spellcheck="false" [attr.aria-label]="field.label"></textarea>
+            <div class="prompt-field-actions">
+              <button (click)="save(field)" [disabled]="savingKey === field.key">
+                {{ savingKey === field.key ? 'Sparar...' : 'Spara' }}
+              </button>
+              <button class="secondary-btn" (click)="resetField(field)" [disabled]="!isModified(field)">
+                Återställ till standard
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </section>
+}

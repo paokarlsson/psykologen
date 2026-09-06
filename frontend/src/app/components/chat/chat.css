@@ -1,19 +1,14 @@
 :host {
-  display: block;
-  height: 100%;
-  min-height: 0;
-}
-
-.chat-container {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.chat-header {
+header {
   padding: 1rem;
   background: #4a90e2;
   color: white;
@@ -21,7 +16,7 @@
   text-align: center;
 }
 
-.chat-header h2 {
+h2 {
   margin: 0;
   font-size: 1.2rem;
 }
@@ -172,7 +167,7 @@
   border-bottom-left-radius: 4px;
 }
 
-.chat-input {
+footer {
   padding: 1rem;
   border-top: 1px solid #e1e5e9;
   background: #f8f9fa;
@@ -191,7 +186,7 @@
   align-items: flex-end;
 }
 
-.input-container textarea {
+textarea {
   flex: 1;
   border: 1px solid #ddd;
   border-radius: 6px;
@@ -203,20 +198,20 @@
   max-height: 120px;
 }
 
-.input-container textarea:focus {
+textarea:focus {
   border-color: #2f6fc2;
 }
 
-.input-container textarea:focus:not(:focus-visible) {
+textarea:focus:not(:focus-visible) {
   outline: none;
 }
 
-.input-container textarea:focus-visible {
+textarea:focus-visible {
   outline: 3px solid #2f6fc2;
   outline-offset: 2px;
 }
 
-.input-container textarea:disabled {
+textarea:disabled {
   background: #f8f9fa;
   color: #666;
 }
@@ -246,7 +241,7 @@
     max-width: 88%;
   }
 
-  .chat-input {
+  footer {
     padding: 0.75rem;
   }
 

@@ -2,36 +2,27 @@
   <div class="app-loading">Laddar…</div>
 } @else if (auth.user()) {
   <a class="skip-link" href="#main-content">Hoppa till chatten</a>
-  <div class="app-container">
-    <header class="app-header">
-      <nav class="app-tools" aria-label="Verktyg">
-        <app-history class="app-history"></app-history>
-        <app-settings class="app-settings"></app-settings>
-      </nav>
-      <h1>Psykologen - Digitalt Terapisamtal</h1>
-      <p>Interaktiv session med Erik Lundström</p>
-      <p class="app-session">
-        Inloggad som {{ auth.user() }}
-        <button type="button" class="logout-button" (click)="logout()">Logga ut</button>
-      </p>
-    </header>
+  <header>
+    <nav aria-label="Verktyg">
+      <app-history></app-history>
+      <app-settings></app-settings>
+    </nav>
+    <h1>Psykologen - Digitalt Terapisamtal</h1>
+    <p>Interaktiv session med Erik Lundström</p>
+    <p class="app-session">
+      Inloggad som {{ auth.user() }}
+      <button type="button" (click)="logout()">Logga ut</button>
+    </p>
+  </header>
 
-    <main class="app-content" id="main-content">
-      <div class="chat-section">
-        <app-chat></app-chat>
-      </div>
+  <main id="main-content">
+    <app-chat></app-chat>
 
-      <div class="sidebar">
-        <div class="profile-section">
-          <app-profile></app-profile>
-        </div>
-
-        <div class="plan-section">
-          <app-plan></app-plan>
-        </div>
-      </div>
-    </main>
-  </div>
+    <aside>
+      <app-profile></app-profile>
+      <app-plan></app-plan>
+    </aside>
+  </main>
 } @else {
   <app-login></app-login>
 }
