@@ -11,10 +11,10 @@
       }
 
       @if (errorMessage) {
-        <div class="banner banner-error">⚠️ {{ errorMessage }}</div>
+        <div class="banner banner-error" role="alert">⚠️ {{ errorMessage }}</div>
       }
       @if (statusMessage) {
-        <div class="banner banner-status">✅ {{ statusMessage }}</div>
+        <div class="banner banner-status" role="status">✅ {{ statusMessage }}</div>
       }
 
       @if (!isLoading) {

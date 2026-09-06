@@ -11,7 +11,7 @@
       }
 
       @if (errorMessage) {
-        <div class="banner banner-error">⚠️ {{ errorMessage }}</div>
+        <div class="banner banner-error" role="alert">⚠️ {{ errorMessage }}</div>
       }
 
       @if (!isLoading && !errorMessage && entries.length === 0) {

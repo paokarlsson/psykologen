@@ -4,7 +4,7 @@
   </div>
 
   @if (backendError) {
-    <div class="backend-error">
+    <div class="backend-error" role="alert">
       <span>⚠️ {{ backendError }}</span>
       <button (click)="retryConnection()">Försök igen</button>
     </div>
