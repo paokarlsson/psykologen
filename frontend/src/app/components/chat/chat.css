@@ -237,8 +237,16 @@
 }
 
 .input-container textarea:focus {
+  border-color: #2f6fc2;
+}
+
+.input-container textarea:focus:not(:focus-visible) {
   outline: none;
-  border-color: #4a90e2;
+}
+
+.input-container textarea:focus-visible {
+  outline: 3px solid #2f6fc2;
+  outline-offset: 2px;
 }
 
 .input-container textarea:disabled {

@@ -49,8 +49,16 @@ input {
 }
 
 input:focus {
+  border-color: #7a2142;
+}
+
+input:focus:not(:focus-visible) {
   outline: none;
-  border-color: #e891a6;
+}
+
+input:focus-visible {
+  outline: 3px solid #7a2142;
+  outline-offset: 2px;
 }
 
 button {
