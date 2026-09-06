@@ -18,7 +18,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  background: #28a745;
+  background: #1e7a34;
   color: white;
   border-radius: 8px 8px 0 0;
 }
@@ -79,7 +79,7 @@
 
 .empty-profile .hint {
   font-size: 0.9rem;
-  color: #999;
+  color: #767676;
   margin-top: 0.5rem;
 }
 
@@ -124,7 +124,7 @@
 }
 
 .indicator-dot.active {
-  background: #28a745;
+  background: #1e7a34;
   animation: pulse 2s ease-in-out infinite;
 }
 

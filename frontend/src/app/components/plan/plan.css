@@ -18,7 +18,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  background: #fd7e14;
+  background: #b35a10;
   color: white;
   border-radius: 8px 8px 0 0;
 }
@@ -79,7 +79,7 @@
 
 .empty-plan .hint {
   font-size: 0.9rem;
-  color: #999;
+  color: #767676;
   margin-top: 0.5rem;
 }
 
@@ -124,7 +124,7 @@
 }
 
 .indicator-dot.active {
-  background: #fd7e14;
+  background: #b35a10;
   animation: pulse 2s ease-in-out infinite;
 }
 
