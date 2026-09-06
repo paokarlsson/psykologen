@@ -2,12 +2,17 @@
   <div class="profile-header">
     <h2>👤 Patient-Profil</h2>
     <div class="header-actions">
-      <button class="refresh-btn" (click)="refreshProfile()" [disabled]="isLoading()">
+      <button
+        class="refresh-btn"
+        (click)="refreshProfile()"
+        [disabled]="isLoading()"
+        [attr.aria-label]="isLoading() ? 'Uppdaterar profil…' : 'Uppdatera profil'"
+      >
         @if (!isLoading()) {
-          <span>🔄</span>
+          <span aria-hidden="true">🔄</span>
         }
         @if (isLoading()) {
-          <span>⏳</span>
+          <span aria-hidden="true">⏳</span>
         }
       </button>
       @if (lastUpdated()) {
