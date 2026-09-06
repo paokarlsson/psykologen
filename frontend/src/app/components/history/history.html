@@ -21,7 +21,7 @@
       (keydown.escape)="close()"
     >
       @if (isLoading) {
-        <p class="hint">Laddar...</p>
+        <app-loading-spinner label="Laddar historik…" />
       }
 
       @if (errorMessage) {

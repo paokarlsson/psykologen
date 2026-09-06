@@ -1,0 +1,13 @@
+<span
+  class="loading-spinner"
+  [class.loading-spinner--compact]="compact()"
+  [attr.role]="announce() ? 'status' : null"
+  [attr.aria-hidden]="announce() ? null : 'true'"
+>
+  <span class="loading-spinner-dot"></span>
+  <span class="loading-spinner-dot"></span>
+  <span class="loading-spinner-dot"></span>
+  @if (!compact()) {
+    <span class="loading-spinner-text">{{ label() }}</span>
+  }
+</span>

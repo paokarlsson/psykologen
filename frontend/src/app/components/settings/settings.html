@@ -21,7 +21,7 @@
       (keydown.escape)="close()"
     >
       @if (isLoading) {
-        <p class="hint">Laddar...</p>
+        <app-loading-spinner label="Laddar inställningar…" />
       }
 
       @if (errorMessage) {
@@ -64,9 +64,18 @@
         </div>
 
         <div class="section">
-          <button class="danger-btn" (click)="resetSession()">🔄 Starta om session (blankt)</button>
+          <button class="danger-btn" (click)="confirmResetDialog.showModal()">🔄 Starta om session (blankt)</button>
           <p class="hint">Rensar samtalshistorik, profil och plan. Rör inte dina promptar.</p>
         </div>
+
+        <dialog #confirmResetDialog class="confirm-dialog">
+          <h3>Starta om sessionen?</h3>
+          <p>Samtalshistorik, profil och plan raderas. Dina promptar påverkas inte.</p>
+          <div class="dialog-actions">
+            <button type="button" class="secondary-btn" (click)="confirmResetDialog.close()">Avbryt</button>
+            <button type="button" class="danger-btn" (click)="confirmResetDialog.close(); resetSession()">Starta om</button>
+          </div>
+        </dialog>
 
         <div class="prompt-list">
           @for (field of fields; track field.key) {

@@ -2,12 +2,13 @@ import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { map } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { pollingResource } from '../../shared/polling-resource';
+import { LoadingSpinner } from '../../shared/loading-spinner/loading-spinner';
 
 const EMPTY_PROFILE = 'Ingen profil skapad än.';
 
 @Component({
   selector: 'app-profile',
-  imports: [],
+  imports: [LoadingSpinner],
   templateUrl: './profile.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './profile.css'

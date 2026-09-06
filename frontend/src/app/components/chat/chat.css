@@ -148,7 +148,7 @@
 
 .message-time {
   font-size: 0.72rem;
-  color: #767676;
+  color: var(--color-muted-text);
   margin-top: 0.2rem;
 }
 
@@ -170,39 +170,6 @@
   background: #f1f3f5;
   color: #333;
   border-bottom-left-radius: 4px;
-}
-
-.typing-indicator {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-
-.typing-indicator span {
-  width: 8px;
-  height: 8px;
-  background: #666;
-  border-radius: 50%;
-  animation: typing 1.4s ease-in-out infinite both;
-}
-
-.typing-indicator span:nth-child(1) {
-  animation-delay: -0.32s;
-}
-
-.typing-indicator span:nth-child(2) {
-  animation-delay: -0.16s;
-}
-
-@keyframes typing {
-  0%, 80%, 100% {
-    opacity: 0.3;
-    transform: scale(0.8);
-  }
-  40% {
-    opacity: 1;
-    transform: scale(1);
-  }
 }
 
 .chat-input {
@@ -272,4 +239,23 @@
 .send-btn:disabled {
   background: #ccc;
   cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .message-content {
+    max-width: 88%;
+  }
+
+  .chat-input {
+    padding: 0.75rem;
+  }
+
+  .input-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .send-btn {
+    width: 100%;
+  }
 }

@@ -45,26 +45,22 @@
 }
 
 .history-panel:focus {
-  outline: 3px solid #7a2142;
+  outline: 3px solid var(--color-focus-ring);
   outline-offset: -3px;
+}
+
+@media (max-width: 480px) {
+  .history-panel {
+    width: min(340px, 92vw);
+    max-height: 65vh;
+    padding: 0.75rem;
+  }
 }
 
 .hint {
   font-size: 0.85rem;
   color: #777;
   margin: 0.3rem 0;
-}
-
-.banner {
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  margin-bottom: 0.75rem;
-}
-
-.banner-error {
-  background: #f8d7da;
-  color: #842029;
 }
 
 .timeline {
