@@ -84,6 +84,7 @@
             [(ngModel)]="currentMessage"
             (keydown)="onKeyPress($event)"
             placeholder="Skriv ditt meddelande här..."
+            aria-label="Meddelande till Erik"
             rows="3"
           [disabled]="isLoading || sessionComplete"></textarea>
           <button

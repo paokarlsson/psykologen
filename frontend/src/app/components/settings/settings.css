@@ -44,6 +44,11 @@
   text-align: left;
 }
 
+.settings-panel:focus {
+  outline: 3px solid #7a2142;
+  outline-offset: -3px;
+}
+
 .section {
   margin-bottom: 1rem;
   padding-bottom: 1rem;
