@@ -1,0 +1,48 @@
+:root {
+  --color-accent: #7a2142;
+  --color-accent-light: #b23a5c;
+  --color-focus-ring: #7a2142;
+  --color-muted-text: #767676;
+  --color-danger-bg: #f8d7da;
+  --color-danger-text: #842029;
+  --color-success-bg: #d1e7dd;
+  --color-success-text: #0f5132;
+}
+
+/* Delad av history/settings/login - se docs/gui-granskning.md, punkt 13 */
+.banner {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.banner-error {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+}
+
+.banner-status {
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+
+/* Delad av plan/profile - identisk uppdateringsknapp i båda widgetarna */
+.refresh-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

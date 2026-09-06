@@ -1,17 +1,31 @@
 <div class="history-widget">
-  <button class="history-toggle" (click)="toggleOpen()" [attr.aria-expanded]="isOpen">
+  <button
+    #toggleBtn
+    class="history-toggle"
+    (click)="toggleOpen()"
+    [attr.aria-expanded]="isOpen"
+    aria-controls="history-panel"
+  >
     <span>📜 Historik</span>
     <span class="chevron" [ngClass]="{ open: isOpen }">▾</span>
   </button>
 
   @if (isOpen) {
-    <div class="history-panel">
+    <div
+      #panel
+      class="history-panel"
+      id="history-panel"
+      role="region"
+      aria-label="Historik"
+      tabindex="-1"
+      (keydown.escape)="close()"
+    >
       @if (isLoading) {
-        <p class="hint">Laddar...</p>
+        <app-loading-spinner label="Laddar historik…" />
       }
 
       @if (errorMessage) {
-        <div class="banner banner-error">⚠️ {{ errorMessage }}</div>
+        <div class="banner banner-error" role="alert">⚠️ {{ errorMessage }}</div>
       }
 
       @if (!isLoading && !errorMessage && entries.length === 0) {

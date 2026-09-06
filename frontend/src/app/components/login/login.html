@@ -1,10 +1,10 @@
 <div class="login-page">
   <form class="login-card" (ngSubmit)="submit()">
-    <h1>🎤 Psykologen</h1>
+    <h1>Psykologen</h1>
     <p class="subtitle">Logga in för att fortsätta ditt samtal</p>
 
     @if (error()) {
-      <p class="error" role="alert">{{ error() }}</p>
+      <p class="banner banner-error" role="alert">{{ error() }}</p>
     }
 
     <label for="username">Användarnamn</label>

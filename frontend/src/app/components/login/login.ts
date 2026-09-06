@@ -47,7 +47,7 @@ export class Login {
       return body.error;
     }
     if (error.status === 0) {
-      return 'Ingen kontakt med servern. Är backend igång?';
+      return 'Kunde inte nå tjänsten just nu. Försök igen om en liten stund.';
     }
     return 'Inloggningen misslyckades.';
   }

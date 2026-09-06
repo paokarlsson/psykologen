@@ -3,10 +3,11 @@ import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService, Message, MessageResponse } from '../../services/api.service';
+import { LoadingSpinner } from '../../shared/loading-spinner/loading-spinner';
 
 @Component({
   selector: 'app-chat',
-  imports: [NgClass, FormsModule],
+  imports: [NgClass, FormsModule, LoadingSpinner],
   templateUrl: './chat.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './chat.css'

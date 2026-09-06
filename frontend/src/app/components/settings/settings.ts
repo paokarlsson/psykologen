@@ -1,8 +1,9 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ElementRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../services/api.service';
+import { LoadingSpinner } from '../../shared/loading-spinner/loading-spinner';
 
 interface PromptField {
   key: string;
@@ -47,12 +48,15 @@ const FIELD_META: { key: string; label: string; description: string }[] = [
 
 @Component({
   selector: 'app-settings',
-  imports: [FormsModule, NgClass],
+  imports: [FormsModule, NgClass, LoadingSpinner],
   templateUrl: './settings.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './settings.css'
 })
 export class Settings {
+  @ViewChild('toggleBtn') private toggleBtnRef?: ElementRef<HTMLButtonElement>;
+  @ViewChild('panel') private panelRef?: ElementRef<HTMLDivElement>;
+
   isOpen = false;
   isLoading = false;
   useCustomPrompts = false;
@@ -69,9 +73,17 @@ export class Settings {
 
   toggleOpen(): void {
     this.isOpen = !this.isOpen;
-    if (this.isOpen && this.fields.length === 0) {
-      this.loadSettings();
+    if (this.isOpen) {
+      if (this.fields.length === 0) {
+        this.loadSettings();
+      }
+      setTimeout(() => this.panelRef?.nativeElement.focus());
     }
+  }
+
+  close(): void {
+    this.isOpen = false;
+    this.toggleBtnRef?.nativeElement.focus();
   }
 
   loadSettings(): void {
@@ -174,9 +186,6 @@ export class Settings {
   }
 
   resetSession(): void {
-    if (!confirm('Starta om sessionen helt blankt? Samtalshistorik, profil och plan raderas. Dina promptar påverkas inte.')) {
-      return;
-    }
     this.apiService.resetSession().subscribe({
       next: () => window.location.reload(),
       error: () => {

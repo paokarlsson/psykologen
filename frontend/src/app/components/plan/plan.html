@@ -2,12 +2,17 @@
   <div class="plan-header">
     <h2>📋 Sessions-Plan</h2>
     <div class="header-actions">
-      <button class="refresh-btn" (click)="refreshPlan()" [disabled]="isLoading()">
+      <button
+        class="refresh-btn"
+        (click)="refreshPlan()"
+        [disabled]="isLoading()"
+        [attr.aria-label]="isLoading() ? 'Uppdaterar plan…' : 'Uppdatera plan'"
+      >
         @if (!isLoading()) {
-          <span>🔄</span>
+          <span aria-hidden="true">🔄</span>
         }
         @if (isLoading()) {
-          <span>⏳</span>
+          <app-loading-spinner [compact]="true" [announce]="false" />
         }
       </button>
       @if (lastUpdated()) {
@@ -21,7 +26,7 @@
   <div class="plan-content">
     @if (isLoading() && !lastUpdated()) {
       <div class="loading">
-        <p>Laddar plan...</p>
+        <app-loading-spinner label="Laddar plan…" />
       </div>
     }
 

@@ -1,20 +1,34 @@
 <div class="settings-widget">
-  <button class="settings-toggle" (click)="toggleOpen()" [attr.aria-expanded]="isOpen">
+  <button
+    #toggleBtn
+    class="settings-toggle"
+    (click)="toggleOpen()"
+    [attr.aria-expanded]="isOpen"
+    aria-controls="settings-panel"
+  >
     <span>⚙️ Inställningar</span>
     <span class="chevron" [ngClass]="{ open: isOpen }">▾</span>
   </button>
 
   @if (isOpen) {
-    <div class="settings-panel">
+    <div
+      #panel
+      class="settings-panel"
+      id="settings-panel"
+      role="region"
+      aria-label="Inställningar"
+      tabindex="-1"
+      (keydown.escape)="close()"
+    >
       @if (isLoading) {
-        <p class="hint">Laddar...</p>
+        <app-loading-spinner label="Laddar inställningar…" />
       }
 
       @if (errorMessage) {
-        <div class="banner banner-error">⚠️ {{ errorMessage }}</div>
+        <div class="banner banner-error" role="alert">⚠️ {{ errorMessage }}</div>
       }
       @if (statusMessage) {
-        <div class="banner banner-status">✅ {{ statusMessage }}</div>
+        <div class="banner banner-status" role="status">✅ {{ statusMessage }}</div>
       }
 
       @if (!isLoading) {
@@ -30,10 +44,11 @@
         </div>
 
         <div class="section">
-          <label class="duration-label">Sessionslängd (minuter)</label>
+          <label class="duration-label" for="session-duration">Sessionslängd (minuter)</label>
           <div class="duration-row">
             <input
               type="number"
+              id="session-duration"
               class="duration-input"
               min="1"
               step="5"
@@ -49,9 +64,18 @@
         </div>
 
         <div class="section">
-          <button class="danger-btn" (click)="resetSession()">🔄 Starta om session (blankt)</button>
+          <button class="danger-btn" (click)="confirmResetDialog.showModal()">🔄 Starta om session (blankt)</button>
           <p class="hint">Rensar samtalshistorik, profil och plan. Rör inte dina promptar.</p>
         </div>
+
+        <dialog #confirmResetDialog class="confirm-dialog">
+          <h3>Starta om sessionen?</h3>
+          <p>Samtalshistorik, profil och plan raderas. Dina promptar påverkas inte.</p>
+          <div class="dialog-actions">
+            <button type="button" class="secondary-btn" (click)="confirmResetDialog.close()">Avbryt</button>
+            <button type="button" class="danger-btn" (click)="confirmResetDialog.close(); resetSession()">Starta om</button>
+          </div>
+        </dialog>
 
         <div class="prompt-list">
           @for (field of fields; track field.key) {
@@ -63,7 +87,7 @@
                 }
               </div>
               <p class="hint">{{ field.description }}</p>
-              <textarea [(ngModel)]="field.value" rows="6" spellcheck="false"></textarea>
+              <textarea [(ngModel)]="field.value" rows="6" spellcheck="false" [attr.aria-label]="field.label"></textarea>
               <div class="prompt-field-actions">
                 <button (click)="save(field)" [disabled]="savingKey === field.key">
                   {{ savingKey === field.key ? 'Sparar...' : 'Spara' }}

@@ -1,16 +1,20 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ElementRef, ViewChild } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService, HistoryEntryDto } from '../../services/api.service';
+import { LoadingSpinner } from '../../shared/loading-spinner/loading-spinner';
 
 @Component({
   selector: 'app-history',
-  imports: [NgClass],
+  imports: [NgClass, LoadingSpinner],
   templateUrl: './history.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './history.css'
 })
 export class History {
+  @ViewChild('toggleBtn') private toggleBtnRef?: ElementRef<HTMLButtonElement>;
+  @ViewChild('panel') private panelRef?: ElementRef<HTMLDivElement>;
+
   isOpen = false;
   isLoading = false;
   errorMessage: string | null = null;
@@ -22,7 +26,13 @@ export class History {
     this.isOpen = !this.isOpen;
     if (this.isOpen) {
       this.load();
+      setTimeout(() => this.panelRef?.nativeElement.focus());
     }
+  }
+
+  close(): void {
+    this.isOpen = false;
+    this.toggleBtnRef?.nativeElement.focus();
   }
 
   load(): void {

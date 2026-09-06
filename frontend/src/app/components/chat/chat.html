@@ -4,7 +4,7 @@
   </div>
 
   @if (backendError) {
-    <div class="backend-error">
+    <div class="backend-error" role="alert">
       <span>⚠️ {{ backendError }}</span>
       <button (click)="retryConnection()">Försök igen</button>
     </div>
@@ -59,11 +59,7 @@
             <span class="message-role">Erik</span>
           </div>
           <div class="message-content">
-            <div class="typing-indicator">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
+            <app-loading-spinner [compact]="true" [announce]="false" />
           </div>
         </div>
       </div>
@@ -84,6 +80,7 @@
             [(ngModel)]="currentMessage"
             (keydown)="onKeyPress($event)"
             placeholder="Skriv ditt meddelande här..."
+            aria-label="Meddelande till Erik"
             rows="3"
           [disabled]="isLoading || sessionComplete"></textarea>
           <button

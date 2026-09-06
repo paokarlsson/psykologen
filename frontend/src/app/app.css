@@ -1,3 +1,23 @@
+.skip-link {
+  position: absolute;
+  top: -3rem;
+  left: 1rem;
+  z-index: 100;
+  background: #1c1c1c;
+  color: white;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: top 0.15s ease;
+}
+
+.skip-link:focus {
+  top: 1rem;
+  outline: 3px solid white;
+  outline-offset: 2px;
+}
+
 .app-container {
   display: flex;
   flex-direction: column;
@@ -8,7 +28,7 @@
 
 .app-header {
   position: relative;
-  background: linear-gradient(135deg, #f8b4c4 0%, #e891a6 100%);
+  background: linear-gradient(135deg, var(--color-accent-light) 0%, var(--color-accent) 100%);
   color: white;
   text-align: center;
   padding: 2rem;
