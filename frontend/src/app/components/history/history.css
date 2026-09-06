@@ -1,9 +1,12 @@
-.history-widget {
+/* app.css sätter position: absolute på värdelementet; relative gäller när
+   komponenten står för sig själv. Båda ger panelen ett containing block. */
+:host {
+  display: block;
   position: relative;
   z-index: 20;
 }
 
-.history-toggle {
+:host > button {
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -16,7 +19,7 @@
   font-size: 0.95rem;
 }
 
-.history-toggle:hover {
+:host > button:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 
@@ -29,7 +32,7 @@
   transform: rotate(180deg);
 }
 
-.history-panel {
+section {
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
@@ -44,13 +47,13 @@
   text-align: left;
 }
 
-.history-panel:focus {
+section:focus {
   outline: 3px solid var(--color-focus-ring);
   outline-offset: -3px;
 }
 
 @media (max-width: 480px) {
-  .history-panel {
+  section {
     width: min(340px, 92vw);
     max-height: 65vh;
     padding: 0.75rem;

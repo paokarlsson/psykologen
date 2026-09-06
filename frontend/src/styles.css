@@ -9,6 +9,12 @@
   --color-success-text: #0f5132;
 }
 
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f5f6fa;
+}
+
 /* Delad av history/settings/login - se docs/gui-granskning.md, punkt 13 */
 .banner {
   padding: 0.5rem 0.75rem;

@@ -1,53 +1,51 @@
-<div class="profile-container">
-  <div class="profile-header">
-    <h2>👤 Patient-Profil</h2>
-    <div class="header-actions">
-      <button
-        class="refresh-btn"
-        (click)="refreshProfile()"
-        [disabled]="isLoading()"
-        [attr.aria-label]="isLoading() ? 'Uppdaterar profil…' : 'Uppdatera profil'"
-      >
-        @if (!isLoading()) {
-          <span aria-hidden="true">🔄</span>
-        }
-        @if (isLoading()) {
-          <app-loading-spinner [compact]="true" [announce]="false" />
-        }
-      </button>
-      @if (lastUpdated()) {
-        <span class="last-updated">
-          Uppdaterad: {{ formatTimestamp() }}
-        </span>
+<header>
+  <h2>👤 Patient-Profil</h2>
+  <div class="header-actions">
+    <button
+      class="refresh-btn"
+      (click)="refreshProfile()"
+      [disabled]="isLoading()"
+      [attr.aria-label]="isLoading() ? 'Uppdaterar profil…' : 'Uppdatera profil'"
+    >
+      @if (!isLoading()) {
+        <span aria-hidden="true">🔄</span>
       }
+      @if (isLoading()) {
+        <app-loading-spinner [compact]="true" [announce]="false" />
+      }
+    </button>
+    @if (lastUpdated()) {
+      <span class="last-updated">
+        Uppdaterad: {{ formatTimestamp() }}
+      </span>
+    }
+  </div>
+</header>
+
+<div class="profile-content">
+  @if (isLoading() && !lastUpdated()) {
+    <div class="loading">
+      <app-loading-spinner label="Laddar profil…" />
     </div>
-  </div>
+  }
 
-  <div class="profile-content">
-    @if (isLoading() && !lastUpdated()) {
-      <div class="loading">
-        <app-loading-spinner label="Laddar profil…" />
-      </div>
-    }
-
-    @if (isProfileEmpty() && !isLoading()) {
-      <div class="empty-profile">
-        <p>Ingen patient-profil har skapats än.</p>
-        <p class="hint">Profilen uppdateras automatiskt när samtalet pågår.</p>
-      </div>
-    }
-
-    @if (!isProfileEmpty()) {
-      <div class="profile-text">
-        <pre>{{ profile() }}</pre>
-      </div>
-    }
-  </div>
-
-  <div class="profile-footer">
-    <div class="auto-update-indicator">
-      <span class="indicator-dot" [class.active]="!isLoading()"></span>
-      <span class="indicator-text">Uppdateras automatiskt var 5:e sekund</span>
+  @if (isProfileEmpty() && !isLoading()) {
+    <div class="empty-profile">
+      <p>Ingen patient-profil har skapats än.</p>
+      <p class="hint">Profilen uppdateras automatiskt när samtalet pågår.</p>
     </div>
-  </div>
+  }
+
+  @if (!isProfileEmpty()) {
+    <div class="profile-text">
+      <pre>{{ profile() }}</pre>
+    </div>
+  }
 </div>
+
+<footer>
+  <div class="auto-update-indicator">
+    <span class="indicator-dot" [class.active]="!isLoading()"></span>
+    <span class="indicator-text">Uppdateras automatiskt var 5:e sekund</span>
+  </div>
+</footer>

@@ -1,9 +1,12 @@
-.settings-widget {
+/* app.css sätter position: absolute på värdelementet; relative gäller när
+   komponenten står för sig själv. Båda ger panelen ett containing block. */
+:host {
+  display: block;
   position: relative;
   z-index: 20;
 }
 
-.settings-toggle {
+:host > button {
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -16,7 +19,7 @@
   font-size: 0.95rem;
 }
 
-.settings-toggle:hover {
+:host > button:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 
@@ -29,7 +32,7 @@
   transform: rotate(180deg);
 }
 
-.settings-panel {
+:host > section {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
@@ -44,13 +47,13 @@
   text-align: left;
 }
 
-.settings-panel:focus {
+:host > section:focus {
   outline: 3px solid var(--color-focus-ring);
   outline-offset: -3px;
 }
 
 @media (max-width: 480px) {
-  .settings-panel {
+  :host > section {
     width: min(340px, 92vw);
     max-height: 65vh;
     padding: 0.75rem;
@@ -139,7 +142,7 @@
   background: #c82333;
 }
 
-.confirm-dialog {
+dialog {
   border: none;
   border-radius: 10px;
   padding: 1.5rem;
@@ -148,15 +151,15 @@
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
 }
 
-.confirm-dialog::backdrop {
+dialog::backdrop {
   background: rgba(0, 0, 0, 0.45);
 }
 
-.confirm-dialog h3 {
+dialog h3 {
   margin: 0 0 0.5rem;
 }
 
-.confirm-dialog p {
+dialog p {
   margin: 0 0 1.25rem;
 }
 
@@ -188,7 +191,7 @@
   border-radius: 10px;
 }
 
-.prompt-field textarea {
+textarea {
   width: 100%;
   box-sizing: border-box;
   margin-top: 0.4rem;

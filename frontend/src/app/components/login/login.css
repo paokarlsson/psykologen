@@ -1,14 +1,12 @@
-.login-page {
+:host {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: #f5f6fa;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   padding: 1.5rem;
 }
 
-.login-card {
+form {
   display: flex;
   flex-direction: column;
   width: min(380px, 100%);

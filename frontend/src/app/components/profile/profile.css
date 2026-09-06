@@ -1,19 +1,14 @@
 :host {
-  display: block;
-  height: 100%;
-  min-height: 0;
-}
-
-.profile-container {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.profile-header {
+header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -23,7 +18,7 @@
   border-radius: 8px 8px 0 0;
 }
 
-.profile-header h2 {
+h2 {
   margin: 0;
   font-size: 1.2rem;
 }
@@ -71,7 +66,7 @@
   border: 1px solid #e9ecef;
 }
 
-.profile-text pre {
+pre {
   margin: 0;
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -81,7 +76,7 @@
   color: #333;
 }
 
-.profile-footer {
+footer {
   padding: 0.75rem 1rem;
   background: #f8f9fa;
   border-top: 1px solid #e9ecef;
