@@ -2,27 +2,62 @@
   <div class="app-loading">Laddar…</div>
 } @else if (auth.user()) {
   <a class="skip-link" href="#main-content">Hoppa till chatten</a>
+
   <header>
+    <h1>
+      <span aria-hidden="true">🧠</span>
+      <span class="label">Psykologen</span>
+    </h1>
+
     <nav aria-label="Verktyg">
       <app-history></app-history>
       <app-settings></app-settings>
     </nav>
-    <h1>Psykologen - Digitalt Terapisamtal</h1>
-    <p>Interaktiv session med Erik Lundström</p>
-    <p class="app-session">
-      Inloggad som {{ auth.user() }}
-      <button type="button" (click)="logout()">Logga ut</button>
+
+    <p>
+      <span class="label">{{ auth.user() }}</span>
+      <button type="button" (click)="logout()" aria-label="Logga ut">
+        <span aria-hidden="true">⏻</span>
+        <span class="label">Logga ut</span>
+      </button>
     </p>
   </header>
 
-  <main id="main-content">
+  <main id="main-content" [attr.data-view]="view()">
     <app-chat></app-chat>
 
-    <aside>
+    <aside aria-label="Sessionsunderlag">
       <app-profile></app-profile>
       <app-plan></app-plan>
     </aside>
   </main>
+
+  <nav aria-label="Vyer">
+    <button
+      type="button"
+      (click)="setView('chat')"
+      [attr.aria-current]="view() === 'chat' ? 'true' : null"
+    >
+      <span aria-hidden="true">💬</span>
+      <span>Samtal</span>
+    </button>
+    <button
+      type="button"
+      (click)="setView('profile')"
+      [attr.aria-current]="view() === 'profile' ? 'true' : null"
+    >
+      <span aria-hidden="true">👤</span>
+      <span>Profil</span>
+    </button>
+    <button
+      type="button"
+      (click)="setView('plan')"
+      [attr.aria-current]="view() === 'plan' ? 'true' : null"
+    >
+      <span aria-hidden="true">📋</span>
+      <span>Plan</span>
+    </button>
+  </nav>
 } @else {
   <app-login></app-login>
 }
