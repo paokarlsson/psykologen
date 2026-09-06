@@ -9,6 +9,8 @@ En genomgång av gränssnittet i `frontend/` med fokus på användarvänlighet, 
 
 **Fynd per allvarlighetsgrad:** 6 kritiska · 4 höga · 4 medel · 2 låga
 
+> **Status: avslutad.** Samtliga 16 fynd är åtgärdade och committade på grenen `docs/gui-granskning` (`930fe7d`…`be0aacb`). Se commit-referensen per rad i den prioriterade åtgärdslistan längst ner.
+
 En interaktiv version av rapporten (med kontrastprover och sorterbar tabell) finns publicerad här: https://claude.ai/code/artifact/1899817e-54dc-4adf-9e71-6efa9971a803
 
 ---
@@ -139,24 +141,24 @@ Dessa punkter är inte tillgänglighetsbrister i sig, men de är orsaken till at
 
 ## Prioriterad åtgärdslista
 
-| Nivå | Fynd | Fil | Rekommendation | Ref. |
-|---|---|---|---|---|
-| 🔴 Kritisk | Fel sidspråk (`lang="en"` på svenskt innehåll) | `index.html` | Byt till `lang="sv"` | 3.1.1 |
-| 🔴 Kritisk | Ingen skip-länk eller semantiska landmärken | `app.html` | Lägg till skip-länk + `header`/`main`/`nav` | 2.4.1 |
-| 🔴 Kritisk | Otillräcklig kontrast i headers/text | `app.css`, `plan.css`, `chat.css` | Mörkna basfärger tills 4,5:1/3:1 nås | 1.4.3 |
-| 🔴 Kritisk | Fokusindikator borttagen utan ersättning | `login.css`, `chat.css` | Synlig `:focus-visible`, ≥3:1 | 2.4.11 |
-| 🔴 Kritisk | Ikonknappar utan tillgängligt namn | `plan.html`, `profile.html` | Lägg till `aria-label` | 4.1.2 |
-| 🔴 Kritisk | Inga aria-live-regioner för fel/statusar | `chat.html`, `settings.html`, `history.html` | `role="alert"` / `aria-live="polite"` | 4.1.3 |
-| 🟠 Hög | Formulärfält utan kopplad etikett | `settings.html`, `chat.html` | `for`/`id`, `aria-label` | 1.3.1 |
-| 🟠 Hög | Panel-knappar saknar `aria-controls`/region-roll | `history.html`, `settings.html` | Koppla knapp↔panel, `role="region"` | 4.1.2 |
-| 🟠 Hög | Ingen fokushantering / Escape på flytande paneler | `history.ts`, `settings.ts` | Fokusflytt in/ut, Escape stänger | Best practice |
-| 🟠 Hög | Diskret text/inputkant under kontrastkrav | flera `.css` | Mörkare gråton, ≥3:1 kantfärg | 1.4.11 |
-| 🟡 Medel | Native `confirm()` för destruktiv åtgärd | `settings.ts` | Egen tillgänglig bekräftelsedialog | Best practice |
-| 🟡 Medel | Tre inkonsekventa laddningsmönster | chat/profile/plan/history | Gemensam laddningskomponent | UX |
-| 🟡 Medel | Dupplicerad banner-/knapp-CSS | `settings.css`, `history.css`, `plan.css`, `profile.css` | Dela via `styles.css` + tokens | Kodkvalitet |
-| 🟡 Medel | Mobilanpassning finns bara i en fil | `chat.css`, `login.css`, `settings.css`, `history.css` | Egna brytpunkter per komponent | UX |
-| 🟢 Låg | Utvecklarorienterad felkopia | `login.ts` | Skriv om till användarspråk | UX-text |
-| 🟢 Låg | Kvarlämnad CLI-titel, ingen meta description | `index.html` | Beskrivande `<title>`/meta | Best practice |
+| Status | Nivå | Fynd | Fil | Rekommendation | Ref. | Commit |
+|---|---|---|---|---|---|---|
+| ✅ | 🔴 Kritisk | Fel sidspråk (`lang="en"` på svenskt innehåll) | `index.html` | Byt till `lang="sv"` | 3.1.1 | `930fe7d` |
+| ✅ | 🔴 Kritisk | Ingen skip-länk eller semantiska landmärken | `app.html` | Lägg till skip-länk + `header`/`main`/`nav` | 2.4.1 | `ed9d36f` |
+| ✅ | 🔴 Kritisk | Otillräcklig kontrast i headers/text | `app.css`, `plan.css`, `chat.css` | Mörkna basfärger tills 4,5:1/3:1 nås | 1.4.3 | `2f5eacd` |
+| ✅ | 🔴 Kritisk | Fokusindikator borttagen utan ersättning | `login.css`, `chat.css` | Synlig `:focus-visible`, ≥3:1 | 2.4.11 | `e6235e4` |
+| ✅ | 🔴 Kritisk | Ikonknappar utan tillgängligt namn | `plan.html`, `profile.html` | Lägg till `aria-label` | 4.1.2 | `476430b` |
+| ✅ | 🔴 Kritisk | Inga aria-live-regioner för fel/statusar | `chat.html`, `settings.html`, `history.html` | `role="alert"` / `aria-live="polite"` | 4.1.3 | `e2feba8` |
+| ✅ | 🟠 Hög | Formulärfält utan kopplad etikett | `settings.html`, `chat.html` | `for`/`id`, `aria-label` | 1.3.1 | `1085120` |
+| ✅ | 🟠 Hög | Panel-knappar saknar `aria-controls`/region-roll | `history.html`, `settings.html` | Koppla knapp↔panel, `role="region"` | 4.1.2 | `1085120` |
+| ✅ | 🟠 Hög | Ingen fokushantering / Escape på flytande paneler | `history.ts`, `settings.ts` | Fokusflytt in/ut, Escape stänger | Best practice | `1085120` |
+| ✅ | 🟠 Hög | Diskret text/inputkant under kontrastkrav | flera `.css` | Mörkare gråton, ≥3:1 kantfärg | 1.4.11 | `2f5eacd` |
+| ✅ | 🟡 Medel | Native `confirm()` för destruktiv åtgärd | `settings.ts` | Egen tillgänglig bekräftelsedialog | Best practice | `4d1a7e5` |
+| ✅ | 🟡 Medel | Tre inkonsekventa laddningsmönster | chat/profile/plan/history | Gemensam laddningskomponent | UX | `4d1a7e5` |
+| ✅ | 🟡 Medel | Dupplicerad banner-/knapp-CSS | `settings.css`, `history.css`, `plan.css`, `profile.css` | Dela via `styles.css` + tokens | Kodkvalitet | `4d1a7e5` |
+| ✅ | 🟡 Medel | Mobilanpassning finns bara i en fil | `chat.css`, `login.css`, `settings.css`, `history.css` | Egna brytpunkter per komponent | UX | `4d1a7e5` |
+| ✅ | 🟢 Låg | Utvecklarorienterad felkopia | `login.ts` | Skriv om till användarspråk | UX-text | `be0aacb` |
+| ✅ | 🟢 Låg | Kvarlämnad CLI-titel, ingen meta description | `index.html` | Beskrivande `<title>`/meta | Best practice | `be0aacb` |
 
 ## Källor & granskade filer
 
