@@ -75,19 +75,24 @@ select {
   color: var(--color-success-text);
 }
 
-/* Delad av plan/profile - identisk uppdateringsknapp i båda widgetarna */
+/* Delad av plan/profile - identisk uppdateringsknapp i båda widgetarna.
+   Kortrubrikerna är ljusa sedan de tappade sin fyllda färgplatta. */
 .refresh-btn {
-  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--tap-min);
+  background: var(--color-border);
   border: none;
-  color: white;
-  padding: 8px 12px;
-  border-radius: 4px;
+  color: var(--color-text);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 1rem;
 }
 
 .refresh-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.3);
+  background: #dde1e4;
 }
 
 .refresh-btn:disabled {
