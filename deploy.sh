@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 #
-# Deployar Psykologen på servern. Körs från repo-roten:
-#   ./deploy.sh
-#
-# Går att köra om hur många gånger som helst - den bygger om, startar om och
-# lämnar användardata och certifikat orörda.
+# Deployar Psykologen på servern. Körs från repo-roten och går att köra om:
+# användardata och certifikat rörs inte.
 
 set -euo pipefail
 
@@ -17,7 +14,6 @@ fail() {
 	exit 1
 }
 
-# Läser ett värde ur en env-fil utan att köra den som skalkod.
 env_value() {
 	sed -n "s/^$2=//p" "$1" | tail -1
 }
@@ -35,17 +31,15 @@ for key in APP_AUTH_USERS_0_USERNAME APP_AUTH_USERS_0_PASSWORDHASH; do
 	[[ -n "$(env_value backend/.env "$key")" ]] || fail "$key är tomt i backend/.env."
 done
 
+# En hash som tappat sina $ eller står inom citattecken ger bara "fel lösenord"
+# vid inloggning, utan att något annat klagar.
 hash=$(env_value backend/.env APP_AUTH_USERS_0_PASSWORDHASH)
 case "$hash" in
-	# Citattecken strippas inte av dotenv-läsaren, och en hash som tappat sina
-	# $ ger bara "fel lösenord" vid inloggning utan att något annat klagar.
 	\'*|\"*) fail "Hashen i backend/.env står inom citattecken. Ta bort dem." ;;
 	'{bcrypt}$2'*'$'*'$'*) ;;
 	*) fail "APP_AUTH_USERS_0_PASSWORDHASH ser inte ut som en hel BCrypt-hash ({bcrypt}\$2a\$10\$...)." ;;
 esac
 
-# Sätts av compose.prod.yaml. Står de även i backend/.env vinner de, och då
-# skickas sessionscookien i klartext respektive skrivs data utanför volymen.
 for key in COOKIE_SECURE APP_STORAGE_BASE_DIR; do
 	grep -q "^$key=" backend/.env && fail "$key hör inte hemma i backend/.env - compose.prod.yaml sätter den. Ta bort raden."
 done
@@ -71,11 +65,10 @@ if [[ "${status:-}" != "healthy" ]]; then
 	exit 1
 fi
 
-# Caddy startar bara när backend är frisk, så den kan behöva en knuff om
-# backend var långsam.
+# Caddy startar bara när backend är frisk och kan behöva en knuff om det tog tid.
 "${COMPOSE[@]}" up -d caddy
 
-echo "==> Städar bort images som ingen container använder längre"
+echo "==> Städar bort oanvända images"
 docker image prune -f >/dev/null
 
 echo "==> Status"

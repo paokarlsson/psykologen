@@ -33,7 +33,7 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
-        <!-- Enbart för /actuator/health, som Dockers healthcheck läser. -->
+        <!-- Enbart för /actuator/health. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>

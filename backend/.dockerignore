@@ -1,11 +1,8 @@
 target/
 
-# Hemligheter och användardata ska aldrig hamna i en image.
 .env
 .env.example
 data/
-
-# Kvarlämnade filer från tiden före inloggningen.
 profile.md
 plan.md
 prompts.json

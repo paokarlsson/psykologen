@@ -1,5 +1,4 @@
-# Serverar den byggda Angular-appen inuti frontend-containern. TLS och port 80/443
-# sköts av proxy-Caddyn i repo-roten; den här lyssnar bara internt.
+# Serverar den byggda Angular-appen internt. TLS sköts av proxyn i repo-roten.
 {
 	auto_https off
 	admin off
@@ -9,7 +8,7 @@
 	root * /srv
 	encode gzip
 
-	# SPA-routing: /chatt finns inte som fil, men Angular-routern kan hantera den.
+	# SPA-routing: /chatt finns inte som fil, men Angular-routern klarar den.
 	try_files {path} /index.html
 	file_server
 }

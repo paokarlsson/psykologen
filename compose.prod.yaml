@@ -1,7 +1,7 @@
-# Produktion. Fristående fil - kör med:
+# Produktion:
 #   docker compose -f compose.prod.yaml up -d --build
 #
-# Medvetet inte en override ovanpå compose.yaml: Compose slår ihop ports och
+# Fristående, inte en override ovanpå compose.yaml: Compose slår ihop ports och
 # volumes i stället för att ersätta dem, så dev-filens "8080:8080" och
 # bind-mountade källkod hade följt med hit.
 
@@ -12,16 +12,15 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "443:443/udp" # HTTP/3
+      - "443:443/udp"
     environment:
-      # Caddy läser {$DOMAIN} och {$ACME_EMAIL} själv i runtime, så det räcker
-      # inte att Compose kan se dem - de måste in i containerns miljö.
+      # Caddy läser variablerna själv i runtime; compose-substitution räcker inte.
       DOMAIN: ${DOMAIN:?DOMAIN saknas i .env}
       ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL saknas i .env}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      # Certifikaten måste överleva rebuilds. Utan named volume hämtas nya vid
-      # varje deploy, och Let's Encrypt släcker ner efter fem försök i veckan.
+      # Utan volym hämtas nya certifikat vid varje deploy - fem per vecka, sen
+      # nekar Let's Encrypt.
       - caddy-data:/data
       - caddy-config:/config
     depends_on:
@@ -33,20 +32,16 @@ services:
   backend:
     build: ./backend
     restart: unless-stopped
-    # Inga ports: backend nås bara av caddy över det interna nätverket.
+    # Inga ports: nås bara av caddy över det interna nätverket.
     expose:
       - "8080"
     environment:
       COOKIE_SECURE: "true"
       APP_STORAGE_BASE_DIR: /data/users
     volumes:
-      # Samma fil som dev använder, monterad dit appen letar efter den.
-      # Poängen med att montera i stället för att skicka in variabler via
-      # environment: Compose får aldrig se innehållet och kan därmed inte
-      # tolka $-tecknen i BCrypt-hasharna. Hashen klistras in rå.
+      # Monteras som fil, inte som environment: då ser Compose aldrig innehållet
+      # och kan inte kapa $-tecknen i BCrypt-hasharna.
       - ./backend/.env:/app/.env:ro
-      # Profiler, planer, historik och promptar. Utan volymen försvinner allt
-      # vid nästa rebuild.
       - psykologen-data:/data/users
 
   frontend:
