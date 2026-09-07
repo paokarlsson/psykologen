@@ -74,6 +74,9 @@ public class SecurityConfig {
                 .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/api/auth/login", "/api/auth/logout").permitAll()
+                        // Dockers healthcheck har ingen session. Proxyn skickar bara
+                        // /api/* hit, så vägen syns aldrig utifrån.
+                        .requestMatchers("/actuator/health").permitAll()
                         .anyRequest().authenticated())
                 // Session fixation hanteras i AuthController: sessionFixation() gäller
                 // Spring Securitys egna inloggningsfilter, som är avstängda nedan.

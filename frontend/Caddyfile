@@ -1,0 +1,14 @@
+# Serverar den byggda Angular-appen internt. TLS sköts av proxyn i repo-roten.
+{
+	auto_https off
+	admin off
+}
+
+:8080 {
+	root * /srv
+	encode gzip
+
+	# SPA-routing: /chatt finns inte som fil, men Angular-routern klarar den.
+	try_files {path} /index.html
+	file_server
+}

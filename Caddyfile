@@ -1,0 +1,16 @@
+# DOMAIN och ACME_EMAIL läses ur containerns miljö i runtime, se compose.prod.yaml.
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode gzip
+
+	handle /api/* {
+		reverse_proxy backend:8080
+	}
+
+	handle {
+		reverse_proxy frontend:8080
+	}
+}

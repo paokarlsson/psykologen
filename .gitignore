@@ -14,3 +14,7 @@ backend/prompts.json
 backend/history.json
 
 .env
+
+backend/.classpath
+backend/.project
+backend/.settings/
