@@ -1,0 +1,21 @@
+target/
+
+# Hemligheter och användardata ska aldrig hamna i en image.
+.env
+.env.example
+data/
+
+# Kvarlämnade filer från tiden före inloggningen.
+profile.md
+plan.md
+prompts.json
+history.json
+
+.git/
+.gitignore
+.classpath
+.project
+.settings/
+Dockerfile
+.dockerignore
+README.md

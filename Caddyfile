@@ -1,0 +1,20 @@
+# Proxyn: äger 80 och 443, sköter TLS automatiskt via Let's Encrypt.
+# DOMAIN och ACME_EMAIL läses ur miljön i runtime - de skickas in i containern
+# från .env via compose.prod.yaml.
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode gzip
+
+	# Backend nås bara härifrån; containern publicerar ingen port mot hosten.
+	# /actuator ligger utanför /api och är därför oåtkomlig utifrån.
+	handle /api/* {
+		reverse_proxy backend:8080
+	}
+
+	handle {
+		reverse_proxy frontend:8080
+	}
+}

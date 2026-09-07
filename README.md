@@ -60,8 +60,7 @@ Du behöver Java 25, Node.js 24 LTS, npm 12, Maven och en API-nyckel
 **1. Starta backend**
 ```bash
 cd backend
-echo "ANTHROPIC_API_KEY=din_nyckel_här" > .env
-# lägg även in minst ett konto enligt "Inloggning" ovan
+cp .env.example .env   # fyll i API-nyckel och minst ett konto, se "Inloggning" ovan
 mvn spring-boot:run
 ```
 `.env` måste ligga i `backend/` — spring-dotenv letar i processens
@@ -101,22 +100,28 @@ backend/    Spring Boot API
 frontend/   Angular-app
 ```
 
-## Om appen ska ut på internet
+## Ute på internet
 
-Den nuvarande uppsättningen är byggd för att köras lokalt. Innan den
-exponeras utåt behövs åtminstone:
+Appen går att köra skarpt bakom Caddy på en enkel server. Se **[DEPLOY.md](DEPLOY.md)**
+för hela gången: DNS, brandvägg, konfiguration och deploy.
 
-- **HTTPS.** Utan TLS går lösenord och sessionscookie i klartext över
-  nätet, och då är inloggningen ingen inloggning. Terminera TLS i en
-  reverse proxy (Caddy, nginx, Traefik) framför backend.
-- **`COOKIE_SECURE=true`** i miljön, så sessionscookien bara skickas över
-  HTTPS. (Sätt den inte utan TLS — då kan ingen logga in alls.)
-- **Servera frontend från samma origin** som backend, t.ex. genom att låta
-  reverse proxyn skicka `/api` till backend och allt annat till den byggda
-  Angular-appen. Dev-proxyn i `proxy.conf.js` gäller bara `npm start`.
+```
+Internet ──► caddy (80/443, TLS)
+               ├── /api/*  ──► backend  (ingen port mot hosten)
+               └── /*      ──► frontend (byggd Angular-app)
+```
+
+`compose.prod.yaml` sköter det som skiljer prod från lokal körning: TLS via
+Caddy, `COOKIE_SECURE=true` så sessionscookien aldrig går i klartext, samma
+origin för frontend och `/api`, och en named volume för användardata.
+`compose.yaml` är kvar orörd för lokal utveckling.
+
+Kvar att göra om appen får mer trafik än en handfull inloggningar:
+
 - **Hastighetsbegränsning per IP** i proxyn. Spärren i appen räknar per
   användarnamn, vilket skyddar ett känt konto men inte mot försök spridda
-  över många användarnamn.
+  över många användarnamn. Caddy kan det inte utan plugin, så det kräver en
+  egen Caddy-build — inte gjort.
 
 ## Vad jag lärde mig / övade på
 

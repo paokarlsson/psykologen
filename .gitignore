@@ -14,3 +14,8 @@ backend/prompts.json
 backend/history.json
 
 .env
+
+# Eclipse/IDE-filer som skapas lokalt.
+backend/.classpath
+backend/.project
+backend/.settings/
