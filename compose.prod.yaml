@@ -1,5 +1,9 @@
 # Produktion:
-#   docker compose -f compose.prod.yaml up -d --build
+#   ./deploy.sh
+#
+# Images byggs inte här utan i GitHub Actions, se .github/workflows/build.yaml.
+# IMAGE_TAG pekar normalt på latest; sätt den till en commit-sha för att rulla
+# tillbaka.
 #
 # Fristående, inte en override ovanpå compose.yaml: Compose slår ihop ports och
 # volumes i stället för att ersätta dem, så dev-filens "8080:8080" och
@@ -30,7 +34,7 @@ services:
         condition: service_healthy
 
   backend:
-    build: ./backend
+    image: ghcr.io/paokarlsson/psykologen-backend:${IMAGE_TAG:-latest}
     restart: unless-stopped
     # Inga ports: nås bara av caddy över det interna nätverket.
     expose:
@@ -45,7 +49,7 @@ services:
       - psykologen-data:/data/users
 
   frontend:
-    build: ./frontend
+    image: ghcr.io/paokarlsson/psykologen-frontend:${IMAGE_TAG:-latest}
     restart: unless-stopped
     expose:
       - "8080"

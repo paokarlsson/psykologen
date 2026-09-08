@@ -129,6 +129,10 @@ Caddy, `COOKIE_SECURE=true` så sessionscookien aldrig går i klartext, samma
 origin för frontend och `/api`, och en named volume för användardata.
 `compose.yaml` är kvar orörd för lokal utveckling.
 
+Images byggs i GitHub Actions vid varje push till `master` och publiceras på
+GHCR. Servern hämtar dem färdiga och bygger ingenting själv — Maven- och
+Angular-byggena är för tunga för en liten droplet.
+
 Kvar att göra om appen får mer trafik än en handfull inloggningar:
 
 - **Hastighetsbegränsning per IP** i proxyn. Spärren i appen räknar per
