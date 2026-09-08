@@ -5,6 +5,19 @@
 > vårdrådgivning eller psykisk hälsa. Det är byggt för att lära mig
 > fullstack-utveckling (Java/Spring Boot + Angular) och hur man bygger
 > mot ett AI-API. Ingenting här är produktionsfärdigt.
+>
+> **Dela inga personuppgifter eller annan känslig information** i appen –
+> varken om dig själv eller om någon annan. Det du skriver skickas vidare
+> till ett externt AI-API, och appen har varken de rutiner eller det skydd
+> som sådana uppgifter kräver.
+>
+> **Allt kan tas bort utan förvarning.** Konton, samtal, profiler och
+> planer kan raderas när som helst, och appen kan stängas av helt utan
+> att någon säger till i förväg. Räkna inte med att något du skriver
+> finns kvar.
+
+Samma text möter användaren i appen: på inloggningssidan, i chattens
+välkomstläge och som en kort påminnelse i chattens rubrik.
 
 ## Vad är det här?
 

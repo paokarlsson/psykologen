@@ -25,6 +25,14 @@ h2 {
   font-size: 1.2rem;
 }
 
+/* Den korta påminnelsen syns hela samtalet - den fylliga varningen i
+   välkomstläget försvinner så fort samtalet startat. */
+.experiment-tag {
+  margin: var(--space-1) 0 0 0;
+  font-size: 0.75rem;
+  color: var(--color-muted-text);
+}
+
 .backend-error {
   display: flex;
   align-items: center;
@@ -65,6 +73,11 @@ h2 {
 .welcome-message {
   text-align: center;
   padding: 2rem;
+}
+
+.welcome-message .notice {
+  max-width: 34rem;
+  margin-inline: auto;
 }
 
 .start-btn {

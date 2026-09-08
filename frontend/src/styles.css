@@ -75,6 +75,26 @@ select {
   color: var(--color-success-text);
 }
 
+/* Experimentvarningen. Delad av login och chattens välkomstläge - samma
+   text ska mötas både före inloggning och innan ett samtal startas. */
+.notice {
+  margin: 0 0 var(--space-4) 0;
+  padding: var(--space-3);
+  border: 1px solid #f0c987;
+  border-left: 4px solid #d98c00;
+  border-radius: var(--radius-sm);
+  background: #fdf6e7;
+  color: #6b4a00;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.notice strong {
+  display: block;
+  margin-bottom: var(--space-1);
+}
+
 /* Delad av plan/profile - identisk uppdateringsknapp i båda widgetarna.
    Kortrubrikerna är ljusa sedan de tappade sin fyllda färgplatta. */
 .refresh-btn {
