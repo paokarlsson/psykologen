@@ -1,5 +1,8 @@
 <header>
   <h2>🎤 Psykologen - Chat med Erik</h2>
+  <p class="experiment-tag">
+    Experiment - dela inga personuppgifter. Allt kan raderas utan förvarning.
+  </p>
 </header>
 
 @if (backendError) {
@@ -12,6 +15,14 @@
 <div class="chat-messages" #messagesContainer>
   @if (!isConversationStarted && messages.length === 0) {
     <div class="welcome-message">
+      <p class="notice">
+        <strong>⚠️ Det här är bara ett experiment</strong>
+        Ingen riktig vård, ingen riktig psykolog. Dela inga personuppgifter eller
+        annan känslig information här - varken om dig själv eller om någon annan.
+        Allt som finns i appen, inklusive konton och sparade samtal, kan tas bort
+        utan förvarning.
+      </p>
+
       <p>Välkommen! Klicka på "Starta Samtal" för att börja din session med Erik.</p>
       <button
         class="start-btn"
