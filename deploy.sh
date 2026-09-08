@@ -2,10 +2,17 @@
 #
 # Deployar Psykologen på servern. Körs från repo-roten och går att köra om:
 # användardata och certifikat rörs inte.
+#
+# Images byggs i GitHub Actions och hämtas härifrån - droppen bygger ingenting.
+#
+#   ./deploy.sh              senaste bygget från master
+#   ./deploy.sh <commit-sha> rullar tillbaka till ett tidigare bygge
 
 set -euo pipefail
 
 cd "$(dirname "$0")"
+
+export IMAGE_TAG="${1:-latest}"
 
 COMPOSE=(docker compose -f compose.prod.yaml)
 
@@ -44,13 +51,27 @@ for key in COOKIE_SECURE APP_STORAGE_BASE_DIR; do
 	grep -q "^$key=" backend/.env && fail "$key hör inte hemma i backend/.env - compose.prod.yaml sätter den. Ta bort raden."
 done
 
-# --- Hämta, bygg, starta ----------------------------------------------------
+# --- Hämta och starta -------------------------------------------------------
 
-echo "==> Hämtar senaste koden"
-git pull --ff-only
+# Koden behövs fortfarande på droppen: compose.prod.yaml och Caddyfile läses
+# härifrån. Vid rollback lämnas den orörd, annars hade en gammal image körts
+# mot en nyare Caddyfile.
+if [[ "$IMAGE_TAG" == latest ]]; then
+	echo "==> Hämtar senaste koden"
+	git pull --ff-only
+else
+	echo "==> Rollback till $IMAGE_TAG, koden lämnas orörd"
+fi
 
-echo "==> Bygger och startar om"
-"${COMPOSE[@]}" up -d --build --remove-orphans
+echo "==> Hämtar images ($IMAGE_TAG)"
+"${COMPOSE[@]}" pull || fail "Kunde inte hämta images.
+  - Är bygget i GitHub Actions klart? Kolla fliken Actions.
+  - Är paketen privata måste droppen vara inloggad:
+      echo <token> | docker login ghcr.io -u paokarlsson --password-stdin
+    Token är en PAT med scope read:packages."
+
+echo "==> Startar om"
+"${COMPOSE[@]}" up -d --remove-orphans
 
 echo "==> Väntar på att backend ska svara"
 for _ in $(seq 1 90); do
