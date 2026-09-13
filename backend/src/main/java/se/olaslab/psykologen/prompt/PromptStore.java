@@ -15,9 +15,11 @@ public class PromptStore {
     public static final String SYSTEM_PROMPT = "systemPrompt";
     public static final String OPENING_INSTRUCTION = "openingInstruction";
     public static final String THOUGHT_REFLECTION = "thoughtReflection";
+    public static final String INTERVENTION_CHOICE = "interventionChoice";
     public static final String ERIK_RESPONSE = "erikResponse";
     public static final String PROFILE_UPDATE = "profileUpdate";
     public static final String PLAN_UPDATE = "planUpdate";
+    public static final String THREADS_UPDATE = "threadsUpdate";
 
     public static final double DEFAULT_SESSION_DURATION_MINUTES = 45.0;
 
@@ -46,14 +48,51 @@ public class PromptStore {
             OPENING_INSTRUCTION,
                 "Starta samtalet som du själv, Erik. Detta är vårt första möte. Håll det kort.",
             THOUGHT_REFLECTION, """
-                Baserat på vad användaren precis sa: "{{userInput}}"
+                Du är den tysta inre rösten hos psykologen Erik under ett pågående samtal.
 
-                Dina nuvarande inre reflektion:
+                DINA NUVARANDE INRE REFLEKTIONER:
                 {{currentThoughts}}
 
-                Uppdatera dina inre psykologiska reflektion. Lägg till nya observationer, hypoteser eller insikter. Skriv bara de NYA tankarna du får, inte alla gamla.
+                Patienten sa just: "{{userInput}}"
 
-                Skriv bara dina nya inre tankar, en per rad med bindestreck.
+                Revidera reflektionerna. Du ska inte bara lägga till - listan ska vara ett arbetsredskap, inte ett arkiv:
+                - Lägg till nya observationer, hypoteser eller insikter
+                - Skriv om hypoteser som fått nytt stöd, så att stödet framgår
+                - Stryk det som visat sig fel, redan är besvarat eller inte längre spelar roll
+                - Slå ihop tankar som säger samma sak
+                - Håll listan kort, som mest ett tiotal punkter. Prioritera det du har nytta av i nästa replik.
+
+                Svara i EXAKT detta format, med de två rubrikraderna ordagrant (ändra inget i dem):
+
+                ===ÄNDRINGAR===
+                [Kort punktlista med vad du la till, skrev om eller strök, t.ex. "Struken: hypotesen om sömnbrist - patienten sover fint" eller "Reviderad: allmän stress → troligen konflikten på jobbet". Om inget nytt: skriv "Inga förändringar."]
+
+                ===DOKUMENT===
+                [Hela den reviderade tankelistan, en tanke per rad med inledande bindestreck. Inga rubriker, ingen numrering.]
+                """,
+            INTERVENTION_CHOICE, """
+                Du är handledare åt psykologen Erik och väljer vilket grepp han ska använda i sin nästa replik.
+
+                ERIKS INRE REFLEKTIONER:
+                {{currentThoughts}}
+
+                SESSIONSPLAN:
+                {{sessionPlan}}
+
+                SESSIONSTID: {{elapsedMinutes}} av {{sessionDurationMinutes}} minuter, {{remainingMinutes}} minuter kvar.
+
+                Patienten sa just: "{{userInput}}"
+
+                GREPP ATT VÄLJA MELLAN:
+                {{interventionList}}
+
+                Välj det grepp som för samtalet framåt just nu. Tänk på:
+                - Vad patienten precis gav dig: ett laddat besked, ett svävande svar, en öppning?
+                - Vad Erik gjorde förra repliken - samma grepp två gånger i rad blir en utfrågning
+                - Var i sessionen ni är. Är tiden nästan slut ska samtalet rundas av, inte fördjupas
+
+                Svara med ENDAST id:t för det valda greppet, till exempel: spegling
+                Ingen förklaring, inga andra ord.
                 """,
             ERIK_RESPONSE, """
                 Du har tillgång till:
@@ -64,6 +103,9 @@ public class PromptStore {
                 PATIENT-PROFIL (vad du hittills vet om patienten):
                 {{patientProfile}}
 
+                ÖPPNA TRÅDAR (nämnt men aldrig utvecklat - återkom till en av dem när det passar):
+                {{openThreads}}
+
                 SESSIONSPLAN (följ denna strategiskt):
                 {{sessionPlan}}
 
@@ -71,9 +113,13 @@ public class PromptStore {
                 - Pågått: {{sessionTimeMinutes}} av {{sessionDurationMinutes}} planerade minuter
                 - Tid kvar: {{remainingMinutes}} minuter
 
+                VALT GREPP FÖR DEN HÄR REPLIKEN:
+                {{intervention}}
+
                 Användarens senaste meddelande: "{{userInput}}"
 
                 Som professionell terapeut ska du:
+                - Använda det valda greppet ovan - det är formen för just den här repliken
                 - Fortsätta samtalet i din egen takt
                 - Anpassa samtalet efter patientens behov
                 - Om tiden nästan är slut: börja naturligt runda av samtalet, utan att säga det rakt ut
@@ -88,8 +134,8 @@ public class PromptStore {
                 {{existingProfile}}
 
                 NYTT SAMTALSUTDRAG:
-                Patient: {{userInput}}
-                Psykolog Erik: {{agentResponse}}
+                Psykolog Erik (föregående replik): {{previousResponse}}
+                Patient (det som just sades): {{userInput}}
 
                 Uppdatera profilen för PATIENTEN med NYA FAKTA som framkommer. Inkludera:
                 - Personliga detaljer om patienten (ålder, jobb, familj, etc.)
@@ -124,6 +170,32 @@ public class PromptStore {
 
                 ## Övriga Noteringar
                 [andra relevanta fakta]
+                """,
+            THREADS_UPDATE, """
+                Du håller reda på lösa trådar i ett psykologsamtal: sådant patienten öppnat men som ingen följt upp.
+
+                En tråd är något patienten nämnt i förbigående och släppt, en känsla som passerade obemött, en person som dök upp utan sammanhang, eller en fråga från Erik som aldrig besvarades.
+
+                BEFINTLIGA ÖPPNA TRÅDAR:
+                {{existingThreads}}
+
+                NYTT SAMTALSUTDRAG:
+                Psykolog Erik (föregående replik): {{previousResponse}}
+                Patient (det som just sades): {{userInput}}
+
+                Uppdatera listan:
+                - Lägg till trådar som öppnades i utdraget
+                - Stryk trådar som nu är utforskade eller besvarade
+                - Stryk trådar som visat sig sakna betydelse
+                - Håll listan kort, som mest sex trådar. Prioritera det som verkar bära något.
+
+                Svara i EXAKT detta format, med de två rubrikraderna ordagrant (ändra inget i dem):
+
+                ===ÄNDRINGAR===
+                [Kort punktlista med vilka trådar som öppnades och vilka som stängdes, t.ex. "Öppnad: nämnde brodern, bytte genast ämne" eller "Stängd: sömnen - utforskad nu". Om inget nytt: skriv "Inga förändringar."]
+
+                ===DOKUMENT===
+                [De öppna trådarna, en per rad med inledande bindestreck. Skriv tråden så att Erik kan återkomma till den: vad som sades och vad som är ofullbordat. Finns inga öppna trådar alls: skriv "Inga öppna trådar."]
                 """,
             PLAN_UPDATE, """
                 Du är en expert psykolog som skapar adaptiva terapeutiska sessionsplaner.
@@ -229,6 +301,10 @@ public class PromptStore {
         return get(THOUGHT_REFLECTION);
     }
 
+    public String getInterventionChoiceTemplate() {
+        return get(INTERVENTION_CHOICE);
+    }
+
     public String getErikResponseTemplate() {
         return get(ERIK_RESPONSE);
     }
@@ -239,6 +315,10 @@ public class PromptStore {
 
     public String getPlanUpdateTemplate() {
         return get(PLAN_UPDATE);
+    }
+
+    public String getThreadsUpdateTemplate() {
+        return get(THREADS_UPDATE);
     }
 
     public double getSessionDurationMinutes() {

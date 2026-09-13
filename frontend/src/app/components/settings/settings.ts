@@ -27,17 +27,27 @@ const FIELD_META: { key: string; label: string; description: string }[] = [
   {
     key: 'thoughtReflection',
     label: 'Reflektionsmall (Eriks tysta inre tankar)',
-    description: 'Platshållare: {{userInput}}, {{currentThoughts}}'
+    description: 'Svarar i två delar, rubrikerna ordagrant: "===ÄNDRINGAR===" (vad som lades till, skrevs om eller ströks - visas under Historik) följt av "===DOKUMENT===" (hela den reviderade tankelistan, som ersätter den gamla). Utan rubrikerna faller mallen tillbaka på det gamla beteendet: svaret läggs till som nya tankar och inget stryks. Platshållare: {{userInput}}, {{currentThoughts}}'
+  },
+  {
+    key: 'interventionChoice',
+    label: 'Metodval (vilket grepp Erik ska använda)',
+    description: 'Väljer ett terapeutiskt grepp - öppen fråga, spegling, skalfråga och så vidare - innan Erik formulerar sin replik. Ska svara med enbart greppets id. Känns inget id igen i svaret används öppen fråga. Själva katalogen av grepp ligger i koden, {{interventionList}} fyller i den. Platshållare: {{interventionList}}, {{currentThoughts}}, {{sessionPlan}}, {{elapsedMinutes}}, {{sessionDurationMinutes}}, {{remainingMinutes}}, {{userInput}}'
   },
   {
     key: 'erikResponse',
     label: 'Svarsmall (det Erik säger till dig)',
-    description: 'Platshållare: {{currentThoughts}}, {{patientProfile}}, {{sessionPlan}}, {{sessionTimeMinutes}}, {{sessionDurationMinutes}}, {{remainingMinutes}}, {{userInput}}'
+    description: 'Platshållare: {{currentThoughts}}, {{patientProfile}}, {{sessionPlan}}, {{openThreads}}, {{intervention}} (greppet metodvalet landade i), {{sessionTimeMinutes}}, {{sessionDurationMinutes}}, {{remainingMinutes}}, {{userInput}}'
   },
   {
     key: 'profileUpdate',
     label: 'Profiluppdatering (analys av dig som patient)',
-    description: 'Måste svara i två delar, rubrikerna ordagrant: "===ÄNDRINGAR===" (kort ändringslogg - visas under Historik) följt av "===DOKUMENT===" (hela profilen). Tar du bort rubrikerna loggas ingen historik den turen. Platshållare: {{existingProfile}}, {{userInput}}, {{agentResponse}}'
+    description: 'Körs före Eriks svar, så att han svarar på en profil som redan innehåller det du just skrev. Utdraget är därför Eriks föregående replik ({{previousResponse}}) plus din nya ({{userInput}}). Måste svara i två delar, rubrikerna ordagrant: "===ÄNDRINGAR===" (kort ändringslogg - visas under Historik) följt av "===DOKUMENT===" (hela profilen). Tar du bort rubrikerna loggas ingen historik den turen. Platshållare: {{existingProfile}}, {{previousResponse}}, {{userInput}}'
+  },
+  {
+    key: 'threadsUpdate',
+    label: 'Öppna trådar (nämnt men aldrig utvecklat)',
+    description: 'Håller en kort lista över trådar du öppnat och släppt, så att Erik kan återkomma till dem. Körs före svaret, med samma omparade utdrag som profilen. Måste svara i två delar, rubrikerna ordagrant: "===ÄNDRINGAR===" (vilka trådar som öppnades och stängdes - visas under Historik) följt av "===DOKUMENT===" (hela listan, en tråd per rad). Platshållare: {{existingThreads}}, {{previousResponse}}, {{userInput}}'
   },
   {
     key: 'planUpdate',

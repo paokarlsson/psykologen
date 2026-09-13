@@ -116,6 +116,15 @@ class ContextStrategyTest {
         }
 
         @Override
+        public Optional<String> readOpenThreads() {
+            return Optional.empty();
+        }
+
+        @Override
+        public void writeOpenThreads(String content) {
+        }
+
+        @Override
         public void appendHistory(HistoryEntry entry) {
         }
 

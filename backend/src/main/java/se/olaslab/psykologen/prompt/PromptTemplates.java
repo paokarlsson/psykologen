@@ -2,6 +2,8 @@ package se.olaslab.psykologen.prompt;
 
 import java.util.Map;
 
+import se.olaslab.psykologen.intervention.Intervention;
+
 public final class PromptTemplates {
 
     private PromptTemplates() {
@@ -21,25 +23,51 @@ public final class PromptTemplates {
                 "currentThoughts", currentThoughts.isEmpty() ? "Inga tidigare tankar." : currentThoughts));
     }
 
+    public static String interventionChoice(String template, String interventionList, String currentThoughts,
+            String sessionPlan, double elapsedMinutes, double sessionDurationMinutes, String userInput) {
+        double remainingMinutes = Math.max(0, sessionDurationMinutes - elapsedMinutes);
+        return render(template, Map.of(
+                "interventionList", interventionList,
+                "currentThoughts", currentThoughts.isEmpty() ? "Inga tidigare tankar." : currentThoughts,
+                "sessionPlan", sessionPlan.isEmpty() ? "Ingen plan än." : sessionPlan,
+                "elapsedMinutes", String.format("%.1f", elapsedMinutes),
+                "sessionDurationMinutes", String.format("%.0f", sessionDurationMinutes),
+                "remainingMinutes", String.format("%.1f", remainingMinutes),
+                "userInput", userInput));
+    }
+
     public static String erikResponse(String template, String currentThoughts, String patientProfile,
-            String sessionPlan, double sessionTimeMinutes, double sessionDurationMinutes, String userInput) {
+            String sessionPlan, String openThreads, Intervention intervention, double sessionTimeMinutes,
+            double sessionDurationMinutes, String userInput) {
         double remainingMinutes = Math.max(0, sessionDurationMinutes - sessionTimeMinutes);
         return render(template, Map.of(
                 "currentThoughts", currentThoughts,
                 "patientProfile", patientProfile.isEmpty() ? "Ingen profil än." : patientProfile,
                 "sessionPlan", sessionPlan.isEmpty() ? "Ingen plan än." : sessionPlan,
+                "openThreads", openThreads.isEmpty() ? "Inga öppna trådar än." : openThreads,
+                "intervention", intervention.label() + " - " + intervention.instruction(),
                 "sessionTimeMinutes", String.format("%.1f", sessionTimeMinutes),
                 "sessionDurationMinutes", String.format("%.0f", sessionDurationMinutes),
                 "remainingMinutes", String.format("%.1f", remainingMinutes),
                 "userInput", userInput));
     }
 
-    public static String profileUpdate(String template, String existingProfile, String userInput,
-            String agentResponse) {
+    /** Profilen skrivs före Eriks svar, så utdraget är hans föregående replik plus patientens nya. */
+    public static String profileUpdate(String template, String existingProfile, String previousResponse,
+            String userInput) {
         return render(template, Map.of(
                 "existingProfile", existingProfile.isEmpty() ? "Ingen befintlig profil." : existingProfile,
-                "userInput", userInput,
-                "agentResponse", agentResponse));
+                "previousResponse", previousResponse.isEmpty() ? "Inget tidigare svar från Erik." : previousResponse,
+                "userInput", userInput));
+    }
+
+    /** Trådarna skrivs före Eriks svar, med samma omparade utdrag som profilen. */
+    public static String threadsUpdate(String template, String existingThreads, String previousResponse,
+            String userInput) {
+        return render(template, Map.of(
+                "existingThreads", existingThreads.isEmpty() ? "Inga öppna trådar än." : existingThreads,
+                "previousResponse", previousResponse.isEmpty() ? "Inget tidigare svar från Erik." : previousResponse,
+                "userInput", userInput));
     }
 
     public static String planUpdate(String template, String existingPlan, String userInput, String agentResponse,

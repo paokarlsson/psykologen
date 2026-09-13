@@ -4,6 +4,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService, HistoryEntryDto } from '../../services/api.service';
 import { LoadingSpinner } from '../../shared/loading-spinner/loading-spinner';
 
+const TYP_ETIKETT: Record<HistoryEntryDto['type'], string> = {
+  profile: '👤 Profil',
+  plan: '🗒️ Plan',
+  thoughts: '🧠 Tankar',
+  threads: '🧵 Trådar',
+};
+
 @Component({
   selector: 'app-history',
   imports: [NgClass, LoadingSpinner],
@@ -52,7 +59,7 @@ export class History {
   }
 
   typeLabel(entry: HistoryEntryDto): string {
-    return entry.type === 'profile' ? '👤 Profil' : '🗒️ Plan';
+    return TYP_ETIKETT[entry.type] ?? entry.type;
   }
 
   formatTime(entry: HistoryEntryDto): string {

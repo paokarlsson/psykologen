@@ -13,6 +13,11 @@ public interface SessionArtifactStore {
 
     void writePlan(String content);
 
+    /** Trådar patienten öppnat men som ingen följt upp. */
+    Optional<String> readOpenThreads();
+
+    void writeOpenThreads(String content);
+
     void appendHistory(HistoryEntry entry);
 
     List<HistoryEntry> readHistory();

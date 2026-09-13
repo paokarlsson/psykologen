@@ -2,8 +2,10 @@ package se.olaslab.psykologen.storage;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -17,6 +19,7 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
 
     private final Path profilePath;
     private final Path planPath;
+    private final Path threadsPath;
     private final Path historyPath;
 
     private final ObjectMapper mapper = new ObjectMapper();
@@ -25,6 +28,7 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
     public FileSessionArtifactStore(Path baseDir) {
         this.profilePath = baseDir.resolve("profile.md");
         this.planPath = baseDir.resolve("plan.md");
+        this.threadsPath = baseDir.resolve("threads.md");
         this.historyPath = baseDir.resolve("history.json");
         try {
             Files.createDirectories(baseDir);
@@ -51,6 +55,16 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
     @Override
     public void writePlan(String content) {
         write(planPath, content);
+    }
+
+    @Override
+    public Optional<String> readOpenThreads() {
+        return read(threadsPath);
+    }
+
+    @Override
+    public void writeOpenThreads(String content) {
+        write(threadsPath, content);
     }
 
     @Override
@@ -91,6 +105,7 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
     public void clear() {
         deleteIfExists(profilePath);
         deleteIfExists(planPath);
+        deleteIfExists(threadsPath);
         deleteIfExists(historyPath);
     }
 
@@ -105,10 +120,25 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
         return Optional.empty();
     }
 
+    /**
+     * Skriver via en temporärfil och byter in den.
+     *
+     * <p>Profilen skrivs numera på en egen tråd samtidigt som huvudtråden bygger kontexten och
+     * kan läsa samma fil. En rå {@code writeString} nollställer filen först, så en läsare kunde
+     * få en halvskriven profil. Namnbytet är odelbart: läsaren ser antingen den gamla eller den
+     * nya filen, aldrig något däremellan.
+     */
     private void write(Path path, String content) {
+        Path temp = path.resolveSibling(path.getFileName() + ".tmp");
         try {
-            Files.writeString(path, content);
+            Files.writeString(temp, content);
+            try {
+                Files.move(temp, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(temp, path, StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (IOException e) {
+            deleteIfExists(temp);
             throw new UncheckedIOException(e);
         }
     }

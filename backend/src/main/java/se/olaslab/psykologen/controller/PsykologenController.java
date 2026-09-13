@@ -140,6 +140,7 @@ public class PsykologenController {
             response.put("success", true);
             response.put("calls", service.getTrace());
             response.put("thoughts", service.getThoughts());
+            response.put("openThreads", service.getOpenThreads());
             response.put("summary", service.getTraceSummary());
             return ResponseEntity.ok(response);
         } catch (Exception e) {

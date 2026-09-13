@@ -55,7 +55,7 @@ export interface SimpleResponse {
 }
 
 export interface HistoryEntryDto {
-  type: 'profile' | 'plan';
+  type: 'profile' | 'plan' | 'thoughts' | 'threads';
   timestamp: number;
   elapsedMinutes: number;
   change: string;
@@ -66,7 +66,7 @@ export interface HistoryResponse {
   history: HistoryEntryDto[];
 }
 
-export type TraceStep = 'oppning' | 'reflektion' | 'svar' | 'profil' | 'plan';
+export type TraceStep = 'oppning' | 'reflektion' | 'metod' | 'svar' | 'profil' | 'tradar' | 'plan';
 
 export interface LlmCallDto {
   steg: TraceStep;
@@ -103,6 +103,7 @@ export interface TraceResponse {
   success: boolean;
   calls: LlmCallDto[];
   thoughts: string[];
+  openThreads: string[];
   summary: TraceSummaryDto;
 }
 

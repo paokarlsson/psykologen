@@ -3,6 +3,7 @@ package se.olaslab.psykologen.session;
 import java.util.ArrayList;
 import java.util.List;
 
+import se.olaslab.psykologen.prompt.BulletLines;
 import se.olaslab.psykologen.service.ai.AiResponse;
 import se.olaslab.psykologen.trace.TraceRecorder;
 
@@ -44,6 +45,15 @@ public class ConversationSession {
         return List.copyOf(messages.subList(0, messages.size() - 1));
     }
 
+    /** Eriks senaste replik, tom sträng innan han sagt något. */
+    public String lastAgentMessage() {
+        return messages.reversed().stream()
+                .filter(message -> message.role() == Role.ASSISTANT)
+                .map(ChatMessage::content)
+                .findFirst()
+                .orElse("");
+    }
+
     public void addUserMessage(String content) {
         messages.add(stampedMessage(Role.USER, content));
     }
@@ -62,17 +72,28 @@ public class ConversationSession {
     }
 
     public void addThoughtLines(String rawThoughts) {
-        if (rawThoughts == null || rawThoughts.startsWith("Inga")) {
+        if (BulletLines.isEmptyAnswer(rawThoughts)) {
             return;
         }
-        for (String rawLine : rawThoughts.split("\n")) {
-            String line = rawLine.trim();
-            if (line.startsWith("- ")) {
-                internalThoughts.add(line.substring(2));
-            } else if (!line.isEmpty() && !line.startsWith("-")) {
-                internalThoughts.add(line);
-            }
+        internalThoughts.addAll(BulletLines.parse(rawThoughts));
+    }
+
+    /**
+     * Ersätter hela tankelistan med den reviderade versionen.
+     *
+     * <p>Poängen med revideringen är att strykningar ska slå igenom - en lista som bara växer
+     * blir brus i prompten. Ett tomt svar ignoreras ändå: hellre gamla tankar än inga alls.
+     */
+    public void replaceThoughts(String rawThoughts) {
+        if (rawThoughts == null) {
+            return;
         }
+        List<String> reviderade = BulletLines.parse(rawThoughts);
+        if (reviderade.isEmpty()) {
+            return;
+        }
+        internalThoughts.clear();
+        internalThoughts.addAll(reviderade);
     }
 
     public double elapsedMinutes() {
