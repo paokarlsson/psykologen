@@ -55,7 +55,7 @@ export interface SimpleResponse {
 }
 
 export interface HistoryEntryDto {
-  type: 'profile' | 'plan';
+  type: 'profile' | 'plan' | 'thoughts';
   timestamp: number;
   elapsedMinutes: number;
   change: string;

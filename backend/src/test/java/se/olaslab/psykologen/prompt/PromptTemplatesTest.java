@@ -26,6 +26,18 @@ class PromptTemplatesTest {
     }
 
     @Test
+    void reflektionsmallenBerOmEnAndringsloggOchHelaListan() {
+        String renderad = PromptTemplates.thoughtReflection(
+                PromptStore.defaults().get(PromptStore.THOUGHT_REFLECTION), "jag sover fint", "- sover dåligt");
+
+        // Utan rubrikerna faller PsykologenService tillbaka på det gamla, adderande beteendet.
+        ChangelogResponse mall = ChangelogResponse.parse(renderad);
+        assertTrue(mall.changelog() != null);
+        assertTrue(renderad.contains("jag sover fint"));
+        assertTrue(renderad.contains("- sover dåligt"));
+    }
+
+    @Test
     void aterstaendeTidBlirAldrigNegativ() {
         String renderad = PromptTemplates.erikResponse("Kvar: {{remainingMinutes}}",
                 "", "", "", 60.0, 45.0, "hej");

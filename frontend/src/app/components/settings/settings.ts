@@ -27,7 +27,7 @@ const FIELD_META: { key: string; label: string; description: string }[] = [
   {
     key: 'thoughtReflection',
     label: 'Reflektionsmall (Eriks tysta inre tankar)',
-    description: 'Platshållare: {{userInput}}, {{currentThoughts}}'
+    description: 'Svarar i två delar, rubrikerna ordagrant: "===ÄNDRINGAR===" (vad som lades till, skrevs om eller ströks - visas under Historik) följt av "===DOKUMENT===" (hela den reviderade tankelistan, som ersätter den gamla). Utan rubrikerna faller mallen tillbaka på det gamla beteendet: svaret läggs till som nya tankar och inget stryks. Platshållare: {{userInput}}, {{currentThoughts}}'
   },
   {
     key: 'erikResponse',

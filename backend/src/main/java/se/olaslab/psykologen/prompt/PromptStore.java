@@ -46,14 +46,27 @@ public class PromptStore {
             OPENING_INSTRUCTION,
                 "Starta samtalet som du själv, Erik. Detta är vårt första möte. Håll det kort.",
             THOUGHT_REFLECTION, """
-                Baserat på vad användaren precis sa: "{{userInput}}"
+                Du är den tysta inre rösten hos psykologen Erik under ett pågående samtal.
 
-                Dina nuvarande inre reflektion:
+                DINA NUVARANDE INRE REFLEKTIONER:
                 {{currentThoughts}}
 
-                Uppdatera dina inre psykologiska reflektion. Lägg till nya observationer, hypoteser eller insikter. Skriv bara de NYA tankarna du får, inte alla gamla.
+                Patienten sa just: "{{userInput}}"
 
-                Skriv bara dina nya inre tankar, en per rad med bindestreck.
+                Revidera reflektionerna. Du ska inte bara lägga till - listan ska vara ett arbetsredskap, inte ett arkiv:
+                - Lägg till nya observationer, hypoteser eller insikter
+                - Skriv om hypoteser som fått nytt stöd, så att stödet framgår
+                - Stryk det som visat sig fel, redan är besvarat eller inte längre spelar roll
+                - Slå ihop tankar som säger samma sak
+                - Håll listan kort, som mest ett tiotal punkter. Prioritera det du har nytta av i nästa replik.
+
+                Svara i EXAKT detta format, med de två rubrikraderna ordagrant (ändra inget i dem):
+
+                ===ÄNDRINGAR===
+                [Kort punktlista med vad du la till, skrev om eller strök, t.ex. "Struken: hypotesen om sömnbrist - patienten sover fint" eller "Reviderad: allmän stress → troligen konflikten på jobbet". Om inget nytt: skriv "Inga förändringar."]
+
+                ===DOKUMENT===
+                [Hela den reviderade tankelistan, en tanke per rad med inledande bindestreck. Inga rubriker, ingen numrering.]
                 """,
             ERIK_RESPONSE, """
                 Du har tillgång till:

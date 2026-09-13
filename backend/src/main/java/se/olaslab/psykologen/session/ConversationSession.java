@@ -65,14 +65,38 @@ public class ConversationSession {
         if (rawThoughts == null || rawThoughts.startsWith("Inga")) {
             return;
         }
+        internalThoughts.addAll(parseThoughtLines(rawThoughts));
+    }
+
+    /**
+     * Ersätter hela tankelistan med den reviderade versionen.
+     *
+     * <p>Poängen med revideringen är att strykningar ska slå igenom - en lista som bara växer
+     * blir brus i prompten. Ett tomt svar ignoreras ändå: hellre gamla tankar än inga alls.
+     */
+    public void replaceThoughts(String rawThoughts) {
+        if (rawThoughts == null) {
+            return;
+        }
+        List<String> reviderade = parseThoughtLines(rawThoughts);
+        if (reviderade.isEmpty()) {
+            return;
+        }
+        internalThoughts.clear();
+        internalThoughts.addAll(reviderade);
+    }
+
+    private static List<String> parseThoughtLines(String rawThoughts) {
+        List<String> thoughts = new ArrayList<>();
         for (String rawLine : rawThoughts.split("\n")) {
             String line = rawLine.trim();
             if (line.startsWith("- ")) {
-                internalThoughts.add(line.substring(2));
+                thoughts.add(line.substring(2));
             } else if (!line.isEmpty() && !line.startsWith("-")) {
-                internalThoughts.add(line);
+                thoughts.add(line);
             }
         }
+        return thoughts;
     }
 
     public double elapsedMinutes() {

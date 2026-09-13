@@ -78,7 +78,6 @@ public class BackgroundSessionUpdater {
         if (parsed.hasNoChange()) {
             return;
         }
-        artifactStore.appendHistory(
-                new HistoryEntry(type, System.currentTimeMillis(), session.elapsedMinutes(), parsed.changelog()));
+        artifactStore.appendHistory(HistoryEntry.now(type, session.elapsedMinutes(), parsed.changelog()));
     }
 }

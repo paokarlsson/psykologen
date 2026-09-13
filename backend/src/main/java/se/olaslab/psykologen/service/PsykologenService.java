@@ -7,6 +7,7 @@ import java.util.Map;
 
 import se.olaslab.psykologen.context.ContextStrategies;
 import se.olaslab.psykologen.context.ContextStrategy;
+import se.olaslab.psykologen.prompt.ChangelogResponse;
 import se.olaslab.psykologen.prompt.PromptStore;
 import se.olaslab.psykologen.prompt.PromptTemplates;
 import se.olaslab.psykologen.service.ai.AiClient;
@@ -107,8 +108,7 @@ public class PsykologenService {
         // Räknas upp först, så att turnumret i traceen gäller den tur anropen tillhör.
         session.incrementConversationCount();
 
-        String newThoughts = reflectOnInput(userInput);
-        session.addThoughtLines(newThoughts);
+        reflectOnInput(userInput);
 
         String agentResponse = respondAsErik(userInput);
         session.addAssistantMessage(agentResponse);
@@ -149,7 +149,7 @@ public class PsykologenService {
         return session.thoughts();
     }
 
-    private String reflectOnInput(String userInput) throws Exception {
+    private void reflectOnInput(String userInput) throws Exception {
         String prompt = PromptTemplates.thoughtReflection(
                 promptStore.getThoughtReflectionTemplate(), userInput, session.thoughtsAsBulletText());
 
@@ -159,7 +159,20 @@ public class PsykologenService {
         AiResponse response = session.tracer()
                 .record(LlmCall.REFLEKTION, session.turn(), request, aiClient::chat);
         session.recordUsage(response);
-        return response.text().trim();
+
+        ChangelogResponse parsed = ChangelogResponse.parse(response.text().trim());
+        if (parsed.changelog() == null) {
+            // Ingen ändringslogg i svaret: en egen mall kör det gamla formatet, där
+            // svaret bara är de nya tankarna. Då gäller det gamla beteendet.
+            session.addThoughtLines(parsed.document());
+            return;
+        }
+
+        session.replaceThoughts(parsed.document());
+        if (!parsed.hasNoChange()) {
+            artifactStore.appendHistory(
+                    HistoryEntry.now(HistoryEntry.THOUGHTS, session.elapsedMinutes(), parsed.changelog()));
+        }
     }
 
     private String respondAsErik(String userInput) throws Exception {
