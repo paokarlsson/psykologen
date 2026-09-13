@@ -1,0 +1,134 @@
+<button
+  #toggleBtn
+  (click)="toggleOpen()"
+  [attr.aria-expanded]="isOpen"
+  aria-controls="trace-panel"
+  aria-label="Glaslåda"
+>
+  <span aria-hidden="true">🔬</span>
+  <span class="label">Glaslåda</span>
+  <span class="chevron" [ngClass]="{ open: isOpen }">▾</span>
+</button>
+
+@if (isOpen) {
+  <section
+    #panel
+    id="trace-panel"
+    aria-label="Glaslåda"
+    tabindex="-1"
+    (keydown.escape)="close()"
+  >
+    <header>
+      <h2>Glaslåda</h2>
+      <div class="header-actions">
+        <button type="button" (click)="load()" aria-label="Uppdatera">↻</button>
+        <button type="button" (click)="close()" aria-label="Stäng glaslådan">✕</button>
+      </div>
+    </header>
+
+    @if (isLoading) {
+      <app-loading-spinner label="Laddar trace…" />
+    }
+
+    @if (errorMessage) {
+      <div class="banner banner-error" role="alert">⚠️ {{ errorMessage }}</div>
+    }
+
+    @if (!isLoading && !errorMessage && summary.callCount === 0) {
+      <p class="hint">
+        Inga AI-anrop än. Starta ett samtal, så visas varje anrop här med exakt den prompt som
+        skickades.
+      </p>
+    }
+
+    @if (summary.callCount > 0) {
+      <dl class="summary">
+        <div>
+          <dt>Anrop</dt>
+          <dd>{{ summary.callCount }}</dd>
+        </div>
+        <div>
+          <dt>Tokens in → ut</dt>
+          <dd>{{ summary.totalInputTokens }} → {{ summary.totalOutputTokens }}</dd>
+        </div>
+        <div>
+          <dt>Kostnad</dt>
+          <dd>{{ formatTotalCost() }}</dd>
+        </div>
+        <div>
+          <dt>Kontext nu</dt>
+          <dd>{{ summary.currentContextTokens }} tokens</dd>
+        </div>
+        <div>
+          <dt>Snittlatens</dt>
+          <dd>{{ summary.avgLatencyMs }} ms</dd>
+        </div>
+        @if (summary.errorCount > 0) {
+          <div class="summary-error">
+            <dt>Fel</dt>
+            <dd>{{ summary.errorCount }}</dd>
+          </div>
+        }
+      </dl>
+
+      <p class="hint">
+        “Kontext nu” är hur många tokens Erik fick läsa i sitt senaste svar. Den växer med varje
+        replik så länge hela historiken skickas med.
+      </p>
+    }
+
+    @if (thoughts.length > 0) {
+      <h3>Eriks inre reflektioner</h3>
+      <ul class="thoughts">
+        @for (thought of thoughts; track $index) {
+          <li>{{ thought }}</li>
+        }
+      </ul>
+    }
+
+    @if (calls.length > 0) {
+      <h3>Anrop</h3>
+      <div class="calls">
+        @for (call of calls; track call.startedAt) {
+          <div class="call" [ngClass]="[call.steg, call.error ? 'failed' : '']">
+            <button
+              type="button"
+              class="call-header"
+              (click)="toggleCall(call)"
+              [attr.aria-expanded]="isExpanded(call)"
+            >
+              <span class="step-badge">{{ stepLabel(call) }}</span>
+              <span class="call-meta">
+                tur {{ call.turn }} · {{ call.latencyMs }} ms ·
+                {{ call.inputTokens }}→{{ call.outputTokens }} ·
+                {{ formatCost(call.costUsd) }}
+              </span>
+              <span class="chevron" [ngClass]="{ open: isExpanded(call) }">▾</span>
+            </button>
+
+            @if (call.error) {
+              <div class="call-error" role="alert">⚠️ {{ call.error }}</div>
+            }
+
+            @if (isExpanded(call)) {
+              <div class="call-body">
+                <h4>Skickat till modellen{{ call.model ? ' (' + call.model + ')' : '' }}</h4>
+                @for (message of call.sentMessages; track $index) {
+                  <div class="message">
+                    <span class="role">{{ roleLabel(message) }}</span>
+                    <pre>{{ message.content }}</pre>
+                  </div>
+                }
+
+                @if (call.responseText !== null) {
+                  <h4>Svar</h4>
+                  <pre class="response">{{ call.responseText }}</pre>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </section>
+}

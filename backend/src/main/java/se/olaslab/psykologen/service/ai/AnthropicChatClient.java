@@ -9,6 +9,7 @@ import com.anthropic.models.messages.Message;
 import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.MessageParam;
 import com.anthropic.models.messages.TextBlock;
+import com.anthropic.models.messages.Usage;
 import se.olaslab.psykologen.session.ChatMessage;
 import se.olaslab.psykologen.session.Role;
 
@@ -99,9 +100,15 @@ public class AnthropicChatClient implements AiClient {
             text.append(block.text());
         }
 
-        int inputTokens = (int) response.usage().inputTokens();
-        int outputTokens = (int) response.usage().outputTokens();
+        Usage usage = response.usage();
+        int inputTokens = (int) usage.inputTokens();
+        int outputTokens = (int) usage.outputTokens();
 
-        return new AiResponse(text.toString(), inputTokens, outputTokens);
+        // Cache-fälten är noll så länge inga cacheControl-brytpunkter sätts. De redovisas
+        // ändå: att de är noll är hela poängen med att visa dem i Glaslådan.
+        int cacheRead = usage.cacheReadInputTokens().orElse(0L).intValue();
+        int cacheCreation = usage.cacheCreationInputTokens().orElse(0L).intValue();
+
+        return new AiResponse(text.toString(), MODEL, inputTokens, outputTokens, cacheRead, cacheCreation);
     }
 }

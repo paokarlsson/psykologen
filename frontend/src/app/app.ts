@@ -4,6 +4,7 @@ import { Profile } from './components/profile/profile';
 import { Plan } from './components/plan/plan';
 import { Settings } from './components/settings/settings';
 import { History } from './components/history/history';
+import { Trace } from './components/trace/trace';
 import { Login } from './components/login/login';
 import { AuthService } from './services/auth.service';
 
@@ -11,7 +12,7 @@ export type View = 'chat' | 'profile' | 'plan';
 
 @Component({
   selector: 'app-root',
-  imports: [Chat, Profile, Plan, Settings, History, Login],
+  imports: [Chat, Profile, Plan, Settings, History, Trace, Login],
   templateUrl: './app.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './app.css'

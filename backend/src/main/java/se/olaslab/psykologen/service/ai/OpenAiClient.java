@@ -83,6 +83,7 @@ public class OpenAiClient implements AiClient {
             outputTokens = usageObj.get("completion_tokens").getAsInt();
         }
 
-        return new AiResponse(text, inputTokens, outputTokens);
+        // OpenAI-svaret rapporterar ingen cache-uppdelning som mappas mot Anthropics fält.
+        return new AiResponse(text, MODEL, inputTokens, outputTokens, 0, 0);
     }
 }

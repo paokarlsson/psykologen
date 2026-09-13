@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import se.olaslab.psykologen.context.ContextStrategies;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
@@ -59,6 +60,9 @@ public class PromptStore {
 
                 DINA INRE REFLEKTION:
                 {{currentThoughts}}
+
+                PATIENT-PROFIL (vad du hittills vet om patienten):
+                {{patientProfile}}
 
                 SESSIONSPLAN (följ denna strategiskt):
                 {{sessionPlan}}
@@ -185,6 +189,7 @@ public class PromptStore {
     private final Map<String, String> customPrompts;
     private boolean useCustomPrompts;
     private double sessionDurationMinutes;
+    private String contextStrategy;
 
     public PromptStore(Path baseDir) {
         this.storePath = baseDir.resolve("prompts.json");
@@ -194,6 +199,9 @@ public class PromptStore {
         this.sessionDurationMinutes = loaded.sessionDurationMinutes() != null
                 ? loaded.sessionDurationMinutes()
                 : DEFAULT_SESSION_DURATION_MINUTES;
+        this.contextStrategy = ContextStrategies.exists(loaded.contextStrategy())
+                ? loaded.contextStrategy()
+                : ContextStrategies.DEFAULT_ID;
     }
 
     public static Map<String, String> defaults() {
@@ -245,6 +253,18 @@ public class PromptStore {
         persist();
     }
 
+    public String getContextStrategy() {
+        return contextStrategy;
+    }
+
+    public void setContextStrategy(String id) {
+        if (!ContextStrategies.exists(id)) {
+            throw new IllegalArgumentException("Okänd kontextstrategi: " + id);
+        }
+        this.contextStrategy = id;
+        persist();
+    }
+
     public Map<String, String> currentValues() {
         Map<String, String> result = new LinkedHashMap<>();
         for (String key : DEFAULTS.keySet()) {
@@ -286,7 +306,8 @@ public class PromptStore {
     private void persist() {
         try {
             Files.writeString(storePath, mapper.writerWithDefaultPrettyPrinter()
-                    .writeValueAsString(new Persisted(useCustomPrompts, customPrompts, sessionDurationMinutes)));
+                    .writeValueAsString(new Persisted(useCustomPrompts, customPrompts,
+                            sessionDurationMinutes, contextStrategy)));
         } catch (IOException | JacksonException e) {
             // Att spara promptinställningar ska inte krascha appen
         }
@@ -300,12 +321,13 @@ public class PromptStore {
         } catch (IOException | JacksonException e) {
             // Korrupt fil: kör vidare med standardvärden
         }
-        return new Persisted(false, Map.of(), null);
+        return new Persisted(false, Map.of(), null, null);
     }
 
     // sessionDurationMinutes är boxad så en äldre prompts.json utan fältet kan
-    // skiljas från en som uttryckligen sparat 0 - se konstruktorn.
+    // skiljas från en som uttryckligen sparat 0 - se konstruktorn. contextStrategy
+    // saknas på samma sätt i äldre filer och faller då tillbaka på standarden.
     private record Persisted(boolean useCustomPrompts, Map<String, String> customPrompts,
-            Double sessionDurationMinutes) {
+            Double sessionDurationMinutes, String contextStrategy) {
     }
 }
