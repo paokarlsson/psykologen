@@ -132,6 +132,23 @@ public class PsykologenController {
         }
     }
 
+    @GetMapping("/trace")
+    public ResponseEntity<Map<String, Object>> getTrace(Authentication auth) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            PsykologenService service = serviceFor(auth);
+            response.put("success", true);
+            response.put("calls", service.getTrace());
+            response.put("thoughts", service.getThoughts());
+            response.put("summary", service.getTraceSummary());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
     @PostMapping("/reset")
     public ResponseEntity<Map<String, Object>> resetSession(Authentication auth) {
         Map<String, Object> response = new HashMap<>();
@@ -198,6 +215,28 @@ public class PsykologenController {
         response.put("success", true);
         response.put("enabled", enabled);
         return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/settings/context-strategy")
+    public ResponseEntity<Map<String, Object>> setContextStrategy(Authentication auth,
+            @RequestBody Map<String, String> body) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String id = body.get("strategy");
+            if (id == null || id.isBlank()) {
+                response.put("success", false);
+                response.put("error", "Fältet 'strategy' saknas.");
+                return ResponseEntity.badRequest().body(response);
+            }
+            serviceFor(auth).setContextStrategy(id);
+            response.put("success", true);
+            response.put("contextStrategy", id);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 
     @PutMapping("/settings/session-duration")

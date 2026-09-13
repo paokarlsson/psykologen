@@ -2,7 +2,7 @@ import { Component, ChangeDetectionStrategy, ElementRef, ViewChild } from '@angu
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ApiService } from '../../services/api.service';
+import { ApiService, ContextStrategyDto } from '../../services/api.service';
 import { LoadingSpinner } from '../../shared/loading-spinner/loading-spinner';
 
 interface PromptField {
@@ -32,7 +32,7 @@ const FIELD_META: { key: string; label: string; description: string }[] = [
   {
     key: 'erikResponse',
     label: 'Svarsmall (det Erik säger till dig)',
-    description: 'Platshållare: {{currentThoughts}}, {{sessionPlan}}, {{sessionTimeMinutes}}, {{sessionDurationMinutes}}, {{remainingMinutes}}, {{userInput}}'
+    description: 'Platshållare: {{currentThoughts}}, {{patientProfile}}, {{sessionPlan}}, {{sessionTimeMinutes}}, {{sessionDurationMinutes}}, {{remainingMinutes}}, {{userInput}}'
   },
   {
     key: 'profileUpdate',
@@ -69,6 +69,9 @@ export class Settings {
   defaultSessionDurationMinutes = 45;
   isSavingDuration = false;
 
+  contextStrategy = 'full';
+  contextStrategies: ContextStrategyDto[] = [];
+
   constructor(private apiService: ApiService) { }
 
   toggleOpen(): void {
@@ -99,6 +102,8 @@ export class Settings {
         }));
         this.sessionDurationMinutes = response.sessionDurationMinutes;
         this.defaultSessionDurationMinutes = response.defaultSessionDurationMinutes;
+        this.contextStrategy = response.contextStrategy;
+        this.contextStrategies = response.contextStrategies;
         this.isLoading = false;
       },
       error: (error: HttpErrorResponse) => {
@@ -183,6 +188,24 @@ export class Settings {
   resetSessionDuration(): void {
     this.sessionDurationMinutes = this.defaultSessionDurationMinutes;
     this.saveSessionDuration();
+  }
+
+  strategyDescription(): string {
+    return this.contextStrategies.find(s => s.id === this.contextStrategy)?.description ?? '';
+  }
+
+  onChangeContextStrategy(): void {
+    const valt = this.contextStrategy;
+    this.errorMessage = null;
+    this.apiService.setContextStrategy(valt).subscribe({
+      next: () => {
+        const label = this.contextStrategies.find(s => s.id === valt)?.label ?? valt;
+        this.statusMessage = `Kontextstrategi satt till "${label}". Gäller från nästa meddelande.`;
+      },
+      error: () => {
+        this.errorMessage = 'Kunde inte byta kontextstrategi.';
+      }
+    });
   }
 
   resetSession(): void {

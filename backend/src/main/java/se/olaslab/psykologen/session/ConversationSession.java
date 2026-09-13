@@ -4,12 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import se.olaslab.psykologen.service.ai.AiResponse;
+import se.olaslab.psykologen.trace.TraceRecorder;
 
 public class ConversationSession {
 
     private final List<ChatMessage> messages = new ArrayList<>();
     private final List<String> internalThoughts = new ArrayList<>();
     private final long sessionStartTime = System.currentTimeMillis();
+
+    // Traceen hör till sessionen och försvinner med den - en ny session börjar tom.
+    private final TraceRecorder tracer = new TraceRecorder();
 
     private int conversationCount = 0;
     private int totalInputTokens = 0;
@@ -21,6 +25,19 @@ public class ConversationSession {
 
     public List<ChatMessage> messages() {
         return List.copyOf(messages);
+    }
+
+    public TraceRecorder tracer() {
+        return tracer;
+    }
+
+    /** Antal användarturer hittills. 0 innan det första meddelandet, alltså under öppningen. */
+    public int turn() {
+        return conversationCount;
+    }
+
+    public List<String> thoughts() {
+        return List.copyOf(internalThoughts);
     }
 
     public List<ChatMessage> historyBeforeLastMessage() {

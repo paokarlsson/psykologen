@@ -161,6 +161,16 @@
   box-sizing: border-box;
 }
 
+.strategy-select {
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: 6px 8px;
+  border: 1px solid #ced4da;
+  border-radius: var(--radius-sm);
+  box-sizing: border-box;
+  background: white;
+}
+
 .duration-row button {
   padding: 6px 12px;
   border-radius: 6px;

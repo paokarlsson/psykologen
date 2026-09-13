@@ -13,6 +13,7 @@ import se.olaslab.psykologen.session.ConversationSession;
 import se.olaslab.psykologen.session.Role;
 import se.olaslab.psykologen.storage.HistoryEntry;
 import se.olaslab.psykologen.storage.SessionArtifactStore;
+import se.olaslab.psykologen.trace.LlmCall;
 
 public class BackgroundSessionUpdater {
 
@@ -40,12 +41,15 @@ public class BackgroundSessionUpdater {
             String prompt = PromptTemplates.profileUpdate(
                     promptStore.getProfileUpdateTemplate(), existingProfile, userInput, agentResponse);
 
-            AiResponse response = aiClient.chat(List.of(ChatMessage.instruction(Role.USER, prompt)));
+            List<ChatMessage> request = List.of(ChatMessage.instruction(Role.USER, prompt));
+            AiResponse response = session.tracer()
+                    .record(LlmCall.PROFIL, session.turn(), request, aiClient::chat);
             ChangelogResponse parsed = ChangelogResponse.parse(response.text());
             artifactStore.writeProfile(parsed.document());
             logChange(HistoryEntry.PROFILE, session, parsed);
         } catch (Exception e) {
-            // Ett misslyckat bakgrundsjobb får aldrig störa samtalet
+            // Ett misslyckat bakgrundsjobb får aldrig störa samtalet. Felet är inte tappat:
+            // TraceRecorder har redan spelat in det, så det syns i Glaslådan.
         }
     }
 
@@ -58,12 +62,15 @@ public class BackgroundSessionUpdater {
                     existingPlan, userInput, agentResponse, timingAnalysis, session.elapsedMinutes(),
                     promptStore.getSessionDurationMinutes());
 
-            AiResponse response = aiClient.chat(List.of(ChatMessage.instruction(Role.USER, prompt)));
+            List<ChatMessage> request = List.of(ChatMessage.instruction(Role.USER, prompt));
+            AiResponse response = session.tracer()
+                    .record(LlmCall.PLAN, session.turn(), request, aiClient::chat);
             ChangelogResponse parsed = ChangelogResponse.parse(response.text());
             artifactStore.writePlan(parsed.document());
             logChange(HistoryEntry.PLAN, session, parsed);
         } catch (Exception e) {
-            // Ett misslyckat bakgrundsjobb får aldrig störa samtalet
+            // Ett misslyckat bakgrundsjobb får aldrig störa samtalet. Felet är inte tappat:
+            // TraceRecorder har redan spelat in det, så det syns i Glaslådan.
         }
     }
 

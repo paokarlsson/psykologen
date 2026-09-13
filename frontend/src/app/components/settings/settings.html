@@ -67,6 +67,25 @@
       </div>
 
       <div class="section">
+        <label class="duration-label" for="context-strategy">Kontextstrategi</label>
+        <select
+          id="context-strategy"
+          class="strategy-select"
+          [(ngModel)]="contextStrategy"
+          (change)="onChangeContextStrategy()"
+        >
+          @for (strategy of contextStrategies; track strategy.id) {
+            <option [value]="strategy.id">{{ strategy.label }}</option>
+          }
+        </select>
+        <p class="hint">{{ strategyDescription() }}</p>
+        <p class="hint">
+          Vad Erik får se av samtalet i varje anrop. Jämför effekten i Glaslådan - “kontext nu”
+          visar hur många tokens han faktiskt läste.
+        </p>
+      </div>
+
+      <div class="section">
         <button class="danger-btn" (click)="confirmResetDialog.showModal()">🔄 Starta om session (blankt)</button>
         <p class="hint">Rensar samtalshistorik, profil och plan. Rör inte dina promptar.</p>
       </div>

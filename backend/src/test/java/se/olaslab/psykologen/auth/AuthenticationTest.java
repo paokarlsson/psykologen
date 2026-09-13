@@ -1,5 +1,7 @@
 package se.olaslab.psykologen.auth;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -118,6 +120,41 @@ class AuthenticationTest {
                 .andExpect(jsonPath("$.profile").value("Ingen profil skapad än."));
     }
 
+    @Test
+    void traceKraverInloggning() throws Exception {
+        mockMvc.perform(get("/api/psykologen/trace"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void anvandareSerInteVarandrasTrace() throws Exception {
+        MockHttpSession annasSession = login("anna", ANNA_PASSWORD);
+        MockHttpSession bosSession = login("bosse", BO_PASSWORD);
+
+        // Traceen innehåller hela samtalet i klartext - den får aldrig läcka mellan konton.
+        mockMvc.perform(post("/api/psykologen/message").session(annasSession)
+                .with(csrf())
+                .contentType("application/json")
+                .content("{\"message\":\"Annas hemlighet\"}"))
+                .andExpect(status().isOk());
+
+        // Antalet anrop assertas inte: bakgrundsjobben för profil och plan kan hinna klart
+        // eller inte innan traceen läses. Det som spelar roll är vem som ser vad.
+        String annasTrace = mockMvc.perform(get("/api/psykologen/trace").session(annasSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.calls").isNotEmpty())
+                .andReturn().getResponse().getContentAsString();
+        assertTrue(annasTrace.contains("Annas hemlighet"),
+                "Annas egen trace ska innehålla det hon skrev");
+
+        String bosTrace = mockMvc.perform(get("/api/psykologen/trace").session(bosSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.summary.callCount").value(0))
+                .andReturn().getResponse().getContentAsString();
+        assertFalse(bosTrace.contains("Annas hemlighet"),
+                "Bosse ska aldrig se Annas samtal");
+    }
+
     private MockHttpSession login(String username, String password) throws Exception {
         MockHttpSession session = new MockHttpSession();
         mockMvc.perform(post("/api/auth/login")
@@ -200,7 +237,7 @@ class AuthenticationTest {
 
         @Override
         public AiResponse chat(List<ChatMessage> messages) {
-            return new AiResponse("Fejkat svar", 0, 0);
+            return new AiResponse("Fejkat svar", "fake-modell", 0, 0, 0, 0);
         }
     }
 }

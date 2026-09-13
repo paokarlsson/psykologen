@@ -32,6 +32,12 @@ export interface PlanResponse {
   plan: string;
 }
 
+export interface ContextStrategyDto {
+  id: string;
+  label: string;
+  description: string;
+}
+
 export interface PromptSettingsResponse {
   success: boolean;
   useCustomPrompts: boolean;
@@ -39,6 +45,8 @@ export interface PromptSettingsResponse {
   defaults: Record<string, string>;
   sessionDurationMinutes: number;
   defaultSessionDurationMinutes: number;
+  contextStrategy: string;
+  contextStrategies: ContextStrategyDto[];
 }
 
 export interface SimpleResponse {
@@ -56,6 +64,46 @@ export interface HistoryEntryDto {
 export interface HistoryResponse {
   success: boolean;
   history: HistoryEntryDto[];
+}
+
+export type TraceStep = 'oppning' | 'reflektion' | 'svar' | 'profil' | 'plan';
+
+export interface LlmCallDto {
+  steg: TraceStep;
+  turn: number;
+  startedAt: number;
+  latencyMs: number;
+  /** null när anropet misslyckades innan någon modell svarade. */
+  model: string | null;
+  sentMessages: Message[];
+  responseText: string | null;
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheCreationTokens: number;
+  /** null när modellen saknar pris i backendens prislista. */
+  costUsd: number | null;
+  /** null när anropet lyckades. */
+  error: string | null;
+}
+
+export interface TraceSummaryDto {
+  callCount: number;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalCostUsd: number;
+  /** false när något anrop kördes på en modell utan känt pris - summan är då för låg. */
+  costComplete: boolean;
+  avgLatencyMs: number;
+  currentContextTokens: number;
+  errorCount: number;
+}
+
+export interface TraceResponse {
+  success: boolean;
+  calls: LlmCallDto[];
+  thoughts: string[];
+  summary: TraceSummaryDto;
 }
 
 @Injectable({
@@ -110,8 +158,16 @@ export class ApiService {
     return this.http.put<SimpleResponse>(`${this.baseUrl}/settings/session-duration`, { minutes });
   }
 
+  setContextStrategy(strategy: string): Observable<SimpleResponse> {
+    return this.http.put<SimpleResponse>(`${this.baseUrl}/settings/context-strategy`, { strategy });
+  }
+
   getHistory(): Observable<HistoryResponse> {
     return this.http.get<HistoryResponse>(`${this.baseUrl}/history`);
+  }
+
+  getTrace(): Observable<TraceResponse> {
+    return this.http.get<TraceResponse>(`${this.baseUrl}/trace`);
   }
 
 }

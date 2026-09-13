@@ -5,6 +5,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import se.olaslab.psykologen.context.ContextStrategies;
+import se.olaslab.psykologen.context.ContextStrategy;
 import se.olaslab.psykologen.prompt.PromptStore;
 import se.olaslab.psykologen.prompt.PromptTemplates;
 import se.olaslab.psykologen.service.ai.AiClient;
@@ -14,6 +16,8 @@ import se.olaslab.psykologen.session.ConversationSession;
 import se.olaslab.psykologen.session.Role;
 import se.olaslab.psykologen.storage.HistoryEntry;
 import se.olaslab.psykologen.storage.SessionArtifactStore;
+import se.olaslab.psykologen.trace.LlmCall;
+import se.olaslab.psykologen.trace.TraceSummary;
 
 public class PsykologenService {
 
@@ -47,7 +51,22 @@ public class PsykologenService {
         result.put("defaults", PromptStore.defaults());
         result.put("sessionDurationMinutes", promptStore.getSessionDurationMinutes());
         result.put("defaultSessionDurationMinutes", PromptStore.DEFAULT_SESSION_DURATION_MINUTES);
+        result.put("contextStrategy", promptStore.getContextStrategy());
+        result.put("contextStrategies", ContextStrategies.all().stream()
+                .map(strategy -> Map.of(
+                        "id", strategy.id(),
+                        "label", strategy.label(),
+                        "description", strategy.description()))
+                .toList());
         return result;
+    }
+
+    public void setContextStrategy(String id) {
+        promptStore.setContextStrategy(id);
+    }
+
+    private ContextStrategy contextStrategy() {
+        return ContextStrategies.byId(promptStore.getContextStrategy());
     }
 
     public void setSessionDurationMinutes(double minutes) {
@@ -74,7 +93,8 @@ public class PsykologenService {
         List<ChatMessage> openingMessages = new ArrayList<>(session.messages());
         openingMessages.add(ChatMessage.instruction(Role.USER, promptStore.getOpeningInstruction()));
 
-        AiResponse openingResponse = aiClient.chat(openingMessages);
+        AiResponse openingResponse = session.tracer()
+                .record(LlmCall.OPPNING, session.turn(), openingMessages, aiClient::chat);
         session.recordUsage(openingResponse);
 
         String agentOpening = openingResponse.text();
@@ -84,13 +104,14 @@ public class PsykologenService {
 
     public String processMessage(String userInput) throws Exception {
         session.addUserMessage(userInput);
+        // Räknas upp först, så att turnumret i traceen gäller den tur anropen tillhör.
+        session.incrementConversationCount();
 
         String newThoughts = reflectOnInput(userInput);
         session.addThoughtLines(newThoughts);
 
         String agentResponse = respondAsErik(userInput);
         session.addAssistantMessage(agentResponse);
-        session.incrementConversationCount();
 
         backgroundUpdater.triggerUpdates(session, userInput, agentResponse);
 
@@ -115,28 +136,44 @@ public class PsykologenService {
         return artifactStore.readHistory();
     }
 
+    public List<LlmCall> getTrace() {
+        return session.tracer().calls();
+    }
+
+    public TraceSummary getTraceSummary() {
+        return session.tracer().summary();
+    }
+
+    /** Eriks tysta inre reflektioner - ackumulerade men aldrig tidigare synliga. */
+    public List<String> getThoughts() {
+        return session.thoughts();
+    }
+
     private String reflectOnInput(String userInput) throws Exception {
         String prompt = PromptTemplates.thoughtReflection(
                 promptStore.getThoughtReflectionTemplate(), userInput, session.thoughtsAsBulletText());
 
-        List<ChatMessage> request = new ArrayList<>(session.historyBeforeLastMessage());
+        List<ChatMessage> request = new ArrayList<>(contextStrategy().build(session, artifactStore));
         request.add(ChatMessage.instruction(Role.USER, prompt));
 
-        AiResponse response = aiClient.chat(request);
+        AiResponse response = session.tracer()
+                .record(LlmCall.REFLEKTION, session.turn(), request, aiClient::chat);
         session.recordUsage(response);
         return response.text().trim();
     }
 
     private String respondAsErik(String userInput) throws Exception {
         String sessionPlan = artifactStore.readPlan().orElse("");
+        String patientProfile = artifactStore.readProfile().orElse("");
         String prompt = PromptTemplates.erikResponse(promptStore.getErikResponseTemplate(),
-                session.thoughtsAsBulletText(), sessionPlan, session.elapsedMinutes(),
+                session.thoughtsAsBulletText(), patientProfile, sessionPlan, session.elapsedMinutes(),
                 promptStore.getSessionDurationMinutes(), userInput);
 
-        List<ChatMessage> request = new ArrayList<>(session.historyBeforeLastMessage());
+        List<ChatMessage> request = new ArrayList<>(contextStrategy().build(session, artifactStore));
         request.add(ChatMessage.instruction(Role.USER, prompt));
 
-        AiResponse response = aiClient.chat(request);
+        AiResponse response = session.tracer()
+                .record(LlmCall.SVAR, session.turn(), request, aiClient::chat);
         session.recordUsage(response);
         return response.text();
     }

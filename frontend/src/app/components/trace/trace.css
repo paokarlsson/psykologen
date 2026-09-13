@@ -1,0 +1,275 @@
+/* Samma railmönster som historikpanelen: värdelementet ger panelen sitt containing block. */
+:host {
+  display: block;
+  position: relative;
+  z-index: 20;
+}
+
+:host > button {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: white;
+  padding: var(--space-2) 14px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+:host > button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.chevron {
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+
+.chevron.open {
+  transform: rotate(180deg);
+}
+
+/* Bredare än historiken - hela prompter ska gå att läsa. */
+section {
+  position: absolute;
+  top: 0;
+  left: calc(100% + var(--space-2));
+  width: min(640px, 52vw);
+  max-height: 80vh;
+  overflow-y: auto;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-panel);
+  padding: var(--space-4);
+  text-align: left;
+}
+
+section:focus {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: -3px;
+}
+
+section header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+section h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--space-1, 0.25rem);
+}
+
+section header button {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 0 var(--space-2);
+  font-size: 1rem;
+  color: var(--color-muted-text);
+}
+
+section h3 {
+  font-size: 0.9rem;
+  margin: var(--space-3) 0 var(--space-2);
+}
+
+/* Ikonrail: knappen krymper till sin ikon, samma brytpunkt som app.css. */
+@media (max-width: 1149px) {
+  :host > button {
+    justify-content: center;
+    padding: var(--space-2);
+  }
+
+  .label,
+  :host > button .chevron {
+    display: none;
+  }
+}
+
+/* Toppbar: panelen läggs fast strax under baren. */
+@media (max-width: 899px) {
+  section {
+    position: fixed;
+    top: calc(var(--bar-h) + env(safe-area-inset-top) + var(--space-2));
+    left: var(--space-2);
+    right: var(--space-2);
+    width: auto;
+    max-height: calc(100dvh - var(--bar-h) - 5rem);
+    overscroll-behavior: contain;
+    padding: var(--space-3);
+  }
+}
+
+.hint {
+  font-size: 0.85rem;
+  color: #777;
+  margin: 0.3rem 0;
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.25rem;
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.summary div {
+  display: flex;
+  flex-direction: column;
+}
+
+.summary dt {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #888;
+}
+
+.summary dd {
+  margin: 0;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.summary-error dd {
+  color: #c0392b;
+  font-weight: 600;
+}
+
+.thoughts {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.calls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.call {
+  border-left: 3px solid #ced4da;
+  background: #f8f9fa;
+  border-radius: 0 6px 6px 0;
+  overflow: hidden;
+}
+
+.call.reflektion {
+  border-left-color: #f39c12;
+}
+
+.call.svar {
+  border-left-color: #0d6efd;
+}
+
+.call.profil {
+  border-left-color: #28a745;
+}
+
+.call.plan {
+  border-left-color: #6f42c1;
+}
+
+.call.failed {
+  border-left-color: #c0392b;
+  background: #fdf3f2;
+}
+
+.call-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  width: 100%;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 0.45rem 0.75rem;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.call-header:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.step-badge {
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.call-meta {
+  flex: 1;
+  font-size: 0.75rem;
+  color: #888;
+  font-variant-numeric: tabular-nums;
+}
+
+.call-error {
+  padding: 0 0.75rem 0.45rem;
+  font-size: 0.8rem;
+  color: #c0392b;
+}
+
+.call-body {
+  padding: 0 0.75rem 0.6rem;
+  border-top: 1px solid #e6e8ea;
+}
+
+.call-body h4 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #888;
+  margin: 0.6rem 0 0.35rem;
+}
+
+.message {
+  margin-bottom: 0.5rem;
+}
+
+.role {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #555;
+  background: #e9ecef;
+  border-radius: var(--radius-pill);
+  padding: 0.05rem 0.5rem;
+  margin-bottom: 0.2rem;
+}
+
+.call-body pre {
+  margin: 0;
+  padding: 0.5rem;
+  background: white;
+  border: 1px solid #e6e8ea;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 20rem;
+  overflow-y: auto;
+}
+
+.call-body pre.response {
+  background: #f1f8ff;
+}
