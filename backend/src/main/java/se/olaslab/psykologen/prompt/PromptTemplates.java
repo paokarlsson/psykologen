@@ -34,12 +34,13 @@ public final class PromptTemplates {
                 "userInput", userInput));
     }
 
-    public static String profileUpdate(String template, String existingProfile, String userInput,
-            String agentResponse) {
+    /** Profilen skrivs före Eriks svar, så utdraget är hans föregående replik plus patientens nya. */
+    public static String profileUpdate(String template, String existingProfile, String previousResponse,
+            String userInput) {
         return render(template, Map.of(
                 "existingProfile", existingProfile.isEmpty() ? "Ingen befintlig profil." : existingProfile,
-                "userInput", userInput,
-                "agentResponse", agentResponse));
+                "previousResponse", previousResponse.isEmpty() ? "Inget tidigare svar från Erik." : previousResponse,
+                "userInput", userInput));
     }
 
     public static String planUpdate(String template, String existingPlan, String userInput, String agentResponse,

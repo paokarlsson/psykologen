@@ -2,8 +2,10 @@ package se.olaslab.psykologen.storage;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -105,10 +107,25 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
         return Optional.empty();
     }
 
+    /**
+     * Skriver via en temporärfil och byter in den.
+     *
+     * <p>Profilen skrivs numera på en egen tråd samtidigt som huvudtråden bygger kontexten och
+     * kan läsa samma fil. En rå {@code writeString} nollställer filen först, så en läsare kunde
+     * få en halvskriven profil. Namnbytet är odelbart: läsaren ser antingen den gamla eller den
+     * nya filen, aldrig något däremellan.
+     */
     private void write(Path path, String content) {
+        Path temp = path.resolveSibling(path.getFileName() + ".tmp");
         try {
-            Files.writeString(path, content);
+            Files.writeString(temp, content);
+            try {
+                Files.move(temp, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(temp, path, StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (IOException e) {
+            deleteIfExists(temp);
             throw new UncheckedIOException(e);
         }
     }

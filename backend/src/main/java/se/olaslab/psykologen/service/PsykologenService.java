@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import se.olaslab.psykologen.context.ContextStrategies;
 import se.olaslab.psykologen.context.ContextStrategy;
@@ -24,16 +27,18 @@ public class PsykologenService {
 
     private final AiClient aiClient;
     private final SessionArtifactStore artifactStore;
-    private final BackgroundSessionUpdater backgroundUpdater;
+    private final SessionArtifactUpdater artifactUpdater;
     private final PromptStore promptStore;
+    private final ExecutorService executor;
     private volatile ConversationSession session;
 
     public PsykologenService(AiClient aiClient, SessionArtifactStore artifactStore,
-            BackgroundSessionUpdater backgroundUpdater, PromptStore promptStore) {
+            SessionArtifactUpdater artifactUpdater, PromptStore promptStore, ExecutorService executor) {
         this.aiClient = aiClient;
         this.artifactStore = artifactStore;
-        this.backgroundUpdater = backgroundUpdater;
+        this.artifactUpdater = artifactUpdater;
         this.promptStore = promptStore;
+        this.executor = executor;
         this.session = new ConversationSession(promptStore.getSystemPrompt());
 
         // Ett nystartat samtal ska inte ärva profil/plan från en tidigare körning.
@@ -104,18 +109,40 @@ public class PsykologenService {
     }
 
     public String processMessage(String userInput) throws Exception {
-        session.addUserMessage(userInput);
-        // Räknas upp först, så att turnumret i traceen gäller den tur anropen tillhör.
-        session.incrementConversationCount();
+        ConversationSession current = session;
+        String previousResponse = current.lastAgentMessage();
 
+        current.addUserMessage(userInput);
+        // Räknas upp först, så att turnumret i traceen gäller den tur anropen tillhör.
+        current.incrementConversationCount();
+
+        // Föranropen är oberoende av varandra och går parallellt. Turen tar därför ungefär
+        // lika lång tid som förr, men Erik svarar på en profil som redan känner till det
+        // patienten just sa - i stället för gårdagens bild, en tur försenad.
+        Future<?> profileUpdate = executor.submit(
+                () -> artifactUpdater.updateProfile(current, previousResponse, userInput));
         reflectOnInput(userInput);
+        awaitPreparation(profileUpdate);
 
         String agentResponse = respondAsErik(userInput);
-        session.addAssistantMessage(agentResponse);
+        current.addAssistantMessage(agentResponse);
 
-        backgroundUpdater.triggerUpdates(session, userInput, agentResponse);
+        // Planen är trögare än profilen och hinner bli klar medan användaren läser svaret.
+        artifactUpdater.triggerPlanUpdate(current, userInput, agentResponse);
 
         return agentResponse;
+    }
+
+    /** Väntar in ett föranrop. Uppgiften hanterar och spelar in sina egna fel - turen rullar vidare. */
+    private void awaitPreparation(Future<?> preparation) {
+        try {
+            preparation.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException e) {
+            // Ska inte hända: uppgiften sväljer sina egna fel. Skulle den ändå kasta får
+            // det inte fälla turen - Erik svarar på de dokument som redan finns.
+        }
     }
 
     public String getProfile() {

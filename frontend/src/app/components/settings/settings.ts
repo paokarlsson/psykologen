@@ -37,7 +37,7 @@ const FIELD_META: { key: string; label: string; description: string }[] = [
   {
     key: 'profileUpdate',
     label: 'Profiluppdatering (analys av dig som patient)',
-    description: 'Måste svara i två delar, rubrikerna ordagrant: "===ÄNDRINGAR===" (kort ändringslogg - visas under Historik) följt av "===DOKUMENT===" (hela profilen). Tar du bort rubrikerna loggas ingen historik den turen. Platshållare: {{existingProfile}}, {{userInput}}, {{agentResponse}}'
+    description: 'Körs före Eriks svar, så att han svarar på en profil som redan innehåller det du just skrev. Utdraget är därför Eriks föregående replik ({{previousResponse}}) plus din nya ({{userInput}}). Måste svara i två delar, rubrikerna ordagrant: "===ÄNDRINGAR===" (kort ändringslogg - visas under Historik) följt av "===DOKUMENT===" (hela profilen). Tar du bort rubrikerna loggas ingen historik den turen. Platshållare: {{existingProfile}}, {{previousResponse}}, {{userInput}}'
   },
   {
     key: 'planUpdate',

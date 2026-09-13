@@ -44,6 +44,15 @@ public class ConversationSession {
         return List.copyOf(messages.subList(0, messages.size() - 1));
     }
 
+    /** Eriks senaste replik, tom sträng innan han sagt något. */
+    public String lastAgentMessage() {
+        return messages.reversed().stream()
+                .filter(message -> message.role() == Role.ASSISTANT)
+                .map(ChatMessage::content)
+                .findFirst()
+                .orElse("");
+    }
+
     public void addUserMessage(String content) {
         messages.add(stampedMessage(Role.USER, content));
     }

@@ -15,8 +15,8 @@ import se.olaslab.psykologen.auth.AuthProperties;
 import se.olaslab.psykologen.auth.LoginAttemptTracker;
 import se.olaslab.psykologen.auth.PasswordHashRunner;
 import se.olaslab.psykologen.prompt.PromptStore;
-import se.olaslab.psykologen.service.BackgroundSessionUpdater;
 import se.olaslab.psykologen.service.PsykologenService;
+import se.olaslab.psykologen.service.SessionArtifactUpdater;
 import se.olaslab.psykologen.service.UserSessionRegistry;
 import se.olaslab.psykologen.service.ai.AiClient;
 import se.olaslab.psykologen.service.ai.AnthropicChatClient;
@@ -48,20 +48,21 @@ public class PsykologenApplication {
 
     private static UserSessionRegistry buildSessionRegistry(Environment env) {
         AiClient aiClient = buildAiClient(env);
-        ExecutorService backgroundExecutor = Executors.newCachedThreadPool();
+        // Samma pool bär både föranropen som turen väntar in och jobben som körs efteråt.
+        ExecutorService executor = Executors.newCachedThreadPool();
         Path usersDir = Path.of(env.getProperty("app.storage.base-dir", "data/users"));
 
         return new UserSessionRegistry(
-                username -> buildPsykologenService(aiClient, backgroundExecutor, usersDir.resolve(username)));
+                username -> buildPsykologenService(aiClient, executor, usersDir.resolve(username)));
     }
 
-    private static PsykologenService buildPsykologenService(AiClient aiClient, ExecutorService backgroundExecutor,
+    private static PsykologenService buildPsykologenService(AiClient aiClient, ExecutorService executor,
             Path userDir) {
         SessionArtifactStore artifactStore = new FileSessionArtifactStore(userDir);
         PromptStore promptStore = new PromptStore(userDir);
-        BackgroundSessionUpdater backgroundUpdater =
-                new BackgroundSessionUpdater(aiClient, artifactStore, promptStore, backgroundExecutor);
-        return new PsykologenService(aiClient, artifactStore, backgroundUpdater, promptStore);
+        SessionArtifactUpdater artifactUpdater =
+                new SessionArtifactUpdater(aiClient, artifactStore, promptStore, executor);
+        return new PsykologenService(aiClient, artifactStore, artifactUpdater, promptStore, executor);
     }
 
     private static AiClient buildAiClient(Environment env) {

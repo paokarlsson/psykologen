@@ -15,14 +15,21 @@ import se.olaslab.psykologen.storage.HistoryEntry;
 import se.olaslab.psykologen.storage.SessionArtifactStore;
 import se.olaslab.psykologen.trace.LlmCall;
 
-public class BackgroundSessionUpdater {
+/**
+ * Håller profilen och planen uppdaterade vid sidan av samtalet.
+ *
+ * <p>De två dokumenten har olika brådska. Profilen är det Erik behöver för att svara på det som
+ * just sades och skrivs därför före svaret, medan planen är trögare och får skrivas färdigt i
+ * bakgrunden medan användaren läser.
+ */
+public class SessionArtifactUpdater {
 
     private final AiClient aiClient;
     private final SessionArtifactStore artifactStore;
     private final PromptStore promptStore;
     private final ExecutorService executor;
 
-    public BackgroundSessionUpdater(AiClient aiClient, SessionArtifactStore artifactStore,
+    public SessionArtifactUpdater(AiClient aiClient, SessionArtifactStore artifactStore,
             PromptStore promptStore, ExecutorService executor) {
         this.aiClient = aiClient;
         this.artifactStore = artifactStore;
@@ -30,16 +37,19 @@ public class BackgroundSessionUpdater {
         this.executor = executor;
     }
 
-    public void triggerUpdates(ConversationSession session, String userInput, String agentResponse) {
-        executor.submit(() -> updateProfile(session, userInput, agentResponse));
-        executor.submit(() -> updatePlan(session, userInput, agentResponse));
-    }
-
-    private void updateProfile(ConversationSession session, String userInput, String agentResponse) {
+    /**
+     * Skriver in patientens senaste replik i profilen. Blockerande - anroparen kör den på egen
+     * tråd parallellt med de andra föranropen och väntar in den innan Erik svarar.
+     *
+     * <p>Utdraget paras om jämfört med hur det såg ut när profilen uppdaterades efter svaret:
+     * Eriks föregående replik plus patientens nya. Ingenting tappas, utbytet delas bara på
+     * mitten - och det som bär nya fakta om patienten är med innan Erik öppnar munnen.
+     */
+    public void updateProfile(ConversationSession session, String previousResponse, String userInput) {
         try {
             String existingProfile = artifactStore.readProfile().orElse("");
             String prompt = PromptTemplates.profileUpdate(
-                    promptStore.getProfileUpdateTemplate(), existingProfile, userInput, agentResponse);
+                    promptStore.getProfileUpdateTemplate(), existingProfile, previousResponse, userInput);
 
             List<ChatMessage> request = List.of(ChatMessage.instruction(Role.USER, prompt));
             AiResponse response = session.tracer()
@@ -48,9 +58,14 @@ public class BackgroundSessionUpdater {
             artifactStore.writeProfile(parsed.document());
             logChange(HistoryEntry.PROFILE, session, parsed);
         } catch (Exception e) {
-            // Ett misslyckat bakgrundsjobb får aldrig störa samtalet. Felet är inte tappat:
-            // TraceRecorder har redan spelat in det, så det syns i Glaslådan.
+            // Ett misslyckat föranrop får aldrig störa samtalet - Erik svarar då på den profil
+            // som redan fanns. Felet är inte tappat: TraceRecorder har redan spelat in det,
+            // så det syns i Glaslådan.
         }
+    }
+
+    public void triggerPlanUpdate(ConversationSession session, String userInput, String agentResponse) {
+        executor.submit(() -> updatePlan(session, userInput, agentResponse));
     }
 
     private void updatePlan(ConversationSession session, String userInput, String agentResponse) {

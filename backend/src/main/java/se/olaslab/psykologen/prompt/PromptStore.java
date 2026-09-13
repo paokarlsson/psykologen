@@ -101,8 +101,8 @@ public class PromptStore {
                 {{existingProfile}}
 
                 NYTT SAMTALSUTDRAG:
-                Patient: {{userInput}}
-                Psykolog Erik: {{agentResponse}}
+                Psykolog Erik (föregående replik): {{previousResponse}}
+                Patient (det som just sades): {{userInput}}
 
                 Uppdatera profilen för PATIENTEN med NYA FAKTA som framkommer. Inkludera:
                 - Personliga detaljer om patienten (ålder, jobb, familj, etc.)

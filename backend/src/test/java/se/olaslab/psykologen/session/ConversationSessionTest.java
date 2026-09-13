@@ -46,6 +46,21 @@ class ConversationSessionTest {
     }
 
     @Test
+    void senasteErikRepliknArAldreAnDenNyaAnvandarrepliken() {
+        ConversationSession session = new ConversationSession("Du är Erik.");
+        session.addAssistantMessage("Hej, hur mår du?");
+        session.addUserMessage("sådär faktiskt");
+
+        // Profilanropet körs före Eriks svar och paras med hans föregående replik.
+        assertEquals("Hej, hur mår du?", session.lastAgentMessage());
+    }
+
+    @Test
+    void senasteErikRepliknArTomFoereOppningen() {
+        assertEquals("", new ConversationSession("Du är Erik.").lastAgentMessage());
+    }
+
+    @Test
     void gamlaFormatetLaggerFortfarandeTillTankar() {
         ConversationSession session = sessionMedTankar();
 

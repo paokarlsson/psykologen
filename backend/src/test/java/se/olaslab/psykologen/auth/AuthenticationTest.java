@@ -32,8 +32,8 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import se.olaslab.psykologen.prompt.PromptStore;
-import se.olaslab.psykologen.service.BackgroundSessionUpdater;
 import se.olaslab.psykologen.service.PsykologenService;
+import se.olaslab.psykologen.service.SessionArtifactUpdater;
 import se.olaslab.psykologen.service.UserSessionRegistry;
 import se.olaslab.psykologen.service.ai.AiClient;
 import se.olaslab.psykologen.service.ai.AiResponse;
@@ -206,14 +206,16 @@ class AuthenticationTest {
         @Bean
         UserSessionRegistry userSessionRegistry() {
             AiClient aiClient = new FakeAiClient();
-            ExecutorService executor = Executors.newSingleThreadExecutor();
+            // Föranropen körs parallellt med varandra, precis som i appen.
+            ExecutorService executor = Executors.newCachedThreadPool();
 
             return new UserSessionRegistry(username -> {
                 Path userDir = STORAGE_DIR.resolve(username);
                 SessionArtifactStore artifactStore = new FileSessionArtifactStore(userDir);
                 PromptStore promptStore = new PromptStore(userDir);
                 return new PsykologenService(aiClient, artifactStore,
-                        new BackgroundSessionUpdater(aiClient, artifactStore, promptStore, executor), promptStore);
+                        new SessionArtifactUpdater(aiClient, artifactStore, promptStore, executor),
+                        promptStore, executor);
             });
         }
     }
