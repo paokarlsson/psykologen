@@ -7,6 +7,7 @@ import { LoadingSpinner } from '../../shared/loading-spinner/loading-spinner';
 const STEG_ETIKETT: Record<TraceStep, string> = {
   oppning: '👋 Öppning',
   reflektion: '🧠 Reflektion',
+  metod: '🧭 Metodval',
   svar: '💬 Svar',
   profil: '👤 Profil',
   plan: '📋 Plan',

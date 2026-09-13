@@ -2,6 +2,8 @@ package se.olaslab.psykologen.prompt;
 
 import java.util.Map;
 
+import se.olaslab.psykologen.intervention.Intervention;
+
 public final class PromptTemplates {
 
     private PromptTemplates() {
@@ -21,13 +23,28 @@ public final class PromptTemplates {
                 "currentThoughts", currentThoughts.isEmpty() ? "Inga tidigare tankar." : currentThoughts));
     }
 
+    public static String interventionChoice(String template, String interventionList, String currentThoughts,
+            String sessionPlan, double elapsedMinutes, double sessionDurationMinutes, String userInput) {
+        double remainingMinutes = Math.max(0, sessionDurationMinutes - elapsedMinutes);
+        return render(template, Map.of(
+                "interventionList", interventionList,
+                "currentThoughts", currentThoughts.isEmpty() ? "Inga tidigare tankar." : currentThoughts,
+                "sessionPlan", sessionPlan.isEmpty() ? "Ingen plan än." : sessionPlan,
+                "elapsedMinutes", String.format("%.1f", elapsedMinutes),
+                "sessionDurationMinutes", String.format("%.0f", sessionDurationMinutes),
+                "remainingMinutes", String.format("%.1f", remainingMinutes),
+                "userInput", userInput));
+    }
+
     public static String erikResponse(String template, String currentThoughts, String patientProfile,
-            String sessionPlan, double sessionTimeMinutes, double sessionDurationMinutes, String userInput) {
+            String sessionPlan, Intervention intervention, double sessionTimeMinutes,
+            double sessionDurationMinutes, String userInput) {
         double remainingMinutes = Math.max(0, sessionDurationMinutes - sessionTimeMinutes);
         return render(template, Map.of(
                 "currentThoughts", currentThoughts,
                 "patientProfile", patientProfile.isEmpty() ? "Ingen profil än." : patientProfile,
                 "sessionPlan", sessionPlan.isEmpty() ? "Ingen plan än." : sessionPlan,
+                "intervention", intervention.label() + " - " + intervention.instruction(),
                 "sessionTimeMinutes", String.format("%.1f", sessionTimeMinutes),
                 "sessionDurationMinutes", String.format("%.0f", sessionDurationMinutes),
                 "remainingMinutes", String.format("%.1f", remainingMinutes),

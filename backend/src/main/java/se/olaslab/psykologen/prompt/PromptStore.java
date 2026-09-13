@@ -15,6 +15,7 @@ public class PromptStore {
     public static final String SYSTEM_PROMPT = "systemPrompt";
     public static final String OPENING_INSTRUCTION = "openingInstruction";
     public static final String THOUGHT_REFLECTION = "thoughtReflection";
+    public static final String INTERVENTION_CHOICE = "interventionChoice";
     public static final String ERIK_RESPONSE = "erikResponse";
     public static final String PROFILE_UPDATE = "profileUpdate";
     public static final String PLAN_UPDATE = "planUpdate";
@@ -68,6 +69,30 @@ public class PromptStore {
                 ===DOKUMENT===
                 [Hela den reviderade tankelistan, en tanke per rad med inledande bindestreck. Inga rubriker, ingen numrering.]
                 """,
+            INTERVENTION_CHOICE, """
+                Du är handledare åt psykologen Erik och väljer vilket grepp han ska använda i sin nästa replik.
+
+                ERIKS INRE REFLEKTIONER:
+                {{currentThoughts}}
+
+                SESSIONSPLAN:
+                {{sessionPlan}}
+
+                SESSIONSTID: {{elapsedMinutes}} av {{sessionDurationMinutes}} minuter, {{remainingMinutes}} minuter kvar.
+
+                Patienten sa just: "{{userInput}}"
+
+                GREPP ATT VÄLJA MELLAN:
+                {{interventionList}}
+
+                Välj det grepp som för samtalet framåt just nu. Tänk på:
+                - Vad patienten precis gav dig: ett laddat besked, ett svävande svar, en öppning?
+                - Vad Erik gjorde förra repliken - samma grepp två gånger i rad blir en utfrågning
+                - Var i sessionen ni är. Är tiden nästan slut ska samtalet rundas av, inte fördjupas
+
+                Svara med ENDAST id:t för det valda greppet, till exempel: spegling
+                Ingen förklaring, inga andra ord.
+                """,
             ERIK_RESPONSE, """
                 Du har tillgång till:
 
@@ -84,9 +109,13 @@ public class PromptStore {
                 - Pågått: {{sessionTimeMinutes}} av {{sessionDurationMinutes}} planerade minuter
                 - Tid kvar: {{remainingMinutes}} minuter
 
+                VALT GREPP FÖR DEN HÄR REPLIKEN:
+                {{intervention}}
+
                 Användarens senaste meddelande: "{{userInput}}"
 
                 Som professionell terapeut ska du:
+                - Använda det valda greppet ovan - det är formen för just den här repliken
                 - Fortsätta samtalet i din egen takt
                 - Anpassa samtalet efter patientens behov
                 - Om tiden nästan är slut: börja naturligt runda av samtalet, utan att säga det rakt ut
@@ -240,6 +269,10 @@ public class PromptStore {
 
     public String getThoughtReflectionTemplate() {
         return get(THOUGHT_REFLECTION);
+    }
+
+    public String getInterventionChoiceTemplate() {
+        return get(INTERVENTION_CHOICE);
     }
 
     public String getErikResponseTemplate() {

@@ -30,6 +30,7 @@ public record LlmCall(
 
     public static final String OPPNING = "oppning";
     public static final String REFLEKTION = "reflektion";
+    public static final String METOD = "metod";
     public static final String SVAR = "svar";
     public static final String PROFIL = "profil";
     public static final String PLAN = "plan";

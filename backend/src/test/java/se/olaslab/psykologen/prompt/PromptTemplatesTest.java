@@ -5,13 +5,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
+import se.olaslab.psykologen.intervention.Interventions;
+
 class PromptTemplatesTest {
 
     @Test
     void patientprofilenFyllsIStandardmallen() {
         String renderad = PromptTemplates.erikResponse(
                 PromptStore.defaults().get(PromptStore.ERIK_RESPONSE),
-                "- tanke", "Patienten heter Kim.", "Plan", 5.0, 45.0, "hej");
+                "- tanke", "Patienten heter Kim.", "Plan", Interventions.DEFAULT, 5.0, 45.0, "hej");
 
         assertTrue(renderad.contains("Patienten heter Kim."));
         assertTrue(!renderad.contains("{{patientProfile}}"));
@@ -20,7 +22,7 @@ class PromptTemplatesTest {
     @Test
     void tomProfilGerFallbacktext() {
         String renderad = PromptTemplates.erikResponse("Profil: {{patientProfile}}",
-                "", "", "", 5.0, 45.0, "hej");
+                "", "", "", Interventions.DEFAULT, 5.0, 45.0, "hej");
 
         assertEquals("Profil: Ingen profil än.", renderad);
     }
@@ -40,7 +42,7 @@ class PromptTemplatesTest {
     @Test
     void aterstaendeTidBlirAldrigNegativ() {
         String renderad = PromptTemplates.erikResponse("Kvar: {{remainingMinutes}}",
-                "", "", "", 60.0, 45.0, "hej");
+                "", "", "", Interventions.DEFAULT, 60.0, 45.0, "hej");
 
         // Decimaltecknet beror på locale, därför bara tecknet som spelar roll här.
         assertTrue(!renderad.contains("-"));

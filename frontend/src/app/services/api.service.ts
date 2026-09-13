@@ -66,7 +66,7 @@ export interface HistoryResponse {
   history: HistoryEntryDto[];
 }
 
-export type TraceStep = 'oppning' | 'reflektion' | 'svar' | 'profil' | 'plan';
+export type TraceStep = 'oppning' | 'reflektion' | 'metod' | 'svar' | 'profil' | 'plan';
 
 export interface LlmCallDto {
   steg: TraceStep;

@@ -10,6 +10,8 @@ import java.util.concurrent.Future;
 
 import se.olaslab.psykologen.context.ContextStrategies;
 import se.olaslab.psykologen.context.ContextStrategy;
+import se.olaslab.psykologen.intervention.Intervention;
+import se.olaslab.psykologen.intervention.Interventions;
 import se.olaslab.psykologen.prompt.ChangelogResponse;
 import se.olaslab.psykologen.prompt.PromptStore;
 import se.olaslab.psykologen.prompt.PromptTemplates;
@@ -121,10 +123,12 @@ public class PsykologenService {
         // patienten just sa - i stället för gårdagens bild, en tur försenad.
         Future<?> profileUpdate = executor.submit(
                 () -> artifactUpdater.updateProfile(current, previousResponse, userInput));
+        Future<Intervention> interventionChoice = executor.submit(() -> chooseIntervention(current, userInput));
         reflectOnInput(userInput);
         awaitPreparation(profileUpdate);
+        Intervention intervention = awaitPreparation(interventionChoice, Interventions.DEFAULT);
 
-        String agentResponse = respondAsErik(userInput);
+        String agentResponse = respondAsErik(userInput, intervention);
         current.addAssistantMessage(agentResponse);
 
         // Planen är trögare än profilen och hinner bli klar medan användaren läser svaret.
@@ -133,16 +137,24 @@ public class PsykologenService {
         return agentResponse;
     }
 
-    /** Väntar in ett föranrop. Uppgiften hanterar och spelar in sina egna fel - turen rullar vidare. */
     private void awaitPreparation(Future<?> preparation) {
+        awaitPreparation(preparation, null);
+    }
+
+    /**
+     * Väntar in ett föranrop. Ett föranrop som misslyckas får aldrig fälla turen: Erik svarar då
+     * på de dokument som redan finns, och felet syns ändå i Glaslådan - TraceRecorder har
+     * spelat in det.
+     */
+    private <T> T awaitPreparation(Future<T> preparation, T fallback) {
         try {
-            preparation.get();
+            return preparation.get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (ExecutionException e) {
-            // Ska inte hända: uppgiften sväljer sina egna fel. Skulle den ändå kasta får
-            // det inte fälla turen - Erik svarar på de dokument som redan finns.
+            // Felet är redan inspelat i traceen.
         }
+        return fallback;
     }
 
     public String getProfile() {
@@ -202,12 +214,31 @@ public class PsykologenService {
         }
     }
 
-    private String respondAsErik(String userInput) throws Exception {
+    /**
+     * Väljer greppet Erik ska använda i nästa replik.
+     *
+     * <p>Körs parallellt med reflektionen och ser därför tankarna som de såg ut före turen. Det
+     * är ett medvetet byte: valet vilar på samma patientreplik som reflektionen läser, och att
+     * kedja anropen hade lagt en hel modellrundtur till väntetiden.
+     */
+    private Intervention chooseIntervention(ConversationSession current, String userInput) throws Exception {
+        String prompt = PromptTemplates.interventionChoice(promptStore.getInterventionChoiceTemplate(),
+                Interventions.asPromptList(), current.thoughtsAsBulletText(),
+                artifactStore.readPlan().orElse(""), current.elapsedMinutes(),
+                promptStore.getSessionDurationMinutes(), userInput);
+
+        List<ChatMessage> request = List.of(ChatMessage.instruction(Role.USER, prompt));
+        AiResponse response = current.tracer()
+                .record(LlmCall.METOD, current.turn(), request, aiClient::chat);
+        return Interventions.match(response.text());
+    }
+
+    private String respondAsErik(String userInput, Intervention intervention) throws Exception {
         String sessionPlan = artifactStore.readPlan().orElse("");
         String patientProfile = artifactStore.readProfile().orElse("");
         String prompt = PromptTemplates.erikResponse(promptStore.getErikResponseTemplate(),
-                session.thoughtsAsBulletText(), patientProfile, sessionPlan, session.elapsedMinutes(),
-                promptStore.getSessionDurationMinutes(), userInput);
+                session.thoughtsAsBulletText(), patientProfile, sessionPlan, intervention,
+                session.elapsedMinutes(), promptStore.getSessionDurationMinutes(), userInput);
 
         List<ChatMessage> request = new ArrayList<>(contextStrategy().build(session, artifactStore));
         request.add(ChatMessage.instruction(Role.USER, prompt));

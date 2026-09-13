@@ -30,9 +30,14 @@ const FIELD_META: { key: string; label: string; description: string }[] = [
     description: 'Svarar i två delar, rubrikerna ordagrant: "===ÄNDRINGAR===" (vad som lades till, skrevs om eller ströks - visas under Historik) följt av "===DOKUMENT===" (hela den reviderade tankelistan, som ersätter den gamla). Utan rubrikerna faller mallen tillbaka på det gamla beteendet: svaret läggs till som nya tankar och inget stryks. Platshållare: {{userInput}}, {{currentThoughts}}'
   },
   {
+    key: 'interventionChoice',
+    label: 'Metodval (vilket grepp Erik ska använda)',
+    description: 'Väljer ett terapeutiskt grepp - öppen fråga, spegling, skalfråga och så vidare - innan Erik formulerar sin replik. Ska svara med enbart greppets id. Känns inget id igen i svaret används öppen fråga. Själva katalogen av grepp ligger i koden, {{interventionList}} fyller i den. Platshållare: {{interventionList}}, {{currentThoughts}}, {{sessionPlan}}, {{elapsedMinutes}}, {{sessionDurationMinutes}}, {{remainingMinutes}}, {{userInput}}'
+  },
+  {
     key: 'erikResponse',
     label: 'Svarsmall (det Erik säger till dig)',
-    description: 'Platshållare: {{currentThoughts}}, {{patientProfile}}, {{sessionPlan}}, {{sessionTimeMinutes}}, {{sessionDurationMinutes}}, {{remainingMinutes}}, {{userInput}}'
+    description: 'Platshållare: {{currentThoughts}}, {{patientProfile}}, {{sessionPlan}}, {{intervention}} (greppet metodvalet landade i), {{sessionTimeMinutes}}, {{sessionDurationMinutes}}, {{remainingMinutes}}, {{userInput}}'
   },
   {
     key: 'profileUpdate',
