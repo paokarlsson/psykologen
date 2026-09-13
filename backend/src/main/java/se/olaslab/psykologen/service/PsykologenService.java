@@ -12,6 +12,7 @@ import se.olaslab.psykologen.context.ContextStrategies;
 import se.olaslab.psykologen.context.ContextStrategy;
 import se.olaslab.psykologen.intervention.Intervention;
 import se.olaslab.psykologen.intervention.Interventions;
+import se.olaslab.psykologen.prompt.BulletLines;
 import se.olaslab.psykologen.prompt.ChangelogResponse;
 import se.olaslab.psykologen.prompt.PromptStore;
 import se.olaslab.psykologen.prompt.PromptTemplates;
@@ -118,14 +119,18 @@ public class PsykologenService {
         // Räknas upp först, så att turnumret i traceen gäller den tur anropen tillhör.
         current.incrementConversationCount();
 
-        // Föranropen är oberoende av varandra och går parallellt. Turen tar därför ungefär
-        // lika lång tid som förr, men Erik svarar på en profil som redan känner till det
-        // patienten just sa - i stället för gårdagens bild, en tur försenad.
+        // De fyra föranropen är oberoende av varandra och går parallellt: reflektionen på den
+        // här tråden, profilen, trådarna och metodvalet på egna. Turen tar därför ungefär lika
+        // lång tid som när bara reflektionen låg före svaret, men Erik svarar på en profil och
+        // en trådlista som känner till det patienten just sa - inte en tur försenade.
         Future<?> profileUpdate = executor.submit(
                 () -> artifactUpdater.updateProfile(current, previousResponse, userInput));
+        Future<?> threadsUpdate = executor.submit(
+                () -> artifactUpdater.updateOpenThreads(current, previousResponse, userInput));
         Future<Intervention> interventionChoice = executor.submit(() -> chooseIntervention(current, userInput));
         reflectOnInput(userInput);
         awaitPreparation(profileUpdate);
+        awaitPreparation(threadsUpdate);
         Intervention intervention = awaitPreparation(interventionChoice, Interventions.DEFAULT);
 
         String agentResponse = respondAsErik(userInput, intervention);
@@ -188,6 +193,12 @@ public class PsykologenService {
         return session.thoughts();
     }
 
+    /** Trådar patienten öppnat men släppt, som Erik kan återkomma till. */
+    public List<String> getOpenThreads() {
+        String threads = artifactStore.readOpenThreads().orElse("");
+        return BulletLines.isEmptyAnswer(threads) ? List.of() : BulletLines.parse(threads);
+    }
+
     private void reflectOnInput(String userInput) throws Exception {
         String prompt = PromptTemplates.thoughtReflection(
                 promptStore.getThoughtReflectionTemplate(), userInput, session.thoughtsAsBulletText());
@@ -236,8 +247,9 @@ public class PsykologenService {
     private String respondAsErik(String userInput, Intervention intervention) throws Exception {
         String sessionPlan = artifactStore.readPlan().orElse("");
         String patientProfile = artifactStore.readProfile().orElse("");
+        String openThreads = artifactStore.readOpenThreads().orElse("");
         String prompt = PromptTemplates.erikResponse(promptStore.getErikResponseTemplate(),
-                session.thoughtsAsBulletText(), patientProfile, sessionPlan, intervention,
+                session.thoughtsAsBulletText(), patientProfile, sessionPlan, openThreads, intervention,
                 session.elapsedMinutes(), promptStore.getSessionDurationMinutes(), userInput);
 
         List<ChatMessage> request = new ArrayList<>(contextStrategy().build(session, artifactStore));

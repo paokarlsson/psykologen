@@ -19,6 +19,7 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
 
     private final Path profilePath;
     private final Path planPath;
+    private final Path threadsPath;
     private final Path historyPath;
 
     private final ObjectMapper mapper = new ObjectMapper();
@@ -27,6 +28,7 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
     public FileSessionArtifactStore(Path baseDir) {
         this.profilePath = baseDir.resolve("profile.md");
         this.planPath = baseDir.resolve("plan.md");
+        this.threadsPath = baseDir.resolve("threads.md");
         this.historyPath = baseDir.resolve("history.json");
         try {
             Files.createDirectories(baseDir);
@@ -53,6 +55,16 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
     @Override
     public void writePlan(String content) {
         write(planPath, content);
+    }
+
+    @Override
+    public Optional<String> readOpenThreads() {
+        return read(threadsPath);
+    }
+
+    @Override
+    public void writeOpenThreads(String content) {
+        write(threadsPath, content);
     }
 
     @Override
@@ -93,6 +105,7 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
     public void clear() {
         deleteIfExists(profilePath);
         deleteIfExists(planPath);
+        deleteIfExists(threadsPath);
         deleteIfExists(historyPath);
     }
 

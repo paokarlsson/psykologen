@@ -64,6 +64,32 @@ public class SessionArtifactUpdater {
         }
     }
 
+    /**
+     * Håller listan över öppna trådar aktuell. Blockerande, av samma skäl som profilen: Erik ska
+     * kunna återkomma till en tråd i den replik han skriver nu.
+     *
+     * <p>Med hela historiken i kontexten finns trådarna redan där, i teorin - men det som nämndes
+     * i förbifarten tjugo repliker bort drunknar. En egen lista är det en skicklig terapeut för i
+     * huvudet, och den är kort nog att faktiskt läsas.
+     */
+    public void updateOpenThreads(ConversationSession session, String previousResponse, String userInput) {
+        try {
+            String existingThreads = artifactStore.readOpenThreads().orElse("");
+            String prompt = PromptTemplates.threadsUpdate(
+                    promptStore.getThreadsUpdateTemplate(), existingThreads, previousResponse, userInput);
+
+            List<ChatMessage> request = List.of(ChatMessage.instruction(Role.USER, prompt));
+            AiResponse response = session.tracer()
+                    .record(LlmCall.TRADAR, session.turn(), request, aiClient::chat);
+            ChangelogResponse parsed = ChangelogResponse.parse(response.text());
+            artifactStore.writeOpenThreads(parsed.document());
+            logChange(HistoryEntry.THREADS, session, parsed);
+        } catch (Exception e) {
+            // Som profilen: ett misslyckat föranrop får inte störa samtalet, och felet
+            // finns redan inspelat i traceen.
+        }
+    }
+
     public void triggerPlanUpdate(ConversationSession session, String userInput, String agentResponse) {
         executor.submit(() -> updatePlan(session, userInput, agentResponse));
     }

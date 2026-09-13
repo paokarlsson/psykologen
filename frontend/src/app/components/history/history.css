@@ -134,6 +134,10 @@ section header button {
   border-left-color: #fd7e14;
 }
 
+.timeline-entry.threads {
+  border-left-color: #d63384;
+}
+
 .timeline-header {
   display: flex;
   justify-content: space-between;

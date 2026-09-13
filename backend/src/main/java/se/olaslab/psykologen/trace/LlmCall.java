@@ -33,5 +33,6 @@ public record LlmCall(
     public static final String METOD = "metod";
     public static final String SVAR = "svar";
     public static final String PROFIL = "profil";
+    public static final String TRADAR = "tradar";
     public static final String PLAN = "plan";
 }

@@ -3,6 +3,7 @@ package se.olaslab.psykologen.session;
 import java.util.ArrayList;
 import java.util.List;
 
+import se.olaslab.psykologen.prompt.BulletLines;
 import se.olaslab.psykologen.service.ai.AiResponse;
 import se.olaslab.psykologen.trace.TraceRecorder;
 
@@ -71,10 +72,10 @@ public class ConversationSession {
     }
 
     public void addThoughtLines(String rawThoughts) {
-        if (rawThoughts == null || rawThoughts.startsWith("Inga")) {
+        if (BulletLines.isEmptyAnswer(rawThoughts)) {
             return;
         }
-        internalThoughts.addAll(parseThoughtLines(rawThoughts));
+        internalThoughts.addAll(BulletLines.parse(rawThoughts));
     }
 
     /**
@@ -87,25 +88,12 @@ public class ConversationSession {
         if (rawThoughts == null) {
             return;
         }
-        List<String> reviderade = parseThoughtLines(rawThoughts);
+        List<String> reviderade = BulletLines.parse(rawThoughts);
         if (reviderade.isEmpty()) {
             return;
         }
         internalThoughts.clear();
         internalThoughts.addAll(reviderade);
-    }
-
-    private static List<String> parseThoughtLines(String rawThoughts) {
-        List<String> thoughts = new ArrayList<>();
-        for (String rawLine : rawThoughts.split("\n")) {
-            String line = rawLine.trim();
-            if (line.startsWith("- ")) {
-                thoughts.add(line.substring(2));
-            } else if (!line.isEmpty() && !line.startsWith("-")) {
-                thoughts.add(line);
-            }
-        }
-        return thoughts;
     }
 
     public double elapsedMinutes() {

@@ -37,13 +37,14 @@ public final class PromptTemplates {
     }
 
     public static String erikResponse(String template, String currentThoughts, String patientProfile,
-            String sessionPlan, Intervention intervention, double sessionTimeMinutes,
+            String sessionPlan, String openThreads, Intervention intervention, double sessionTimeMinutes,
             double sessionDurationMinutes, String userInput) {
         double remainingMinutes = Math.max(0, sessionDurationMinutes - sessionTimeMinutes);
         return render(template, Map.of(
                 "currentThoughts", currentThoughts,
                 "patientProfile", patientProfile.isEmpty() ? "Ingen profil än." : patientProfile,
                 "sessionPlan", sessionPlan.isEmpty() ? "Ingen plan än." : sessionPlan,
+                "openThreads", openThreads.isEmpty() ? "Inga öppna trådar än." : openThreads,
                 "intervention", intervention.label() + " - " + intervention.instruction(),
                 "sessionTimeMinutes", String.format("%.1f", sessionTimeMinutes),
                 "sessionDurationMinutes", String.format("%.0f", sessionDurationMinutes),
@@ -56,6 +57,15 @@ public final class PromptTemplates {
             String userInput) {
         return render(template, Map.of(
                 "existingProfile", existingProfile.isEmpty() ? "Ingen befintlig profil." : existingProfile,
+                "previousResponse", previousResponse.isEmpty() ? "Inget tidigare svar från Erik." : previousResponse,
+                "userInput", userInput));
+    }
+
+    /** Trådarna skrivs före Eriks svar, med samma omparade utdrag som profilen. */
+    public static String threadsUpdate(String template, String existingThreads, String previousResponse,
+            String userInput) {
+        return render(template, Map.of(
+                "existingThreads", existingThreads.isEmpty() ? "Inga öppna trådar än." : existingThreads,
                 "previousResponse", previousResponse.isEmpty() ? "Inget tidigare svar från Erik." : previousResponse,
                 "userInput", userInput));
     }

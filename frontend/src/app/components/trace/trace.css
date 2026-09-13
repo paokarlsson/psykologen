@@ -174,12 +174,20 @@ section h3 {
   border-left-color: #f39c12;
 }
 
+.call.metod {
+  border-left-color: #17a2b8;
+}
+
 .call.svar {
   border-left-color: #0d6efd;
 }
 
 .call.profil {
   border-left-color: #28a745;
+}
+
+.call.tradar {
+  border-left-color: #d63384;
 }
 
 .call.plan {

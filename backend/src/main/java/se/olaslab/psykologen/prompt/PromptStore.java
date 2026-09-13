@@ -19,6 +19,7 @@ public class PromptStore {
     public static final String ERIK_RESPONSE = "erikResponse";
     public static final String PROFILE_UPDATE = "profileUpdate";
     public static final String PLAN_UPDATE = "planUpdate";
+    public static final String THREADS_UPDATE = "threadsUpdate";
 
     public static final double DEFAULT_SESSION_DURATION_MINUTES = 45.0;
 
@@ -102,6 +103,9 @@ public class PromptStore {
                 PATIENT-PROFIL (vad du hittills vet om patienten):
                 {{patientProfile}}
 
+                ÖPPNA TRÅDAR (nämnt men aldrig utvecklat - återkom till en av dem när det passar):
+                {{openThreads}}
+
                 SESSIONSPLAN (följ denna strategiskt):
                 {{sessionPlan}}
 
@@ -166,6 +170,32 @@ public class PromptStore {
 
                 ## Övriga Noteringar
                 [andra relevanta fakta]
+                """,
+            THREADS_UPDATE, """
+                Du håller reda på lösa trådar i ett psykologsamtal: sådant patienten öppnat men som ingen följt upp.
+
+                En tråd är något patienten nämnt i förbigående och släppt, en känsla som passerade obemött, en person som dök upp utan sammanhang, eller en fråga från Erik som aldrig besvarades.
+
+                BEFINTLIGA ÖPPNA TRÅDAR:
+                {{existingThreads}}
+
+                NYTT SAMTALSUTDRAG:
+                Psykolog Erik (föregående replik): {{previousResponse}}
+                Patient (det som just sades): {{userInput}}
+
+                Uppdatera listan:
+                - Lägg till trådar som öppnades i utdraget
+                - Stryk trådar som nu är utforskade eller besvarade
+                - Stryk trådar som visat sig sakna betydelse
+                - Håll listan kort, som mest sex trådar. Prioritera det som verkar bära något.
+
+                Svara i EXAKT detta format, med de två rubrikraderna ordagrant (ändra inget i dem):
+
+                ===ÄNDRINGAR===
+                [Kort punktlista med vilka trådar som öppnades och vilka som stängdes, t.ex. "Öppnad: nämnde brodern, bytte genast ämne" eller "Stängd: sömnen - utforskad nu". Om inget nytt: skriv "Inga förändringar."]
+
+                ===DOKUMENT===
+                [De öppna trådarna, en per rad med inledande bindestreck. Skriv tråden så att Erik kan återkomma till den: vad som sades och vad som är ofullbordat. Finns inga öppna trådar alls: skriv "Inga öppna trådar."]
                 """,
             PLAN_UPDATE, """
                 Du är en expert psykolog som skapar adaptiva terapeutiska sessionsplaner.
@@ -285,6 +315,10 @@ public class PromptStore {
 
     public String getPlanUpdateTemplate() {
         return get(PLAN_UPDATE);
+    }
+
+    public String getThreadsUpdateTemplate() {
+        return get(THREADS_UPDATE);
     }
 
     public double getSessionDurationMinutes() {

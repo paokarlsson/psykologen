@@ -8,6 +8,7 @@ const TYP_ETIKETT: Record<HistoryEntryDto['type'], string> = {
   profile: '👤 Profil',
   plan: '🗒️ Plan',
   thoughts: '🧠 Tankar',
+  threads: '🧵 Trådar',
 };
 
 @Component({

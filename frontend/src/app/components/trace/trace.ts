@@ -10,6 +10,7 @@ const STEG_ETIKETT: Record<TraceStep, string> = {
   metod: '🧭 Metodval',
   svar: '💬 Svar',
   profil: '👤 Profil',
+  tradar: '🧵 Trådar',
   plan: '📋 Plan',
 };
 
@@ -40,6 +41,7 @@ export class Trace {
   errorMessage: string | null = null;
   calls: LlmCallDto[] = [];
   thoughts: string[] = [];
+  openThreads: string[] = [];
   summary: TraceSummaryDto = TOM_SAMMANFATTNING;
 
   /** startedAt för de anrop användaren fällt ut. Unikt nog inom en session. */
@@ -67,6 +69,7 @@ export class Trace {
       next: (response) => {
         this.calls = response.calls;
         this.thoughts = response.thoughts;
+        this.openThreads = response.openThreads;
         this.summary = response.summary;
         this.isLoading = false;
       },

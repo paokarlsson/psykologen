@@ -37,12 +37,17 @@ const FIELD_META: { key: string; label: string; description: string }[] = [
   {
     key: 'erikResponse',
     label: 'Svarsmall (det Erik säger till dig)',
-    description: 'Platshållare: {{currentThoughts}}, {{patientProfile}}, {{sessionPlan}}, {{intervention}} (greppet metodvalet landade i), {{sessionTimeMinutes}}, {{sessionDurationMinutes}}, {{remainingMinutes}}, {{userInput}}'
+    description: 'Platshållare: {{currentThoughts}}, {{patientProfile}}, {{sessionPlan}}, {{openThreads}}, {{intervention}} (greppet metodvalet landade i), {{sessionTimeMinutes}}, {{sessionDurationMinutes}}, {{remainingMinutes}}, {{userInput}}'
   },
   {
     key: 'profileUpdate',
     label: 'Profiluppdatering (analys av dig som patient)',
     description: 'Körs före Eriks svar, så att han svarar på en profil som redan innehåller det du just skrev. Utdraget är därför Eriks föregående replik ({{previousResponse}}) plus din nya ({{userInput}}). Måste svara i två delar, rubrikerna ordagrant: "===ÄNDRINGAR===" (kort ändringslogg - visas under Historik) följt av "===DOKUMENT===" (hela profilen). Tar du bort rubrikerna loggas ingen historik den turen. Platshållare: {{existingProfile}}, {{previousResponse}}, {{userInput}}'
+  },
+  {
+    key: 'threadsUpdate',
+    label: 'Öppna trådar (nämnt men aldrig utvecklat)',
+    description: 'Håller en kort lista över trådar du öppnat och släppt, så att Erik kan återkomma till dem. Körs före svaret, med samma omparade utdrag som profilen. Måste svara i två delar, rubrikerna ordagrant: "===ÄNDRINGAR===" (vilka trådar som öppnades och stängdes - visas under Historik) följt av "===DOKUMENT===" (hela listan, en tråd per rad). Platshållare: {{existingThreads}}, {{previousResponse}}, {{userInput}}'
   },
   {
     key: 'planUpdate',

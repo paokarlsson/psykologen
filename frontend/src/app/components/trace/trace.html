@@ -86,6 +86,15 @@
       </ul>
     }
 
+    @if (openThreads.length > 0) {
+      <h3>Öppna trådar</h3>
+      <ul class="thoughts">
+        @for (thread of openThreads; track $index) {
+          <li>{{ thread }}</li>
+        }
+      </ul>
+    }
+
     @if (calls.length > 0) {
       <h3>Anrop</h3>
       <div class="calls">
