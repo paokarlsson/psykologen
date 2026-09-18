@@ -45,6 +45,9 @@ body {
 }
 
 button {
+  /* Utan border-box läggs padding och kant utanpå minimimåttet, och en knapp
+     som ska vara 44px hög blir 70. */
+  box-sizing: border-box;
   min-height: var(--tap-min);
   font-family: inherit;
 }
@@ -59,6 +62,9 @@ select {
 
 /* Delad av history/settings/login - se docs/gui-granskning.md, punkt 13 */
 .banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
   font-size: 0.85rem;
@@ -91,7 +97,9 @@ select {
 }
 
 .notice strong {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin-bottom: var(--space-1);
 }
 

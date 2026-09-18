@@ -25,6 +25,9 @@ header {
 }
 
 h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin: 0;
   font-size: 1.1rem;
 }
@@ -84,46 +87,40 @@ pre {
   color: #333;
 }
 
-footer {
-  padding: 0.75rem 1rem;
-  background: #f8f9fa;
-  border-top: 1px solid #e9ecef;
-  border-radius: 0 0 8px 8px;
-}
-
-.auto-update-indicator {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.indicator-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #dc3545;
-  transition: background-color 0.3s ease;
-}
-
-.indicator-dot.active {
-  background: var(--color-profile);
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0% {
-    opacity: 1;
+/* Mobil: kortet ligger i ett ark som sköter rullningen själv, och rubriken
+   måste rymmas på en rad i en telefonbredd. */
+@media (max-width: 899px) {
+  :host {
+    height: auto;
   }
-  50% {
-    opacity: 0.5;
-  }
-  100% {
-    opacity: 1;
-  }
-}
 
-.indicator-text {
-  user-select: none;
+  header {
+    flex-wrap: nowrap;
+    padding: var(--space-2) var(--space-3);
+  }
+
+  h2 {
+    font-size: 1rem;
+    white-space: nowrap;
+  }
+
+  /* Tidsstämpeln närmast rubriken, knappen längst ut - annars läses raden
+     som "Patient-Profil, knapp, klockslag". */
+  .header-actions {
+    flex-direction: row-reverse;
+    gap: var(--space-2);
+  }
+
+  .last-updated {
+    font-size: 0.75rem;
+  }
+
+  .prefix {
+    display: none;
+  }
+
+  .profile-content {
+    overflow: visible;
+    padding: var(--space-3);
+  }
 }

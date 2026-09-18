@@ -1,24 +1,28 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { map } from 'rxjs';
 import { ApiService } from '../../services/api.service';
+import { UiState } from '../../services/ui-state';
 import { pollingResource } from '../../shared/polling-resource';
 import { LoadingSpinner } from '../../shared/loading-spinner/loading-spinner';
+import { Icon } from '../../shared/icon/icon';
 
 const EMPTY_PROFILE = 'Ingen profil skapad än.';
 
 @Component({
   selector: 'app-profile',
-  imports: [LoadingSpinner],
+  imports: [LoadingSpinner, Icon],
   templateUrl: './profile.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './profile.css'
 })
 export class Profile {
   private readonly apiService = inject(ApiService);
+  private readonly ui = inject(UiState);
 
   private readonly profileResource = pollingResource(
     () => this.apiService.getProfile().pipe(map((response) => response.profile)),
-    EMPTY_PROFILE
+    EMPTY_PROFILE,
+    { enabled: this.ui.underlagVisible }
   );
 
   readonly profile = this.profileResource.value;

@@ -3,15 +3,17 @@ import { NgClass } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService, LlmCallDto, Message, TraceStep, TraceSummaryDto } from '../../services/api.service';
 import { LoadingSpinner } from '../../shared/loading-spinner/loading-spinner';
+import { formatTotalCost } from '../../services/session-meter';
+import { Icon } from '../../shared/icon/icon';
 
 const STEG_ETIKETT: Record<TraceStep, string> = {
-  oppning: '👋 Öppning',
-  reflektion: '🧠 Reflektion',
-  metod: '🧭 Metodval',
-  svar: '💬 Svar',
-  profil: '👤 Profil',
-  tradar: '🧵 Trådar',
-  plan: '📋 Plan',
+  oppning: 'Öppning',
+  reflektion: 'Reflektion',
+  metod: 'Metodval',
+  svar: 'Svar',
+  profil: 'Profil',
+  tradar: 'Trådar',
+  plan: 'Plan',
 };
 
 const TOM_SAMMANFATTNING: TraceSummaryDto = {
@@ -27,10 +29,12 @@ const TOM_SAMMANFATTNING: TraceSummaryDto = {
 
 @Component({
   selector: 'app-trace',
-  imports: [NgClass, LoadingSpinner],
+  imports: [NgClass, LoadingSpinner, Icon],
   templateUrl: './trace.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  styleUrl: './trace.css'
+  styleUrl: './trace.css',
+  // En öppen panel måste måla över syskonens togglar i verktygsmenyn.
+  host: { '[class.panel-open]': 'isOpen' }
 })
 export class Trace {
   @ViewChild('toggleBtn') private toggleBtnRef?: ElementRef<HTMLButtonElement>;
@@ -103,8 +107,7 @@ export class Trace {
   }
 
   formatTotalCost(): string {
-    const belopp = '$' + this.summary.totalCostUsd.toFixed(4);
-    return this.summary.costComplete ? belopp : 'minst ' + belopp;
+    return formatTotalCost(this.summary.totalCostUsd, this.summary.costComplete);
   }
 
   roleLabel(message: Message): string {

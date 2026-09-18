@@ -1,5 +1,5 @@
-import { DestroyRef, Signal, inject, signal } from '@angular/core';
-import { Observable, Subject, interval, startWith, switchMap } from 'rxjs';
+import { DestroyRef, Signal, effect, inject, signal } from '@angular/core';
+import { Observable, Subject, interval, switchMap } from 'rxjs';
 
 export interface PollingResource<T> {
   readonly value: Signal<T>;
@@ -8,12 +8,23 @@ export interface PollingResource<T> {
   refresh(): void;
 }
 
+export interface PollingOptions {
+  intervalMs?: number;
+  /**
+   * Pollningen vilar medan den är false och hämtar direkt när den slår om till
+   * true, så att det man fäller ut är aktuellt utan att ha kostat anrop under
+   * tiden det var dolt.
+   */
+  enabled?: Signal<boolean>;
+}
+
 /** Anropas i en fältinitierare (injection context), inte i en metod - använder `inject()`. */
 export function pollingResource<T>(
   fetch: () => Observable<T>,
   initialValue: T,
-  intervalMs = 5000,
+  options: PollingOptions = {},
 ): PollingResource<T> {
+  const { intervalMs = 5000, enabled } = options;
   const destroyRef = inject(DestroyRef);
 
   const value = signal(initialValue);
@@ -23,7 +34,6 @@ export function pollingResource<T>(
 
   const subscription = trigger
     .pipe(
-      startWith(undefined),
       switchMap(() => {
         isLoading.set(true);
         return fetch();
@@ -41,7 +51,22 @@ export function pollingResource<T>(
       },
     });
 
-  const intervalSubscription = interval(intervalMs).subscribe(() => trigger.next());
+  const intervalSubscription = interval(intervalMs).subscribe(() => {
+    if (!enabled || enabled()) {
+      trigger.next();
+    }
+  });
+
+  // Första hämtningen, och en ny så fort resursen blir synlig igen. Ersätter
+  // det startWith som förut hämtade oavsett om någon tittade.
+  let wasEnabled = false;
+  effect(() => {
+    const isEnabled = enabled ? enabled() : true;
+    if (isEnabled && !wasEnabled) {
+      queueMicrotask(() => trigger.next());
+    }
+    wasEnabled = isEnabled;
+  });
 
   destroyRef.onDestroy(() => {
     subscription.unsubscribe();

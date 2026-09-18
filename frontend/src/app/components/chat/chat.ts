@@ -1,13 +1,18 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, ChangeDetectionStrategy, inject } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService, Message, MessageResponse } from '../../services/api.service';
+import { SessionMeter } from '../../services/session-meter';
 import { LoadingSpinner } from '../../shared/loading-spinner/loading-spinner';
+import { Icon } from '../../shared/icon/icon';
+
+/** Så nära botten att nästa replik får scrolla fram av sig själv. */
+const PIN_THRESHOLD_PX = 100;
 
 @Component({
   selector: 'app-chat',
-  imports: [NgClass, FormsModule, LoadingSpinner],
+  imports: [NgClass, FormsModule, LoadingSpinner, Icon],
   templateUrl: './chat.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './chat.css'
@@ -22,6 +27,12 @@ export class Chat implements OnInit, AfterViewInit {
   isLoading: boolean = false;
   sessionComplete: boolean = false;
   backendError: string | null = null;
+  hasUnseenMessages: boolean = false;
+
+  /** Falskt så fort man scrollat upp för att läsa något tidigare i samtalet. */
+  private isPinnedToBottom = true;
+
+  private readonly meter = inject(SessionMeter);
 
   constructor(private apiService: ApiService) { }
   
@@ -29,6 +40,7 @@ export class Chat implements OnInit, AfterViewInit {
     if (this.isConversationStarted && this.messageInput) {
       setTimeout(() => this.messageInput.nativeElement.focus(), 100);
     }
+    this.resizeInput();
   }
 
   ngOnInit(): void {
@@ -42,6 +54,7 @@ export class Chat implements OnInit, AfterViewInit {
       next: (response: MessageResponse) => {
         if (response.success) {
           this.isConversationStarted = true;
+          this.meter.sync(response);
           this.messages.push({
             role: 'assistant',
             content: response.message,
@@ -80,11 +93,15 @@ export class Chat implements OnInit, AfterViewInit {
     this.isLoading = true;
     this.backendError = null;
 
-    setTimeout(() => this.scrollToBottom(), 0);
+    setTimeout(() => {
+      this.resizeInput();
+      this.scrollToBottom();
+    }, 0);
 
     this.apiService.sendMessage(messageToSend).subscribe({
       next: (response: MessageResponse) => {
         if (response.success) {
+          this.meter.sync(response);
           this.messages.push({
             role: 'assistant',
             content: response.message,
@@ -93,12 +110,13 @@ export class Chat implements OnInit, AfterViewInit {
 
           if (response.sessionComplete) {
             this.sessionComplete = true;
+            this.meter.markComplete();
           }
           setTimeout(() => {
             if (this.messageInput) {
               this.messageInput.nativeElement.focus();
             }
-            this.scrollToBottom();
+            this.revealLatest();
           }, 100);
         }
         this.isLoading = false;
@@ -118,6 +136,11 @@ export class Chat implements OnInit, AfterViewInit {
         if (response.success && response.conversation.length > 1) {
           this.messages = response.conversation.filter(msg => msg.role !== 'system');
           this.isConversationStarted = this.messages.length > 0;
+          // Bara när samtalet är igång - annars skulle nedräkningen synas
+          // redan i välkomstläget, innan någon tryckt på "Starta Samtal".
+          if (this.isConversationStarted) {
+            this.meter.sync(response);
+          }
           setTimeout(() => this.scrollToBottom(), 100);
         }
       },
@@ -161,11 +184,58 @@ export class Chat implements OnInit, AfterViewInit {
     return this.messages[index].role !== this.messages[index + 1].role;
   }
 
-  /** Publik för att skalet ska kunna scrolla om efter att chatten varit dold. */
-  scrollToBottom(): void {
-    if (this.messagesContainer) {
-      const container = this.messagesContainer.nativeElement;
-      container.scrollTop = container.scrollHeight;
+  onInput(): void {
+    this.resizeInput();
+  }
+
+  onMessagesScroll(): void {
+    const container = this.messagesContainer?.nativeElement;
+    if (!container) {
+      return;
     }
+    const fromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    this.isPinnedToBottom = fromBottom < PIN_THRESHOLD_PX;
+    if (this.isPinnedToBottom) {
+      this.hasUnseenMessages = false;
+    }
+  }
+
+  scrollToBottom(): void {
+    const container = this.messagesContainer?.nativeElement;
+    if (!container) {
+      return;
+    }
+    container.scrollTop = container.scrollHeight;
+    this.isPinnedToBottom = true;
+    this.hasUnseenMessages = false;
+  }
+
+  /**
+   * Publik för att skalet ska kunna hålla samtalet nedscrollat när arket tar
+   * höjd från det. Har man scrollat upp för att läsa ligger man kvar.
+   */
+  keepPinned(): void {
+    if (this.isPinnedToBottom) {
+      this.scrollToBottom();
+    }
+  }
+
+  /** Läser man längre upp ska en ny replik anmäla sig, inte rycka undan texten. */
+  private revealLatest(): void {
+    if (this.isPinnedToBottom) {
+      this.scrollToBottom();
+    } else {
+      this.hasUnseenMessages = true;
+    }
+  }
+
+  /** Rutan växer med texten. Höjden klamras av max-height i css:en. */
+  private resizeInput(): void {
+    const input = this.messageInput?.nativeElement;
+    if (!input) {
+      return;
+    }
+    input.style.height = 'auto';
+    input.style.height = `${input.scrollHeight}px`;
   }
 }

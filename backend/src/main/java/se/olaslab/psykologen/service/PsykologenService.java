@@ -82,6 +82,19 @@ public class PsykologenService {
         promptStore.setSessionDurationMinutes(minutes);
     }
 
+    /**
+     * Sessionens gång, samma tal som prompterna får via {{elapsedMinutes}}.
+     * Frontenden kan inte räkna ut den själv - klockan startar när sessionen
+     * skapas här, inte när sidan laddas.
+     */
+    public double elapsedMinutes() {
+        return session.elapsedMinutes();
+    }
+
+    public double getSessionDurationMinutes() {
+        return promptStore.getSessionDurationMinutes();
+    }
+
     public void updatePrompts(Map<String, String> updates) {
         promptStore.update(updates);
     }

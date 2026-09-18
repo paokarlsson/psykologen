@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { SessionMeterFields } from './session-meter';
 
 export interface Message {
   role: string;
@@ -10,12 +11,12 @@ export interface Message {
   session_time?: number;
 }
 
-export interface ConversationResponse {
+export interface ConversationResponse extends SessionMeterFields {
   success: boolean;
   conversation: Message[];
 }
 
-export interface MessageResponse {
+export interface MessageResponse extends SessionMeterFields {
   success: boolean;
   message: string;
   role: string;

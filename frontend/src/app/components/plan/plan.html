@@ -1,5 +1,5 @@
 <header>
-  <h2>📋 Sessions-Plan</h2>
+  <h2><app-icon name="clipboard" />Sessions-Plan</h2>
   <div class="header-actions">
     <button
       class="refresh-btn"
@@ -8,7 +8,7 @@
       [attr.aria-label]="isLoading() ? 'Uppdaterar plan…' : 'Uppdatera plan'"
     >
       @if (!isLoading()) {
-        <span aria-hidden="true">🔄</span>
+        <app-icon name="refresh" />
       }
       @if (isLoading()) {
         <app-loading-spinner [compact]="true" [announce]="false" />
@@ -16,7 +16,7 @@
     </button>
     @if (lastUpdated()) {
       <span class="last-updated">
-        Uppdaterad: {{ formatTimestamp() }}
+        <span class="prefix">Uppdaterad: </span>{{ formatTimestamp() }}
       </span>
     }
   </div>
@@ -42,10 +42,3 @@
     </div>
   }
 </div>
-
-<footer>
-  <div class="auto-update-indicator">
-    <span class="indicator-dot" [class.active]="!isLoading()"></span>
-    <span class="indicator-text">Uppdateras automatiskt var 5:e sekund</span>
-  </div>
-</footer>

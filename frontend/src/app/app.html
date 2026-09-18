@@ -3,62 +3,120 @@
 } @else if (auth.user()) {
   <a class="skip-link" href="#main-content">Hoppa till chatten</a>
 
-  <header>
-    <h1>
-      <span aria-hidden="true">🧠</span>
-      <span class="label">Psykologen</span>
-    </h1>
+  <header (keydown.escape)="closeMenu()">
+    <h1><span class="label">Psykologen</span></h1>
 
-    <nav aria-label="Verktyg">
-      <app-history></app-history>
-      <app-trace></app-trace>
-      <app-settings></app-settings>
-    </nav>
+    <!-- Backend äger både klockan och taxametern. Erik anpassar sig efter
+         tiden som är kvar, och kostnaden är det appen faktiskt drar. -->
+    @if (meter.started()) {
+      <p class="session-status">
+        <span class="time">
+          <app-icon name="clock" />
+          <span>{{ meter.timeLabel() }}</span>
+        </span>
+        @if (meter.costLabel()) {
+          <app-taxameter />
+        }
+      </p>
+    }
 
-    <p>
-      <span class="label">{{ auth.user() }}</span>
-      <button type="button" (click)="logout()" aria-label="Logga ut">
-        <span aria-hidden="true">⏻</span>
-        <span class="label">Logga ut</span>
+    <!-- Toppbarens enda knapp på mobil. Railen har plats för verktygen själva
+         och gömmer den här. -->
+    <button
+      type="button"
+      class="menu-toggle"
+      (click)="toggleMenu()"
+      [attr.aria-expanded]="menuOpen()"
+      aria-controls="tools-menu"
+      aria-label="Meny"
+    >
+      <app-icon name="more" />
+    </button>
+
+    @if (menuOpen()) {
+      <div class="menu-backdrop" (click)="closeMenu()"></div>
+    }
+
+    <!-- display: contents i railen, utfällbar meny i toppbaren. Verktygen får
+         inte dupliceras - history/trace/settings har hårdkodade panel-id:n. -->
+    <div id="tools-menu" class="tools" [class.open]="menuOpen()">
+      <!-- Underlaget är dolt tills man ber om det, även i railen. Samtalet är
+           det man kom för; profilen och planen är stöd man tittar på ibland. -->
+      <button
+        type="button"
+        class="panel-toggle"
+        (click)="toggleSheet()"
+        [attr.aria-expanded]="ui.sheetState() !== 'closed'"
+        aria-controls="sessionsunderlag"
+      >
+        <app-icon name="clipboard" />
+        <span class="label">Underlag</span>
+        <app-icon
+          class="chevron"
+          [class.open]="ui.sheetState() !== 'closed'"
+          name="chevron-down"
+        />
       </button>
-    </p>
+
+      <nav aria-label="Verktyg">
+        <app-history></app-history>
+        <app-trace></app-trace>
+        <app-settings></app-settings>
+      </nav>
+
+      <p>
+        <span class="label">{{ auth.user() }}</span>
+        <button type="button" (click)="logout()" aria-label="Logga ut">
+          <app-icon name="power" />
+          <span class="label">Logga ut</span>
+        </button>
+      </p>
+    </div>
   </header>
 
-  <main id="main-content" [attr.data-view]="view()">
+  <main id="main-content" [attr.data-sheet]="ui.sheetState()">
     <app-chat></app-chat>
 
-    <aside aria-label="Sessionsunderlag">
-      <app-profile></app-profile>
-      <app-plan></app-plan>
+    <!-- Utfällbart ark på mobil, utfällbar kolumn över brytpunkten. Samtalet
+         är kvar i sikte i båda fallen - det är hela poängen. -->
+    <aside aria-label="Sessionsunderlag" (keydown.escape)="collapseSheet()">
+      <div
+        class="sheet-handle"
+        (pointerdown)="onHandlePointerDown($event)"
+        (pointerup)="onHandlePointerUp($event)"
+        (pointercancel)="onHandlePointerCancel()"
+      >
+        <button
+          type="button"
+          class="sheet-toggle"
+          (click)="toggleSheet()"
+          [attr.aria-expanded]="ui.sheetState() !== 'closed'"
+          aria-controls="sessionsunderlag"
+        >
+          <span class="grip" aria-hidden="true"></span>
+          <span class="sheet-summary">{{ sheetSummary() }}</span>
+        </button>
+
+        @if (ui.sheetState() !== 'closed') {
+          <button
+            type="button"
+            class="sheet-expand"
+            (click)="toggleFullSheet()"
+            [attr.aria-label]="
+              ui.sheetState() === 'full' ? 'Visa samtalet igen' : 'Visa underlaget i helskärm'
+            "
+          >
+            <app-icon [name]="ui.sheetState() === 'full' ? 'chevron-down' : 'chevron-up'" />
+          </button>
+        }
+      </div>
+
+      <div class="sheet-body" id="sessionsunderlag">
+        <app-profile></app-profile>
+        <app-plan></app-plan>
+      </div>
     </aside>
   </main>
-
-  <nav aria-label="Vyer">
-    <button
-      type="button"
-      (click)="setView('chat')"
-      [attr.aria-current]="view() === 'chat' ? 'true' : null"
-    >
-      <span aria-hidden="true">💬</span>
-      <span>Samtal</span>
-    </button>
-    <button
-      type="button"
-      (click)="setView('profile')"
-      [attr.aria-current]="view() === 'profile' ? 'true' : null"
-    >
-      <span aria-hidden="true">👤</span>
-      <span>Profil</span>
-    </button>
-    <button
-      type="button"
-      (click)="setView('plan')"
-      [attr.aria-current]="view() === 'plan' ? 'true' : null"
-    >
-      <span aria-hidden="true">📋</span>
-      <span>Plan</span>
-    </button>
-  </nav>
 } @else {
   <app-login></app-login>
 }

@@ -1,0 +1,13 @@
+:host {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+svg {
+  /* Följer textstorleken där ikonen står, med ett litet påslag - ett streck
+     väger mindre än en versal och ser annars mindre ut än den är. */
+  width: 1.15em;
+  height: 1.15em;
+}

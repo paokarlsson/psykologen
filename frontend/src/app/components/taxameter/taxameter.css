@@ -1,0 +1,186 @@
+/* Värdelementet ligger i statusraden i headern och ger inte panelen sitt
+   containing block - den ska hänga på headern, inte på den lilla knappen. */
+:host {
+  display: contents;
+}
+
+/* Taxametern är en knapp: beloppet säger inget om var gränserna går, och
+   prisstegen får plats bakom den i stället för i baren. */
+:host > button {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 0;
+  /* Linjerar med tiden ovanför i stället för med klockikonen: ikonens bredd
+     plus mellanrummet. */
+  margin-left: calc(1.15em + 0.4rem);
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  text-align: left;
+}
+
+.amount {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 0.2em;
+}
+
+/* Så länge systemutvecklaren bjuder är taxametern bara en upplysning. */
+:host > button.over-gransen {
+  font-weight: 600;
+}
+
+:host > button:focus-visible {
+  outline: 3px solid white;
+  outline-offset: 2px;
+}
+
+/* --- Panelen ----------------------------------------------------------- */
+
+.panel-backdrop {
+  display: none;
+}
+
+/* Rail: fälls ut åt höger, bredvid railen - samma mönster som verktygen. */
+section {
+  position: absolute;
+  z-index: 40;
+  top: var(--space-4);
+  left: calc(var(--rail-w) + var(--space-2));
+  width: min(360px, 40vw);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-panel);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+section:focus {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: -3px;
+}
+
+section header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+section h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+section header button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--tap-min);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-muted-text);
+  cursor: pointer;
+}
+
+section header button:hover {
+  background: var(--color-border);
+}
+
+.price-now {
+  margin: 0 0 var(--space-3);
+}
+
+.price-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.price-steps li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: var(--space-2) var(--space-3);
+  background: #f8f9fa;
+  border-left: 3px solid var(--color-border);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  line-height: 1.4;
+}
+
+/* Steget sessionen ligger i just nu. */
+.price-steps li[aria-current] {
+  background: #f7eef2;
+  border-left-color: var(--color-accent);
+}
+
+.range {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.price-note {
+  margin: var(--space-3) 0 0;
+  color: var(--color-muted-text);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+/* Ikonrailen har ingen bredd för statusraden alls - app.css gömmer den där. */
+@media (max-width: 1149px) {
+  section {
+    left: calc(var(--rail-w-narrow) + var(--space-2));
+  }
+}
+
+/* Toppbaren: panelen läggs fast under baren, som verktygens paneler. */
+@media (max-width: 899px) {
+  /* Ordet står kvar i railen och som rubrik i panelen - baren är för smal. */
+  :host > button {
+    margin-left: 0;
+  }
+
+  .taxameter-label {
+    display: none;
+  }
+
+  :host > button::before {
+    content: '·';
+    margin-right: var(--space-2);
+    opacity: 0.6;
+  }
+
+  .panel-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 35;
+    background: rgba(0, 0, 0, 0.35);
+  }
+
+  section {
+    position: fixed;
+    top: calc(var(--bar-h) + env(safe-area-inset-top) + var(--space-2));
+    right: var(--space-2);
+    left: var(--space-2);
+    width: auto;
+    max-height: calc(100dvh - var(--bar-h) - 5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: var(--space-3);
+  }
+}

@@ -12,6 +12,7 @@ import se.olaslab.psykologen.service.PsykologenService;
 import se.olaslab.psykologen.service.UserSessionRegistry;
 import se.olaslab.psykologen.session.ChatMessage;
 import se.olaslab.psykologen.storage.HistoryEntry;
+import se.olaslab.psykologen.trace.TraceSummary;
 
 @RestController
 @RequestMapping("/api/psykologen")
@@ -27,14 +28,32 @@ public class PsykologenController {
         return registry.forUser(auth.getName());
     }
 
+    /**
+     * Sessionens mätare följer med varje svar som rör samtalet: tiden, eftersom
+     * Erik anpassar sig efter hur mycket som är kvar, och vad anropen kostat
+     * hittills. Kostnaden ändras bara när ett anrop görs, så den hör hemma här
+     * i stället för i en egen pollning - /trace bär hela prompthistoriken och
+     * är alldeles för tung att hämta för ett belopp.
+     */
+    private void addTiming(Map<String, Object> response, PsykologenService service) {
+        response.put("elapsedMinutes", service.elapsedMinutes());
+        response.put("sessionDurationMinutes", service.getSessionDurationMinutes());
+
+        TraceSummary trace = service.getTraceSummary();
+        response.put("costUsd", trace.totalCostUsd());
+        response.put("costComplete", trace.costComplete());
+    }
+
     @PostMapping("/start")
     public ResponseEntity<Map<String, Object>> startConversation(Authentication auth) {
         Map<String, Object> response = new HashMap<>();
         try {
-            String opening = serviceFor(auth).startConversation();
+            PsykologenService service = serviceFor(auth);
+            String opening = service.startConversation();
             response.put("success", true);
             response.put("message", opening);
             response.put("role", "erik");
+            addTiming(response, service);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("success", false);
@@ -55,10 +74,12 @@ public class PsykologenController {
                 return ResponseEntity.badRequest().body(response);
             }
 
-            String erikResponse = serviceFor(auth).processMessage(userInput);
+            PsykologenService service = serviceFor(auth);
+            String erikResponse = service.processMessage(userInput);
             response.put("success", true);
             response.put("message", erikResponse);
             response.put("role", "erik");
+            addTiming(response, service);
 
             if (erikResponse.contains("KLAR FÖR SKRIVNING")) {
                 response.put("sessionComplete", true);
@@ -76,9 +97,11 @@ public class PsykologenController {
     public ResponseEntity<Map<String, Object>> getConversation(Authentication auth) {
         Map<String, Object> response = new HashMap<>();
         try {
-            List<ChatMessage> conversation = serviceFor(auth).getConversation();
+            PsykologenService service = serviceFor(auth);
+            List<ChatMessage> conversation = service.getConversation();
             response.put("success", true);
             response.put("conversation", conversation);
+            addTiming(response, service);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("success", false);

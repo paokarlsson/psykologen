@@ -67,18 +67,15 @@ h1 {
   font-weight: 600;
 }
 
-h1 span[aria-hidden] {
-  font-size: 1.5rem;
-}
-
 header nav {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
 }
 
-/* Kontoraden trycks till railens botten. */
-header p {
+/* Kontoraden trycks till railens botten. Selektorn går via .tools för att
+   inte träffa sessionsstatusen, som är ett eget <p> i headern. */
+.tools p {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -88,8 +85,31 @@ header p {
   font-size: 0.85rem;
 }
 
-header p > .label {
+.tools p > .label {
   opacity: 0.85;
+}
+
+/* Sessionsstatusen: nedräkningen och taxametern. I ikonrailen finns ingen
+   bredd för dem - där får de vänta tills man fäller ut något.
+   I railen står de på var sin rad, i toppbaren på samma. */
+.session-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+/* Dämpningen ligger på texten, inte på raden. opacity på föräldern skapar en
+   stackningskontext och drar med sig taxameterns panel in i den - panelen
+   blev genomskinlig och backdropen verkningslös. Taxametern är dessutom en
+   knapp och ska inte dämpas. */
+.session-status .time {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: rgba(255, 255, 255, 0.88);
 }
 
 /* Utloggningsknappen - träffar inte togglarna i app-history/app-settings,
@@ -111,6 +131,34 @@ header button:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 
+/* Växeln för underlaget. Ligger direkt i headern, inte i en komponent, så
+   den behöver hugga om sin bredd själv - annars sträcks den över hela railen
+   medan verktygspillren hugger sitt innehåll. */
+.panel-toggle {
+  align-self: flex-start;
+}
+
+.panel-toggle .chevron {
+  transition: transform 0.15s ease;
+}
+
+.panel-toggle .chevron.open {
+  transform: rotate(180deg);
+}
+
+/* Verktygsmenyn finns bara i toppbaren. I railen står verktygen framme, och
+   display: contents lämnar då railens flexlayout precis som förut. */
+.tools {
+  display: contents;
+}
+
+/* Selektorn går via header: Angulars encapsulation ger varje compound ett
+   attribut, så "header button" väger tyngre än en ensam klass. */
+header .menu-toggle,
+header .menu-backdrop {
+  display: none;
+}
+
 /* --- Innehållsyta ------------------------------------------------------ */
 
 main {
@@ -130,18 +178,45 @@ app-chat {
 aside {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+}
+
+.sheet-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   gap: var(--space-5);
   min-height: 0;
 }
 
-aside > * {
+.sheet-body > * {
   flex: 1;
   min-height: 0;
 }
 
-/* Bottenflikarna - :host > nav skiljer dem från verktygsnav:en i headern. */
-:host > nav {
+/* Draghandtaget hör till arket, och arket finns bara under brytpunkten. */
+.sheet-handle {
   display: none;
+}
+
+/* Hopfällt underlag ger samtalet hela ytan. Attributselektorn väger tyngre
+   än "main" och slår därför igenom även i ikonrailens brytpunkt nedan. */
+@media (min-width: 900px) {
+  main[data-sheet='closed'] {
+    grid-template-columns: 1fr;
+  }
+
+  main[data-sheet='closed'] aside {
+    display: none;
+  }
+
+  /* Ett samtal som spänner över hela skärmen ger radlängder man tappar
+     bort sig i. */
+  main[data-sheet='closed'] app-chat {
+    width: 100%;
+    max-width: 64rem;
+    margin-inline: auto;
+  }
 }
 
 /* --- Ikonrail: railen tappar etiketterna men behåller sin plats -------- */
@@ -167,8 +242,20 @@ aside > * {
     justify-content: center;
   }
 
-  header p {
+  .panel-toggle {
+    align-self: center;
+  }
+
+  .panel-toggle .chevron {
+    display: none;
+  }
+
+  .tools p {
     align-items: center;
+  }
+
+  .session-status {
+    display: none;
   }
 
   main {
@@ -181,11 +268,10 @@ aside > * {
 @media (max-width: 899px) {
   :host {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto 1fr;
     grid-template-areas:
       'chrome'
-      'main'
-      'viewbar';
+      'main';
   }
 
   header {
@@ -198,83 +284,210 @@ aside > * {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   }
 
-  /* Toppbaren är bred nog för ordmärket, till skillnad från ikonrailen. */
+  /* Ordmärket säger inget användaren inte redan vet, och baren behöver varje
+     pixel till sessionsstatusen. Rubriken finns kvar för skärmläsare. */
   h1 {
-    font-size: 1rem;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
-  h1 .label {
-    display: inline;
-  }
-
-  header nav {
-    flex-direction: row;
-    margin-left: auto;
-  }
-
-  header p {
+  .session-status {
+    display: flex;
     flex-direction: row;
     align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  /* Tiden får kapas om baren tryter; beloppet är kort och står kvar. */
+  .session-status .time {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .session-status .time span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  header .menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--tap-min);
+    margin-left: auto;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: var(--radius-pill);
+    color: white;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  header .menu-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 24;
+  }
+
+  /* Arkets draghandtag gör redan det här - i menyn vore växeln en dubblett. */
+  .panel-toggle {
+    display: none;
+  }
+
+  .tools {
+    display: none;
+  }
+
+  /* Menyn ärver barens färg, så att verktygsknapparna - ritade för railen -
+     fungerar oförändrade i den. */
+  .tools.open {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    position: absolute;
+    z-index: 25;
+    top: 100%;
+    right: var(--space-2);
+    left: var(--space-2);
+    padding: var(--space-3);
+    border-radius: var(--radius);
+    background: var(--color-accent);
+    box-shadow: var(--shadow-panel);
+  }
+
+  .tools nav {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .tools p {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
     margin-top: 0;
   }
 
+  /* I menyn finns bredd igen - etiketterna som viker undan i railen kommer
+     tillbaka. Verktygens egna etiketter styrs av respektive komponent. */
+  .tools .label {
+    display: inline;
+  }
+
+  /* Samtalet tar all höjd som arket inte gör anspråk på. Flikraden som låg
+     här förut gjorde profil och plan till egna vyer, jämbördiga med
+     samtalet - de är underlag som samtalet producerar. */
   main {
     grid-template-columns: 1fr;
-    gap: 0;
+    grid-template-rows: 1fr auto;
+    gap: var(--space-2);
     padding: var(--space-3);
+    padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
   }
 
-  /* Panelerna ligger kvar i DOM:en - att växla med display i stället för
-     @if bevarar komponenternas tillstånd och låter profil/plan fortsätta
-     polla, så att de redan är aktuella när man byter flik. */
-  main[data-view='chat'] aside {
-    display: none;
-  }
-
-  main[data-view='profile'] app-chat,
-  main[data-view='profile'] app-plan {
-    display: none;
-  }
-
-  main[data-view='plan'] app-chat,
-  main[data-view='plan'] app-profile {
-    display: none;
-  }
-
-  :host > nav {
-    grid-area: viewbar;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+  aside {
     background: var(--color-surface);
-    border-top: 1px solid var(--color-border);
-    padding-bottom: env(safe-area-inset-bottom);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
   }
 
-  :host > nav button {
+  .sheet-handle {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 2px;
-    min-height: var(--bar-h);
+    flex-shrink: 0;
+    /* Dragningen är vertikal - webbläsarens egen panorering är i vägen. */
+    touch-action: none;
+  }
+
+  .sheet-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: 1;
+    min-width: 0;
+    padding: 0 var(--space-3);
     background: none;
     border: 0;
     cursor: pointer;
-    font-size: 0.7rem;
+    font-size: 0.8rem;
+    color: var(--color-text);
+    text-align: left;
+  }
+
+  .grip {
+    flex-shrink: 0;
+    width: 28px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--color-border);
+  }
+
+  .sheet-summary {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .sheet-expand {
+    flex-shrink: 0;
+    min-width: var(--tap-min);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    font-size: 1.1rem;
     color: var(--color-muted-text);
   }
 
-  :host > nav span[aria-hidden] {
-    font-size: 1.15rem;
-  }
-
-  :host > nav button[aria-current] {
-    color: var(--color-accent);
-    box-shadow: inset 0 2px 0 var(--color-accent);
-  }
-
-  :host > nav button:focus-visible {
+  .sheet-toggle:focus-visible,
+  .sheet-expand:focus-visible {
     outline: 3px solid var(--color-focus-ring);
     outline-offset: -3px;
+  }
+
+  /* Ett rullfält för hela underlaget i stället för ett i varje kort. Två
+     halvhöga rutor som var för sig scrollar är svårare att läsa än en. */
+  .sheet-body {
+    gap: var(--space-2);
+    padding: var(--space-2);
+    overflow-y: auto;
+  }
+
+  .sheet-body > * {
+    flex: none;
+  }
+
+  main[data-sheet='closed'] .sheet-body {
+    display: none;
+  }
+
+  /* Samma radhöjd i peek och full: helskärmen läggs som overlay, så att
+     ingenting flödar om i samtalet när man växlar mellan lägena. */
+  main[data-sheet='peek'],
+  main[data-sheet='full'] {
+    grid-template-rows: 1fr minmax(0, 55dvh);
+  }
+
+  main[data-sheet='full'] aside {
+    position: fixed;
+    z-index: 15;
+    top: calc(var(--bar-h) + env(safe-area-inset-top));
+    right: 0;
+    bottom: 0;
+    left: 0;
+    border-radius: 0;
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
