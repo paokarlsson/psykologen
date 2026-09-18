@@ -16,7 +16,7 @@
     </button>
     @if (lastUpdated()) {
       <span class="last-updated">
-        Uppdaterad: {{ formatTimestamp() }}
+        <span class="prefix">Uppdaterad: </span>{{ formatTimestamp() }}
       </span>
     }
   </div>

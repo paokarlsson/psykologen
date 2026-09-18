@@ -129,8 +129,10 @@ header button:hover {
   display: contents;
 }
 
-.menu-toggle,
-.menu-backdrop {
+/* Selektorn går via header: Angulars encapsulation ger varje compound ett
+   attribut, så "header button" väger tyngre än en ensam klass. */
+header .menu-toggle,
+header .menu-backdrop {
   display: none;
 }
 
@@ -252,7 +254,7 @@ aside {
     text-overflow: ellipsis;
   }
 
-  .menu-toggle {
+  header .menu-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -267,7 +269,7 @@ aside {
     cursor: pointer;
   }
 
-  .menu-backdrop {
+  header .menu-backdrop {
     display: block;
     position: fixed;
     inset: 0;
@@ -385,9 +387,16 @@ aside {
     outline-offset: -3px;
   }
 
+  /* Ett rullfält för hela underlaget i stället för ett i varje kort. Två
+     halvhöga rutor som var för sig scrollar är svårare att läsa än en. */
   .sheet-body {
     gap: var(--space-2);
     padding: var(--space-2);
+    overflow-y: auto;
+  }
+
+  .sheet-body > * {
+    flex: none;
   }
 
   main[data-sheet='closed'] .sheet-body {

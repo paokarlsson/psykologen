@@ -45,6 +45,9 @@ body {
 }
 
 button {
+  /* Utan border-box läggs padding och kant utanpå minimimåttet, och en knapp
+     som ska vara 44px hög blir 70. */
+  box-sizing: border-box;
   min-height: var(--tap-min);
   font-family: inherit;
 }

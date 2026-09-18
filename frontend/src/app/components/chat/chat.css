@@ -213,6 +213,9 @@ footer {
 /* Rutan växer med texten i stället för att scrolla internt. resize: none -
    höjden sköts av autogrow, ett draghandtag skulle bara slåss med den. */
 textarea {
+  /* scrollHeight räknar med padding. Utan border-box lägger autogrow den
+     utanpå igen och rutan blir en rad för hög. */
+  box-sizing: border-box;
   flex: 1;
   border: 1px solid #ddd;
   border-radius: 6px;
@@ -221,7 +224,7 @@ textarea {
   font-size: 1rem;
   resize: none;
   overflow-y: auto;
-  min-height: var(--tap-min);
+  min-height: 20px;
   max-height: 120px;
 }
 
