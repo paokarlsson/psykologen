@@ -81,6 +81,12 @@
   z-index: 40;
 }
 
+/* Bara på mobil, där panelen täcker vyn. I railen ligger den bredvid
+   innehållet och ska inte spärra det. */
+.panel-backdrop {
+  display: none;
+}
+
 /* Ikonrail: knappen krymper till sin ikon, samma brytpunkt som app.css. */
 @media (max-width: 1149px) {
   :host > button {
@@ -97,15 +103,28 @@
 /* Toppbar: panelen läggs fast strax under baren i nästan full bredd.
    fixed så att den varken klipps av eller trycker isär baren. */
 @media (max-width: 899px) {
+  /* Fullskärm i stället för en ruta med marginal. Panelerna är sällanvyer -
+     de tar ingen plats i baren, men förtjänar hela den när de väl är framme.
+     Glaslådan, som visar hela promptar, tjänar mest på det. */
   :host > section {
     position: fixed;
-    top: calc(var(--bar-h) + env(safe-area-inset-top) + var(--space-2));
-    left: var(--space-2);
-    right: var(--space-2);
+    top: calc(var(--bar-h) + env(safe-area-inset-top));
+    right: 0;
+    bottom: 0;
+    left: 0;
     width: auto;
-    max-height: calc(100dvh - var(--bar-h) - 5rem);
-    overscroll-behavior: contain;
+    max-height: none;
     padding: var(--space-3);
+    padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+    border-radius: var(--radius) var(--radius) 0 0;
+    overscroll-behavior: contain;
+  }
+
+  .panel-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
   }
 
   /* Promptrutorna är i monospace och mindre än 16px, vilket får iOS att

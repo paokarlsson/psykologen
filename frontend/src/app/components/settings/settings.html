@@ -11,6 +11,8 @@
 </button>
 
 @if (isOpen) {
+  <div class="panel-backdrop" (click)="close()"></div>
+
   <section
     #panel
     id="settings-panel"
