@@ -119,6 +119,21 @@ header button:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 
+/* Växeln för underlaget. Ligger direkt i headern, inte i en komponent, så
+   den behöver hugga om sin bredd själv - annars sträcks den över hela railen
+   medan verktygspillren hugger sitt innehåll. */
+.panel-toggle {
+  align-self: flex-start;
+}
+
+.panel-toggle .chevron {
+  transition: transform 0.15s ease;
+}
+
+.panel-toggle .chevron.open {
+  transform: rotate(180deg);
+}
+
 /* Verktygsmenyn finns bara i toppbaren. I railen står verktygen framme, och
    display: contents lämnar då railens flexlayout precis som förut. */
 .tools {
@@ -172,6 +187,26 @@ aside {
   display: none;
 }
 
+/* Hopfällt underlag ger samtalet hela ytan. Attributselektorn väger tyngre
+   än "main" och slår därför igenom även i ikonrailens brytpunkt nedan. */
+@media (min-width: 900px) {
+  main[data-sheet='closed'] {
+    grid-template-columns: 1fr;
+  }
+
+  main[data-sheet='closed'] aside {
+    display: none;
+  }
+
+  /* Ett samtal som spänner över hela skärmen ger radlängder man tappar
+     bort sig i. */
+  main[data-sheet='closed'] app-chat {
+    width: 100%;
+    max-width: 64rem;
+    margin-inline: auto;
+  }
+}
+
 /* --- Ikonrail: railen tappar etiketterna men behåller sin plats -------- */
 
 @media (max-width: 1149px) {
@@ -193,6 +228,14 @@ aside {
   header button {
     padding: var(--space-2);
     justify-content: center;
+  }
+
+  .panel-toggle {
+    align-self: center;
+  }
+
+  .panel-toggle .chevron {
+    display: none;
   }
 
   .tools p {
@@ -270,6 +313,11 @@ aside {
     position: fixed;
     inset: 0;
     z-index: 24;
+  }
+
+  /* Arkets draghandtag gör redan det här - i menyn vore växeln en dubblett. */
+  .panel-toggle {
+    display: none;
   }
 
   .tools {

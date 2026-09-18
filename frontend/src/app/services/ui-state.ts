@@ -1,9 +1,11 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 
-/** Underlagets läge på mobil. Över brytpunkten står det alltid framme. */
+/**
+ * Underlagets läge. 'peek' delar ytan med samtalet, 'full' tar över den.
+ * Över brytpunkten finns bara hopfällt och utfällt - där är 'peek' kolumnen
+ * vid sidan av samtalet.
+ */
 export type SheetState = 'closed' | 'peek' | 'full';
-
-const WIDE_LAYOUT = '(min-width: 900px)';
 
 /**
  * Det skalet vet om sig självt och som komponenterna behöver: hur mycket av
@@ -13,7 +15,6 @@ const WIDE_LAYOUT = '(min-width: 900px)';
 export class UiState {
   readonly sheetState = signal<SheetState>('closed');
 
-  readonly wideLayout = signal(false);
   readonly documentVisible = signal(true);
 
   /**
@@ -21,23 +22,18 @@ export class UiState {
    * anrop var femte sekund för data ingen tittar på kostar batteri och surf.
    */
   readonly underlagVisible = computed(
-    () => this.documentVisible() && (this.wideLayout() || this.sheetState() !== 'closed'),
+    () => this.documentVisible() && this.sheetState() !== 'closed',
   );
 
   constructor() {
-    const media = matchMedia(WIDE_LAYOUT);
-    this.wideLayout.set(media.matches);
     this.documentVisible.set(document.visibilityState === 'visible');
 
-    const onLayoutChange = (event: MediaQueryListEvent) => this.wideLayout.set(event.matches);
     const onVisibilityChange = () =>
       this.documentVisible.set(document.visibilityState === 'visible');
 
-    media.addEventListener('change', onLayoutChange);
     document.addEventListener('visibilitychange', onVisibilityChange);
 
     inject(DestroyRef).onDestroy(() => {
-      media.removeEventListener('change', onLayoutChange);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     });
   }

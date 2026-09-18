@@ -35,6 +35,24 @@
     <!-- display: contents i railen, utfällbar meny i toppbaren. Verktygen får
          inte dupliceras - history/trace/settings har hårdkodade panel-id:n. -->
     <div id="tools-menu" class="tools" [class.open]="menuOpen()">
+      <!-- Underlaget är dolt tills man ber om det, även i railen. Samtalet är
+           det man kom för; profilen och planen är stöd man tittar på ibland. -->
+      <button
+        type="button"
+        class="panel-toggle"
+        (click)="toggleSheet()"
+        [attr.aria-expanded]="ui.sheetState() !== 'closed'"
+        aria-controls="sessionsunderlag"
+      >
+        <app-icon name="clipboard" />
+        <span class="label">Underlag</span>
+        <app-icon
+          class="chevron"
+          [class.open]="ui.sheetState() !== 'closed'"
+          name="chevron-down"
+        />
+      </button>
+
       <nav aria-label="Verktyg">
         <app-history></app-history>
         <app-trace></app-trace>
@@ -54,8 +72,8 @@
   <main id="main-content" [attr.data-sheet]="ui.sheetState()">
     <app-chat></app-chat>
 
-    <!-- Utfällbart ark på mobil, fast kolumn över brytpunkten. Samtalet är
-         kvar i sikte i mellanläget - det är hela poängen med arket. -->
+    <!-- Utfällbart ark på mobil, utfällbar kolumn över brytpunkten. Samtalet
+         är kvar i sikte i båda fallen - det är hela poängen. -->
     <aside aria-label="Sessionsunderlag" (keydown.escape)="collapseSheet()">
       <div
         class="sheet-handle"
