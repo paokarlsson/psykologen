@@ -4,7 +4,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService, HistoryEntryDto } from '../../services/api.service';
 import { LoadingSpinner } from '../../shared/loading-spinner/loading-spinner';
 
-const TYP_ETIKETT: Record<HistoryEntryDto['type'], string> = {
+/** Delas med skalet, som visar senaste ändringen på underlagets draghandtag. */
+export const TYP_ETIKETT: Record<HistoryEntryDto['type'], string> = {
   profile: '👤 Profil',
   plan: '🗒️ Plan',
   thoughts: '🧠 Tankar',

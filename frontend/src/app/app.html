@@ -54,41 +54,49 @@
     </div>
   </header>
 
-  <main id="main-content" [attr.data-view]="view()">
+  <main id="main-content" [attr.data-sheet]="ui.sheetState()">
     <app-chat></app-chat>
 
-    <aside aria-label="Sessionsunderlag">
-      <app-profile></app-profile>
-      <app-plan></app-plan>
+    <!-- Utfällbart ark på mobil, fast kolumn över brytpunkten. Samtalet är
+         kvar i sikte i mellanläget - det är hela poängen med arket. -->
+    <aside aria-label="Sessionsunderlag" (keydown.escape)="collapseSheet()">
+      <div
+        class="sheet-handle"
+        (pointerdown)="onHandlePointerDown($event)"
+        (pointerup)="onHandlePointerUp($event)"
+        (pointercancel)="onHandlePointerCancel()"
+      >
+        <button
+          type="button"
+          class="sheet-toggle"
+          (click)="toggleSheet()"
+          [attr.aria-expanded]="ui.sheetState() !== 'closed'"
+          aria-controls="sessionsunderlag"
+        >
+          <span class="grip" aria-hidden="true"></span>
+          <span class="sheet-summary">{{ sheetSummary() }}</span>
+        </button>
+
+        @if (ui.sheetState() !== 'closed') {
+          <button
+            type="button"
+            class="sheet-expand"
+            (click)="toggleFullSheet()"
+            [attr.aria-label]="
+              ui.sheetState() === 'full' ? 'Visa samtalet igen' : 'Visa underlaget i helskärm'
+            "
+          >
+            <span aria-hidden="true">{{ ui.sheetState() === 'full' ? '⌄' : '⌃' }}</span>
+          </button>
+        }
+      </div>
+
+      <div class="sheet-body" id="sessionsunderlag">
+        <app-profile></app-profile>
+        <app-plan></app-plan>
+      </div>
     </aside>
   </main>
-
-  <nav aria-label="Vyer">
-    <button
-      type="button"
-      (click)="setView('chat')"
-      [attr.aria-current]="view() === 'chat' ? 'true' : null"
-    >
-      <span aria-hidden="true">💬</span>
-      <span>Samtal</span>
-    </button>
-    <button
-      type="button"
-      (click)="setView('profile')"
-      [attr.aria-current]="view() === 'profile' ? 'true' : null"
-    >
-      <span aria-hidden="true">👤</span>
-      <span>Profil</span>
-    </button>
-    <button
-      type="button"
-      (click)="setView('plan')"
-      [attr.aria-current]="view() === 'plan' ? 'true' : null"
-    >
-      <span aria-hidden="true">📋</span>
-      <span>Plan</span>
-    </button>
-  </nav>
 } @else {
   <app-login></app-login>
 }

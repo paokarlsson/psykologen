@@ -153,17 +153,24 @@ app-chat {
 aside {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+}
+
+.sheet-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   gap: var(--space-5);
   min-height: 0;
 }
 
-aside > * {
+.sheet-body > * {
   flex: 1;
   min-height: 0;
 }
 
-/* Bottenflikarna - :host > nav skiljer dem från verktygsnav:en i headern. */
-:host > nav {
+/* Draghandtaget hör till arket, och arket finns bara under brytpunkten. */
+.sheet-handle {
   display: none;
 }
 
@@ -208,11 +215,10 @@ aside > * {
 @media (max-width: 899px) {
   :host {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto 1fr;
     grid-template-areas:
       'chrome'
-      'main'
-      'viewbar';
+      'main';
   }
 
   header {
@@ -308,63 +314,101 @@ aside > * {
     display: inline;
   }
 
+  /* Samtalet tar all höjd som arket inte gör anspråk på. Flikraden som låg
+     här förut gjorde profil och plan till egna vyer, jämbördiga med
+     samtalet - de är underlag som samtalet producerar. */
   main {
     grid-template-columns: 1fr;
-    gap: 0;
+    grid-template-rows: 1fr auto;
+    gap: var(--space-2);
     padding: var(--space-3);
+    padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
   }
 
-  /* Panelerna ligger kvar i DOM:en - att växla med display i stället för
-     @if bevarar komponenternas tillstånd och låter profil/plan fortsätta
-     polla, så att de redan är aktuella när man byter flik. */
-  main[data-view='chat'] aside {
-    display: none;
-  }
-
-  main[data-view='profile'] app-chat,
-  main[data-view='profile'] app-plan {
-    display: none;
-  }
-
-  main[data-view='plan'] app-chat,
-  main[data-view='plan'] app-profile {
-    display: none;
-  }
-
-  :host > nav {
-    grid-area: viewbar;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+  aside {
     background: var(--color-surface);
-    border-top: 1px solid var(--color-border);
-    padding-bottom: env(safe-area-inset-bottom);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
   }
 
-  :host > nav button {
+  .sheet-handle {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 2px;
-    min-height: var(--bar-h);
+    flex-shrink: 0;
+    /* Dragningen är vertikal - webbläsarens egen panorering är i vägen. */
+    touch-action: none;
+  }
+
+  .sheet-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: 1;
+    min-width: 0;
+    padding: 0 var(--space-3);
     background: none;
     border: 0;
     cursor: pointer;
-    font-size: 0.7rem;
+    font-size: 0.8rem;
+    color: var(--color-text);
+    text-align: left;
+  }
+
+  .grip {
+    flex-shrink: 0;
+    width: 28px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--color-border);
+  }
+
+  .sheet-summary {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .sheet-expand {
+    flex-shrink: 0;
+    min-width: var(--tap-min);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    font-size: 1.1rem;
     color: var(--color-muted-text);
   }
 
-  :host > nav span[aria-hidden] {
-    font-size: 1.15rem;
-  }
-
-  :host > nav button[aria-current] {
-    color: var(--color-accent);
-    box-shadow: inset 0 2px 0 var(--color-accent);
-  }
-
-  :host > nav button:focus-visible {
+  .sheet-toggle:focus-visible,
+  .sheet-expand:focus-visible {
     outline: 3px solid var(--color-focus-ring);
     outline-offset: -3px;
+  }
+
+  .sheet-body {
+    gap: var(--space-2);
+    padding: var(--space-2);
+  }
+
+  main[data-sheet='closed'] .sheet-body {
+    display: none;
+  }
+
+  /* Samma radhöjd i peek och full: helskärmen läggs som overlay, så att
+     ingenting flödar om i samtalet när man växlar mellan lägena. */
+  main[data-sheet='peek'],
+  main[data-sheet='full'] {
+    grid-template-rows: 1fr minmax(0, 55dvh);
+  }
+
+  main[data-sheet='full'] aside {
+    position: fixed;
+    z-index: 15;
+    top: calc(var(--bar-h) + env(safe-area-inset-top));
+    right: 0;
+    bottom: 0;
+    left: 0;
+    border-radius: 0;
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
