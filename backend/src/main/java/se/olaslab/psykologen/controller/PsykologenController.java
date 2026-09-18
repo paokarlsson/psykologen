@@ -27,14 +27,25 @@ public class PsykologenController {
         return registry.forUser(auth.getName());
     }
 
+    /**
+     * Sessionsklockan följer med varje svar som rör samtalet. Erik anpassar sig
+     * efter hur mycket tid som är kvar, så användaren behöver se samma siffra.
+     */
+    private void addTiming(Map<String, Object> response, PsykologenService service) {
+        response.put("elapsedMinutes", service.elapsedMinutes());
+        response.put("sessionDurationMinutes", service.getSessionDurationMinutes());
+    }
+
     @PostMapping("/start")
     public ResponseEntity<Map<String, Object>> startConversation(Authentication auth) {
         Map<String, Object> response = new HashMap<>();
         try {
-            String opening = serviceFor(auth).startConversation();
+            PsykologenService service = serviceFor(auth);
+            String opening = service.startConversation();
             response.put("success", true);
             response.put("message", opening);
             response.put("role", "erik");
+            addTiming(response, service);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("success", false);
@@ -55,10 +66,12 @@ public class PsykologenController {
                 return ResponseEntity.badRequest().body(response);
             }
 
-            String erikResponse = serviceFor(auth).processMessage(userInput);
+            PsykologenService service = serviceFor(auth);
+            String erikResponse = service.processMessage(userInput);
             response.put("success", true);
             response.put("message", erikResponse);
             response.put("role", "erik");
+            addTiming(response, service);
 
             if (erikResponse.contains("KLAR FÖR SKRIVNING")) {
                 response.put("sessionComplete", true);
@@ -76,9 +89,11 @@ public class PsykologenController {
     public ResponseEntity<Map<String, Object>> getConversation(Authentication auth) {
         Map<String, Object> response = new HashMap<>();
         try {
-            List<ChatMessage> conversation = serviceFor(auth).getConversation();
+            PsykologenService service = serviceFor(auth);
+            List<ChatMessage> conversation = service.getConversation();
             response.put("success", true);
             response.put("conversation", conversation);
+            addTiming(response, service);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("success", false);

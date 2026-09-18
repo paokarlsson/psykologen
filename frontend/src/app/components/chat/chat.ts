@@ -1,8 +1,9 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, ChangeDetectionStrategy, inject } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService, Message, MessageResponse } from '../../services/api.service';
+import { SessionClock } from '../../services/session-clock';
 import { LoadingSpinner } from '../../shared/loading-spinner/loading-spinner';
 
 @Component({
@@ -23,6 +24,8 @@ export class Chat implements OnInit, AfterViewInit {
   sessionComplete: boolean = false;
   backendError: string | null = null;
 
+  private readonly clock = inject(SessionClock);
+
   constructor(private apiService: ApiService) { }
   
   ngAfterViewInit(): void {
@@ -42,6 +45,7 @@ export class Chat implements OnInit, AfterViewInit {
       next: (response: MessageResponse) => {
         if (response.success) {
           this.isConversationStarted = true;
+          this.clock.sync(response.elapsedMinutes, response.sessionDurationMinutes);
           this.messages.push({
             role: 'assistant',
             content: response.message,
@@ -85,6 +89,7 @@ export class Chat implements OnInit, AfterViewInit {
     this.apiService.sendMessage(messageToSend).subscribe({
       next: (response: MessageResponse) => {
         if (response.success) {
+          this.clock.sync(response.elapsedMinutes, response.sessionDurationMinutes);
           this.messages.push({
             role: 'assistant',
             content: response.message,
@@ -93,6 +98,7 @@ export class Chat implements OnInit, AfterViewInit {
 
           if (response.sessionComplete) {
             this.sessionComplete = true;
+            this.clock.markComplete();
           }
           setTimeout(() => {
             if (this.messageInput) {
@@ -118,6 +124,11 @@ export class Chat implements OnInit, AfterViewInit {
         if (response.success && response.conversation.length > 1) {
           this.messages = response.conversation.filter(msg => msg.role !== 'system');
           this.isConversationStarted = this.messages.length > 0;
+          // Bara när samtalet är igång - annars skulle nedräkningen synas
+          // redan i välkomstläget, innan någon tryckt på "Starta Samtal".
+          if (this.isConversationStarted) {
+            this.clock.sync(response.elapsedMinutes, response.sessionDurationMinutes);
+          }
           setTimeout(() => this.scrollToBottom(), 100);
         }
       },

@@ -7,6 +7,7 @@ import { History } from './components/history/history';
 import { Trace } from './components/trace/trace';
 import { Login } from './components/login/login';
 import { AuthService } from './services/auth.service';
+import { SessionClock } from './services/session-clock';
 
 export type View = 'chat' | 'profile' | 'plan';
 
@@ -19,6 +20,7 @@ export type View = 'chat' | 'profile' | 'plan';
 })
 export class App {
   readonly auth = inject(AuthService);
+  readonly clock = inject(SessionClock);
 
   /** Styr vilken panel som visas på mobil. Över brytpunkten visas alla samtidigt. */
   readonly view = signal<View>('chat');

@@ -9,6 +9,15 @@
       <span class="label">Psykologen</span>
     </h1>
 
+    <!-- Backend äger sessionsklockan; Erik anpassar sig efter den, så
+         användaren ska se samma siffra. -->
+    @if (clock.started()) {
+      <p class="session-status">
+        <span aria-hidden="true">⏱</span>
+        <span>{{ clock.label() }}</span>
+      </p>
+    }
+
     <!-- Toppbarens enda knapp på mobil. Railen har plats för verktygen själva
          och gömmer den här. -->
     <button

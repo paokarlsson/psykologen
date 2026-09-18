@@ -13,6 +13,9 @@ export interface Message {
 export interface ConversationResponse {
   success: boolean;
   conversation: Message[];
+  /** Saknas om anropet gick till en äldre backend. */
+  elapsedMinutes?: number;
+  sessionDurationMinutes?: number;
 }
 
 export interface MessageResponse {
@@ -20,6 +23,9 @@ export interface MessageResponse {
   message: string;
   role: string;
   sessionComplete?: boolean;
+  /** Saknas om anropet gick till en äldre backend. */
+  elapsedMinutes?: number;
+  sessionDurationMinutes?: number;
 }
 
 export interface ProfileResponse {
