@@ -75,6 +75,12 @@
   color: var(--color-muted-text);
 }
 
+/* Panelen ligger i verktygsmenyn tillsammans med syskonens togglar. Utan ett
+   eget lager målas de som står senare i DOM:en ovanpå den. */
+:host(.panel-open) {
+  z-index: 40;
+}
+
 /* Ikonrail: knappen krymper till sin ikon, samma brytpunkt som app.css. */
 @media (max-width: 1149px) {
   :host > button {
@@ -111,6 +117,21 @@
   .duration-row,
   .prompt-field-actions {
     flex-wrap: wrap;
+  }
+  /* I menyn finns bredd igen - knappen blir en rad med etikett. */
+  :host > button {
+    width: 100%;
+    justify-content: flex-start;
+    padding: var(--space-2) 14px;
+  }
+
+  .label {
+    display: inline;
+  }
+
+  .chevron {
+    display: inline-block;
+    margin-left: auto;
   }
 }
 

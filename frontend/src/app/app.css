@@ -111,6 +111,17 @@ header button:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 
+/* Verktygsmenyn finns bara i toppbaren. I railen står verktygen framme, och
+   display: contents lämnar då railens flexlayout precis som förut. */
+.tools {
+  display: contents;
+}
+
+.menu-toggle,
+.menu-backdrop {
+  display: none;
+}
+
 /* --- Innehållsyta ------------------------------------------------------ */
 
 main {
@@ -198,24 +209,79 @@ aside > * {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   }
 
-  /* Toppbaren är bred nog för ordmärket, till skillnad från ikonrailen. */
+  /* Ordmärket säger inget användaren inte redan vet, och baren behöver varje
+     pixel till sessionsstatusen. Rubriken finns kvar för skärmläsare. */
   h1 {
-    font-size: 1rem;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
-  h1 .label {
-    display: inline;
-  }
-
-  header nav {
-    flex-direction: row;
+  .menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--tap-min);
     margin-left: auto;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: var(--radius-pill);
+    color: white;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
   }
 
-  header p {
+  .menu-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 24;
+  }
+
+  .tools {
+    display: none;
+  }
+
+  /* Menyn ärver barens färg, så att verktygsknapparna - ritade för railen -
+     fungerar oförändrade i den. */
+  .tools.open {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    position: absolute;
+    z-index: 25;
+    top: 100%;
+    right: var(--space-2);
+    left: var(--space-2);
+    padding: var(--space-3);
+    border-radius: var(--radius);
+    background: var(--color-accent);
+    box-shadow: var(--shadow-panel);
+  }
+
+  .tools nav {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .tools p {
     flex-direction: row;
     align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
     margin-top: 0;
+  }
+
+  /* I menyn finns bredd igen - etiketterna som viker undan i railen kommer
+     tillbaka. Verktygens egna etiketter styrs av respektive komponent. */
+  .tools .label {
+    display: inline;
   }
 
   main {

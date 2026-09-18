@@ -23,10 +23,21 @@ export class App {
   /** Styr vilken panel som visas på mobil. Över brytpunkten visas alla samtidigt. */
   readonly view = signal<View>('chat');
 
+  /** Toppbarens verktygsmeny. Railen visar verktygen direkt och rör den inte. */
+  readonly menuOpen = signal(false);
+
   @ViewChild(Chat) private chat?: Chat;
 
   constructor() {
     this.auth.checkSession();
+  }
+
+  toggleMenu(): void {
+    this.menuOpen.update((open) => !open);
+  }
+
+  closeMenu(): void {
+    this.menuOpen.set(false);
   }
 
   setView(view: View): void {

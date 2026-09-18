@@ -30,7 +30,9 @@ const TOM_SAMMANFATTNING: TraceSummaryDto = {
   imports: [NgClass, LoadingSpinner],
   templateUrl: './trace.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  styleUrl: './trace.css'
+  styleUrl: './trace.css',
+  // En öppen panel måste måla över syskonens togglar i verktygsmenyn.
+  host: { '[class.panel-open]': 'isOpen' }
 })
 export class Trace {
   @ViewChild('toggleBtn') private toggleBtnRef?: ElementRef<HTMLButtonElement>;

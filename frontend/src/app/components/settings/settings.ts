@@ -61,7 +61,9 @@ const FIELD_META: { key: string; label: string; description: string }[] = [
   imports: [FormsModule, NgClass, LoadingSpinner],
   templateUrl: './settings.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  styleUrl: './settings.css'
+  styleUrl: './settings.css',
+  // En öppen panel måste måla över syskonens togglar i verktygsmenyn.
+  host: { '[class.panel-open]': 'isOpen' }
 })
 export class Settings {
   @ViewChild('toggleBtn') private toggleBtnRef?: ElementRef<HTMLButtonElement>;

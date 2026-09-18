@@ -16,7 +16,9 @@ const TYP_ETIKETT: Record<HistoryEntryDto['type'], string> = {
   imports: [NgClass, LoadingSpinner],
   templateUrl: './history.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  styleUrl: './history.css'
+  styleUrl: './history.css',
+  // En öppen panel måste måla över syskonens togglar i verktygsmenyn.
+  host: { '[class.panel-open]': 'isOpen' }
 })
 export class History {
   @ViewChild('toggleBtn') private toggleBtnRef?: ElementRef<HTMLButtonElement>;
