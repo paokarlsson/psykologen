@@ -137,7 +137,8 @@ export class App {
     }
     this.ui.sheetState.set(state);
     // Arket tar höjd från samtalet. Utan detta står man kvar på samma
-    // scrollTop och tappar de sista replikerna ur sikte.
-    setTimeout(() => this.chat?.scrollToBottom());
+    // scrollTop och tappar de sista replikerna ur sikte - men läser man
+    // längre upp i samtalet ska man få ligga kvar där.
+    setTimeout(() => this.chat?.keepPinned());
   }
 }

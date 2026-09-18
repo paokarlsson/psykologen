@@ -1,5 +1,6 @@
 :host {
   display: flex;
+  position: relative;
   flex-direction: column;
   height: 100%;
   min-height: 0;
@@ -209,6 +210,8 @@ footer {
   align-items: flex-end;
 }
 
+/* Rutan växer med texten i stället för att scrolla internt. resize: none -
+   höjden sköts av autogrow, ett draghandtag skulle bara slåss med den. */
 textarea {
   flex: 1;
   border: 1px solid #ddd;
@@ -216,8 +219,9 @@ textarea {
   padding: 0.75rem;
   font-family: inherit;
   font-size: 1rem;
-  resize: vertical;
-  min-height: 20px;
+  resize: none;
+  overflow-y: auto;
+  min-height: var(--tap-min);
   max-height: 120px;
 }
 
@@ -266,6 +270,30 @@ textarea:disabled {
   cursor: not-allowed;
 }
 
+/* Syns bara när man läser längre upp i samtalet och en ny replik kommit in. */
+.jump-to-latest {
+  display: flex;
+  position: absolute;
+  z-index: 5;
+  right: var(--space-4);
+  bottom: 7rem;
+  align-items: center;
+  gap: 0.4rem;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-chat);
+  border: 0;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-card);
+  color: white;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.jump-to-latest:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
 @media (max-width: 899px) {
   /* Bottenfliken "Samtal" och toppbaren säger redan var man är. */
   header {
@@ -293,9 +321,9 @@ textarea:disabled {
   }
 
   /* Inmatningen stod tidigare staplad med en fullbred knapp under, vilket
-     kostade en extra rad där höjden är som dyrast. */
+     kostade en extra rad där höjden är som dyrast. Taket är högre än på
+     desktop - här finns ingen annan plats för en lång text att ta. */
   textarea {
-    height: 3.5rem;
     max-height: 35dvh;
   }
 

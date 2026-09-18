@@ -15,7 +15,7 @@
   </div>
 }
 
-<div class="chat-messages" #messagesContainer>
+<div class="chat-messages" #messagesContainer (scroll)="onMessagesScroll()">
   @if (!isConversationStarted && messages.length === 0) {
     <div class="welcome-message">
       <p class="notice">
@@ -79,6 +79,13 @@
   }
 </div>
 
+@if (hasUnseenMessages) {
+  <button type="button" class="jump-to-latest" (click)="scrollToBottom()">
+    <span aria-hidden="true">↓</span>
+    <span>Nytt meddelande</span>
+  </button>
+}
+
 @if (isConversationStarted) {
   <footer>
     @if (sessionComplete) {
@@ -92,9 +99,10 @@
           #messageInput
           [(ngModel)]="currentMessage"
           (keydown)="onKeyPress($event)"
+          (input)="onInput()"
           placeholder="Skriv ditt meddelande här..."
           aria-label="Meddelande till Erik"
-          rows="3"
+          rows="1"
         [disabled]="isLoading || sessionComplete"></textarea>
         <button
           (click)="sendMessage()"

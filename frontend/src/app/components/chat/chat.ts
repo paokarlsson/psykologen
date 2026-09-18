@@ -6,6 +6,9 @@ import { ApiService, Message, MessageResponse } from '../../services/api.service
 import { SessionClock } from '../../services/session-clock';
 import { LoadingSpinner } from '../../shared/loading-spinner/loading-spinner';
 
+/** Så nära botten att nästa replik får scrolla fram av sig själv. */
+const PIN_THRESHOLD_PX = 100;
+
 @Component({
   selector: 'app-chat',
   imports: [NgClass, FormsModule, LoadingSpinner],
@@ -23,6 +26,10 @@ export class Chat implements OnInit, AfterViewInit {
   isLoading: boolean = false;
   sessionComplete: boolean = false;
   backendError: string | null = null;
+  hasUnseenMessages: boolean = false;
+
+  /** Falskt så fort man scrollat upp för att läsa något tidigare i samtalet. */
+  private isPinnedToBottom = true;
 
   private readonly clock = inject(SessionClock);
 
@@ -32,6 +39,7 @@ export class Chat implements OnInit, AfterViewInit {
     if (this.isConversationStarted && this.messageInput) {
       setTimeout(() => this.messageInput.nativeElement.focus(), 100);
     }
+    this.resizeInput();
   }
 
   ngOnInit(): void {
@@ -84,7 +92,10 @@ export class Chat implements OnInit, AfterViewInit {
     this.isLoading = true;
     this.backendError = null;
 
-    setTimeout(() => this.scrollToBottom(), 0);
+    setTimeout(() => {
+      this.resizeInput();
+      this.scrollToBottom();
+    }, 0);
 
     this.apiService.sendMessage(messageToSend).subscribe({
       next: (response: MessageResponse) => {
@@ -104,7 +115,7 @@ export class Chat implements OnInit, AfterViewInit {
             if (this.messageInput) {
               this.messageInput.nativeElement.focus();
             }
-            this.scrollToBottom();
+            this.revealLatest();
           }, 100);
         }
         this.isLoading = false;
@@ -172,11 +183,58 @@ export class Chat implements OnInit, AfterViewInit {
     return this.messages[index].role !== this.messages[index + 1].role;
   }
 
-  /** Publik för att skalet ska kunna scrolla om efter att chatten varit dold. */
-  scrollToBottom(): void {
-    if (this.messagesContainer) {
-      const container = this.messagesContainer.nativeElement;
-      container.scrollTop = container.scrollHeight;
+  onInput(): void {
+    this.resizeInput();
+  }
+
+  onMessagesScroll(): void {
+    const container = this.messagesContainer?.nativeElement;
+    if (!container) {
+      return;
     }
+    const fromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    this.isPinnedToBottom = fromBottom < PIN_THRESHOLD_PX;
+    if (this.isPinnedToBottom) {
+      this.hasUnseenMessages = false;
+    }
+  }
+
+  scrollToBottom(): void {
+    const container = this.messagesContainer?.nativeElement;
+    if (!container) {
+      return;
+    }
+    container.scrollTop = container.scrollHeight;
+    this.isPinnedToBottom = true;
+    this.hasUnseenMessages = false;
+  }
+
+  /**
+   * Publik för att skalet ska kunna hålla samtalet nedscrollat när arket tar
+   * höjd från det. Har man scrollat upp för att läsa ligger man kvar.
+   */
+  keepPinned(): void {
+    if (this.isPinnedToBottom) {
+      this.scrollToBottom();
+    }
+  }
+
+  /** Läser man längre upp ska en ny replik anmäla sig, inte rycka undan texten. */
+  private revealLatest(): void {
+    if (this.isPinnedToBottom) {
+      this.scrollToBottom();
+    } else {
+      this.hasUnseenMessages = true;
+    }
+  }
+
+  /** Rutan växer med texten. Höjden klamras av max-height i css:en. */
+  private resizeInput(): void {
+    const input = this.messageInput?.nativeElement;
+    if (!input) {
+      return;
+    }
+    input.style.height = 'auto';
+    input.style.height = `${input.scrollHeight}px`;
   }
 }
