@@ -89,15 +89,31 @@ header nav {
   opacity: 0.85;
 }
 
-/* Sessionsstatusen. I ikonrailen finns ingen bredd för den - där får
-   nedräkningen vänta tills man fäller ut något. */
+/* Sessionsstatusen: nedräkningen och taxametern. I ikonrailen finns ingen
+   bredd för dem - där får de vänta tills man fäller ut något.
+   I railen står de på var sin rad, i toppbaren på samma. */
 .session-status {
   display: flex;
-  align-items: center;
-  gap: 0.4rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
   margin: 0;
   font-size: 0.85rem;
   opacity: 0.9;
+}
+
+.session-status .time {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.session-status .cost {
+  flex-shrink: 0;
+  /* Linjerar med tiden ovanför i stället för med klockikonen: ikonens bredd
+     plus mellanrummet. */
+  padding-left: calc(1.15em + 0.4rem);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Utloggningsknappen - träffar inte togglarna i app-history/app-settings,
@@ -287,10 +303,34 @@ aside {
 
   .session-status {
     display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  /* Tiden får kapas om baren tryter; beloppet är kort och står kvar. */
+  .session-status .time {
     min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .session-status .time span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .session-status .cost {
+    padding-left: 0;
+  }
+
+  .session-status .cost::before {
+    content: '·';
+    margin-right: var(--space-2);
+    opacity: 0.6;
   }
 
   header .menu-toggle {

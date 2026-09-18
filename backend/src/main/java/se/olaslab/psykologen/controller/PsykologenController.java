@@ -12,6 +12,7 @@ import se.olaslab.psykologen.service.PsykologenService;
 import se.olaslab.psykologen.service.UserSessionRegistry;
 import se.olaslab.psykologen.session.ChatMessage;
 import se.olaslab.psykologen.storage.HistoryEntry;
+import se.olaslab.psykologen.trace.TraceSummary;
 
 @RestController
 @RequestMapping("/api/psykologen")
@@ -28,12 +29,19 @@ public class PsykologenController {
     }
 
     /**
-     * Sessionsklockan följer med varje svar som rör samtalet. Erik anpassar sig
-     * efter hur mycket tid som är kvar, så användaren behöver se samma siffra.
+     * Sessionens mätare följer med varje svar som rör samtalet: tiden, eftersom
+     * Erik anpassar sig efter hur mycket som är kvar, och vad anropen kostat
+     * hittills. Kostnaden ändras bara när ett anrop görs, så den hör hemma här
+     * i stället för i en egen pollning - /trace bär hela prompthistoriken och
+     * är alldeles för tung att hämta för ett belopp.
      */
     private void addTiming(Map<String, Object> response, PsykologenService service) {
         response.put("elapsedMinutes", service.elapsedMinutes());
         response.put("sessionDurationMinutes", service.getSessionDurationMinutes());
+
+        TraceSummary trace = service.getTraceSummary();
+        response.put("costUsd", trace.totalCostUsd());
+        response.put("costComplete", trace.costComplete());
     }
 
     @PostMapping("/start")

@@ -10,7 +10,7 @@ import { Login } from './components/login/login';
 import { Icon } from './shared/icon/icon';
 import { ApiService, HistoryEntryDto } from './services/api.service';
 import { AuthService } from './services/auth.service';
-import { SessionClock } from './services/session-clock';
+import { SessionMeter } from './services/session-meter';
 import { SheetState, UiState } from './services/ui-state';
 import { pollingResource } from './shared/polling-resource';
 
@@ -26,7 +26,7 @@ const DRAG_THRESHOLD_PX = 40;
 })
 export class App {
   readonly auth = inject(AuthService);
-  readonly clock = inject(SessionClock);
+  readonly meter = inject(SessionMeter);
   readonly ui = inject(UiState);
 
   private readonly apiService = inject(ApiService);

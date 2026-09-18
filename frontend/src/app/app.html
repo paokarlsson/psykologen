@@ -6,12 +6,17 @@
   <header (keydown.escape)="closeMenu()">
     <h1><span class="label">Psykologen</span></h1>
 
-    <!-- Backend äger sessionsklockan; Erik anpassar sig efter den, så
-         användaren ska se samma siffra. -->
-    @if (clock.started()) {
+    <!-- Backend äger både klockan och taxametern. Erik anpassar sig efter
+         tiden som är kvar, och kostnaden är det appen faktiskt drar. -->
+    @if (meter.started()) {
       <p class="session-status">
-        <app-icon name="clock" />
-        <span>{{ clock.label() }}</span>
+        <span class="time">
+          <app-icon name="clock" />
+          <span>{{ meter.timeLabel() }}</span>
+        </span>
+        @if (meter.costLabel()) {
+          <span class="cost">{{ meter.costLabel() }}</span>
+        }
       </p>
     }
 

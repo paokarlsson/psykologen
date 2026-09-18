@@ -3,7 +3,7 @@ import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService, Message, MessageResponse } from '../../services/api.service';
-import { SessionClock } from '../../services/session-clock';
+import { SessionMeter } from '../../services/session-meter';
 import { LoadingSpinner } from '../../shared/loading-spinner/loading-spinner';
 import { Icon } from '../../shared/icon/icon';
 
@@ -32,7 +32,7 @@ export class Chat implements OnInit, AfterViewInit {
   /** Falskt så fort man scrollat upp för att läsa något tidigare i samtalet. */
   private isPinnedToBottom = true;
 
-  private readonly clock = inject(SessionClock);
+  private readonly meter = inject(SessionMeter);
 
   constructor(private apiService: ApiService) { }
   
@@ -54,7 +54,7 @@ export class Chat implements OnInit, AfterViewInit {
       next: (response: MessageResponse) => {
         if (response.success) {
           this.isConversationStarted = true;
-          this.clock.sync(response.elapsedMinutes, response.sessionDurationMinutes);
+          this.meter.sync(response);
           this.messages.push({
             role: 'assistant',
             content: response.message,
@@ -101,7 +101,7 @@ export class Chat implements OnInit, AfterViewInit {
     this.apiService.sendMessage(messageToSend).subscribe({
       next: (response: MessageResponse) => {
         if (response.success) {
-          this.clock.sync(response.elapsedMinutes, response.sessionDurationMinutes);
+          this.meter.sync(response);
           this.messages.push({
             role: 'assistant',
             content: response.message,
@@ -110,7 +110,7 @@ export class Chat implements OnInit, AfterViewInit {
 
           if (response.sessionComplete) {
             this.sessionComplete = true;
-            this.clock.markComplete();
+            this.meter.markComplete();
           }
           setTimeout(() => {
             if (this.messageInput) {
@@ -139,7 +139,7 @@ export class Chat implements OnInit, AfterViewInit {
           // Bara när samtalet är igång - annars skulle nedräkningen synas
           // redan i välkomstläget, innan någon tryckt på "Starta Samtal".
           if (this.isConversationStarted) {
-            this.clock.sync(response.elapsedMinutes, response.sessionDurationMinutes);
+            this.meter.sync(response);
           }
           setTimeout(() => this.scrollToBottom(), 100);
         }
