@@ -26,11 +26,17 @@ h2 {
 }
 
 /* Den korta påminnelsen syns hela samtalet - den fylliga varningen i
-   välkomstläget försvinner så fort samtalet startat. */
+   välkomstläget försvinner så fort samtalet startat. Egen rad, inte en del av
+   kortrubriken: rubriken göms på mobil, påminnelsen får inte följa med. */
 .experiment-tag {
-  margin: var(--space-1) 0 0 0;
+  flex-shrink: 0;
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
   font-size: 0.75rem;
   color: var(--color-muted-text);
+  text-align: center;
 }
 
 .backend-error {
@@ -264,6 +270,14 @@ textarea:disabled {
   /* Bottenfliken "Samtal" och toppbaren säger redan var man är. */
   header {
     display: none;
+  }
+
+  /* Påminnelsen blir kortets översta rad och ärver rubrikens kantfärg. */
+  .experiment-tag {
+    padding: var(--space-2) var(--space-3);
+    border-top: 3px solid var(--color-chat);
+    border-radius: var(--radius) var(--radius) 0 0;
+    text-align: left;
   }
 
   .chat-messages {
