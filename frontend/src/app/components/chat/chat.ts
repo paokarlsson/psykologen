@@ -5,13 +5,14 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService, Message, MessageResponse } from '../../services/api.service';
 import { SessionClock } from '../../services/session-clock';
 import { LoadingSpinner } from '../../shared/loading-spinner/loading-spinner';
+import { Icon } from '../../shared/icon/icon';
 
 /** Så nära botten att nästa replik får scrolla fram av sig själv. */
 const PIN_THRESHOLD_PX = 100;
 
 @Component({
   selector: 'app-chat',
-  imports: [NgClass, FormsModule, LoadingSpinner],
+  imports: [NgClass, FormsModule, LoadingSpinner, Icon],
   templateUrl: './chat.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './chat.css'

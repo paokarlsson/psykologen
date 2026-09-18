@@ -5,9 +5,9 @@
   aria-controls="history-panel"
   aria-label="Historik"
 >
-  <span aria-hidden="true">📜</span>
+  <app-icon name="list" />
   <span class="label">Historik</span>
-  <span class="chevron" [ngClass]="{ open: isOpen }">▾</span>
+  <app-icon class="chevron" [ngClass]="{ open: isOpen }" name="chevron-down" />
 </button>
 
 @if (isOpen) {
@@ -22,7 +22,7 @@
   >
     <header>
       <h2>Historik</h2>
-      <button type="button" (click)="close()" aria-label="Stäng historik">✕</button>
+      <button type="button" (click)="close()" aria-label="Stäng historik"><app-icon name="x" /></button>
     </header>
 
     @if (isLoading) {
@@ -30,7 +30,7 @@
     }
 
     @if (errorMessage) {
-      <div class="banner banner-error" role="alert">⚠️ {{ errorMessage }}</div>
+      <div class="banner banner-error" role="alert"><app-icon name="alert" />{{ errorMessage }}</div>
     }
 
     @if (!isLoading && !errorMessage && entries.length === 0) {

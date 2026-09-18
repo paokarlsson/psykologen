@@ -4,12 +4,13 @@ import { ApiService } from '../../services/api.service';
 import { UiState } from '../../services/ui-state';
 import { pollingResource } from '../../shared/polling-resource';
 import { LoadingSpinner } from '../../shared/loading-spinner/loading-spinner';
+import { Icon } from '../../shared/icon/icon';
 
 const EMPTY_PLAN = 'Ingen plan skapad än.';
 
 @Component({
   selector: 'app-plan',
-  imports: [LoadingSpinner],
+  imports: [LoadingSpinner, Icon],
   templateUrl: './plan.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './plan.css'

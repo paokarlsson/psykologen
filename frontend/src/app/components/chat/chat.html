@@ -1,5 +1,5 @@
 <header>
-  <h2>🎤 Psykologen - Chat med Erik</h2>
+  <h2>Psykologen - Chat med Erik</h2>
 </header>
 
 <!-- Utanför kortrubriken: den göms på mobil, men påminnelsen ska följa med
@@ -10,7 +10,7 @@
 
 @if (backendError) {
   <div class="backend-error" role="alert">
-    <span>⚠️ {{ backendError }}</span>
+    <span class="backend-error-text"><app-icon name="alert" />{{ backendError }}</span>
     <button (click)="retryConnection()">Försök igen</button>
   </div>
 }
@@ -19,7 +19,7 @@
   @if (!isConversationStarted && messages.length === 0) {
     <div class="welcome-message">
       <p class="notice">
-        <strong>⚠️ Det här är bara ett experiment</strong>
+        <strong><app-icon name="alert" />Det här är bara ett experiment</strong>
         Ingen riktig vård, ingen riktig psykolog. Dela inga personuppgifter eller
         annan känslig information här - varken om dig själv eller om någon annan.
         Allt som finns i appen, inklusive konton och sparade samtal, kan tas bort
@@ -52,7 +52,7 @@
       @if (isNewGroup(i)) {
         <div class="message-header">
           <span class="avatar" [ngClass]="message.role === 'user' ? 'avatar-user' : 'avatar-assistant'">
-            {{ message.role === 'user' ? '👤' : '🤖' }}
+            <app-icon name="user" />
           </span>
           <span class="message-role">{{ message.role === 'user' ? 'Du' : 'Erik' }}</span>
         </div>
@@ -68,7 +68,7 @@
     <div class="loading-message">
       <div class="message assistant-message group-start">
         <div class="message-header">
-          <span class="avatar avatar-assistant">🤖</span>
+          <span class="avatar avatar-assistant"><app-icon name="user" /></span>
           <span class="message-role">Erik</span>
         </div>
         <div class="message-content">
@@ -81,7 +81,7 @@
 
 @if (hasUnseenMessages) {
   <button type="button" class="jump-to-latest" (click)="scrollToBottom()">
-    <span aria-hidden="true">↓</span>
+    <app-icon name="arrow-down" />
     <span>Nytt meddelande</span>
   </button>
 }
@@ -90,7 +90,7 @@
   <footer>
     @if (sessionComplete) {
       <div class="session-complete">
-        <p>✅ Sessionen är avslutad. Tack för ditt besök!</p>
+        <p><app-icon name="check" />Sessionen är avslutad. Tack för ditt besök!</p>
       </div>
     }
     @if (!sessionComplete) {
@@ -110,7 +110,7 @@
           [attr.aria-label]="isLoading ? 'Skickar' : 'Skicka'"
           class="send-btn">
           <span class="label">{{ isLoading ? 'Skickar...' : 'Skicka' }}</span>
-          <span aria-hidden="true">➤</span>
+          <app-icon name="send" />
         </button>
       </div>
     }

@@ -4,12 +4,13 @@ import { ApiService } from '../../services/api.service';
 import { UiState } from '../../services/ui-state';
 import { pollingResource } from '../../shared/polling-resource';
 import { LoadingSpinner } from '../../shared/loading-spinner/loading-spinner';
+import { Icon } from '../../shared/icon/icon';
 
 const EMPTY_PROFILE = 'Ingen profil skapad än.';
 
 @Component({
   selector: 'app-profile',
-  imports: [LoadingSpinner],
+  imports: [LoadingSpinner, Icon],
   templateUrl: './profile.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './profile.css'

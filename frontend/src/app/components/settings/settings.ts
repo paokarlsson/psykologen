@@ -4,6 +4,7 @@ import { NgClass } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService, ContextStrategyDto } from '../../services/api.service';
 import { LoadingSpinner } from '../../shared/loading-spinner/loading-spinner';
+import { Icon } from '../../shared/icon/icon';
 
 interface PromptField {
   key: string;
@@ -58,7 +59,7 @@ const FIELD_META: { key: string; label: string; description: string }[] = [
 
 @Component({
   selector: 'app-settings',
-  imports: [FormsModule, NgClass, LoadingSpinner],
+  imports: [FormsModule, NgClass, LoadingSpinner, Icon],
   templateUrl: './settings.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './settings.css',

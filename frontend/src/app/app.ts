@@ -7,6 +7,7 @@ import { Settings } from './components/settings/settings';
 import { History, TYP_ETIKETT } from './components/history/history';
 import { Trace } from './components/trace/trace';
 import { Login } from './components/login/login';
+import { Icon } from './shared/icon/icon';
 import { ApiService, HistoryEntryDto } from './services/api.service';
 import { AuthService } from './services/auth.service';
 import { SessionClock } from './services/session-clock';
@@ -18,7 +19,7 @@ const DRAG_THRESHOLD_PX = 40;
 
 @Component({
   selector: 'app-root',
-  imports: [Chat, Profile, Plan, Settings, History, Trace, Login],
+  imports: [Chat, Profile, Plan, Settings, History, Trace, Login, Icon],
   templateUrl: './app.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './app.css'
@@ -54,7 +55,7 @@ export class App {
     if (!latest) {
       return 'Profil och plan';
     }
-    return `${TYP_ETIKETT[latest.type] ?? latest.type} ${latest.change}`;
+    return `${TYP_ETIKETT[latest.type] ?? latest.type} · ${latest.change}`;
   });
 
   @ViewChild(Chat) private chat?: Chat;

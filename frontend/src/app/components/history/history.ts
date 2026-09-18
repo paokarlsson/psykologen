@@ -3,18 +3,19 @@ import { NgClass } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService, HistoryEntryDto } from '../../services/api.service';
 import { LoadingSpinner } from '../../shared/loading-spinner/loading-spinner';
+import { Icon } from '../../shared/icon/icon';
 
 /** Delas med skalet, som visar senaste ändringen på underlagets draghandtag. */
 export const TYP_ETIKETT: Record<HistoryEntryDto['type'], string> = {
-  profile: '👤 Profil',
-  plan: '🗒️ Plan',
-  thoughts: '🧠 Tankar',
-  threads: '🧵 Trådar',
+  profile: 'Profil',
+  plan: 'Plan',
+  thoughts: 'Tankar',
+  threads: 'Trådar',
 };
 
 @Component({
   selector: 'app-history',
-  imports: [NgClass, LoadingSpinner],
+  imports: [NgClass, LoadingSpinner, Icon],
   templateUrl: './history.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './history.css',

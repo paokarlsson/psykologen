@@ -4,16 +4,13 @@
   <a class="skip-link" href="#main-content">Hoppa till chatten</a>
 
   <header (keydown.escape)="closeMenu()">
-    <h1>
-      <span aria-hidden="true">🧠</span>
-      <span class="label">Psykologen</span>
-    </h1>
+    <h1><span class="label">Psykologen</span></h1>
 
     <!-- Backend äger sessionsklockan; Erik anpassar sig efter den, så
          användaren ska se samma siffra. -->
     @if (clock.started()) {
       <p class="session-status">
-        <span aria-hidden="true">⏱</span>
+        <app-icon name="clock" />
         <span>{{ clock.label() }}</span>
       </p>
     }
@@ -28,7 +25,7 @@
       aria-controls="tools-menu"
       aria-label="Meny"
     >
-      <span aria-hidden="true">⋯</span>
+      <app-icon name="more" />
     </button>
 
     @if (menuOpen()) {
@@ -47,7 +44,7 @@
       <p>
         <span class="label">{{ auth.user() }}</span>
         <button type="button" (click)="logout()" aria-label="Logga ut">
-          <span aria-hidden="true">⏻</span>
+          <app-icon name="power" />
           <span class="label">Logga ut</span>
         </button>
       </p>
@@ -86,7 +83,7 @@
               ui.sheetState() === 'full' ? 'Visa samtalet igen' : 'Visa underlaget i helskärm'
             "
           >
-            <span aria-hidden="true">{{ ui.sheetState() === 'full' ? '⌄' : '⌃' }}</span>
+            <app-icon [name]="ui.sheetState() === 'full' ? 'chevron-down' : 'chevron-up'" />
           </button>
         }
       </div>
