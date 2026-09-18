@@ -1,6 +1,7 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { map } from 'rxjs';
 import { ApiService } from '../../services/api.service';
+import { UiState } from '../../services/ui-state';
 import { pollingResource } from '../../shared/polling-resource';
 import { LoadingSpinner } from '../../shared/loading-spinner/loading-spinner';
 
@@ -15,10 +16,12 @@ const EMPTY_PLAN = 'Ingen plan skapad än.';
 })
 export class Plan {
   private readonly apiService = inject(ApiService);
+  private readonly ui = inject(UiState);
 
   private readonly planResource = pollingResource(
     () => this.apiService.getPlan().pipe(map((response) => response.plan)),
-    EMPTY_PLAN
+    EMPTY_PLAN,
+    { enabled: this.ui.underlagVisible }
   );
 
   readonly plan = this.planResource.value;

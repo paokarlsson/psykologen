@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal, ViewChild, ChangeDetectionStrategy } from '@angular/core';
-import { map, of } from 'rxjs';
+import { map } from 'rxjs';
 import { Chat } from './components/chat/chat';
 import { Profile } from './components/profile/profile';
 import { Plan } from './components/plan/plan';
@@ -38,14 +38,14 @@ export class App {
    * bär redan exakt den meningen, och går långsammare än profil och plan.
    */
   private readonly historyResource = pollingResource<HistoryEntryDto[]>(
-    // Skalet finns även på inloggningssidan - utan spärren blir det 401 var
-    // femtonde sekund innan någon loggat in.
-    () =>
-      this.auth.user()
-        ? this.apiService.getHistory().pipe(map((response) => response.history))
-        : of([]),
+    () => this.apiService.getHistory().pipe(map((response) => response.history)),
     [],
-    15000,
+    {
+      intervalMs: 15000,
+      // Skalet finns även på inloggningssidan - utan spärren blir det 401 var
+      // femtonde sekund innan någon loggat in.
+      enabled: computed(() => !!this.auth.user() && this.ui.documentVisible()),
+    },
   );
 
   readonly sheetSummary = computed(() => {

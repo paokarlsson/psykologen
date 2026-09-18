@@ -1,6 +1,7 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { map } from 'rxjs';
 import { ApiService } from '../../services/api.service';
+import { UiState } from '../../services/ui-state';
 import { pollingResource } from '../../shared/polling-resource';
 import { LoadingSpinner } from '../../shared/loading-spinner/loading-spinner';
 
@@ -15,10 +16,12 @@ const EMPTY_PROFILE = 'Ingen profil skapad än.';
 })
 export class Profile {
   private readonly apiService = inject(ApiService);
+  private readonly ui = inject(UiState);
 
   private readonly profileResource = pollingResource(
     () => this.apiService.getProfile().pipe(map((response) => response.profile)),
-    EMPTY_PROFILE
+    EMPTY_PROFILE,
+    { enabled: this.ui.underlagVisible }
   );
 
   readonly profile = this.profileResource.value;
