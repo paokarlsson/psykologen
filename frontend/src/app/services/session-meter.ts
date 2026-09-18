@@ -12,12 +12,36 @@ export interface SessionMeterFields {
 }
 
 /**
+ * Fast växelkurs. Prislistan hos AI-leverantören är i dollar, taxametern visas
+ * i kronor - ingen hämtar en dagskurs för det här, och behöver inte: beloppen
+ * rör sig om ental kronor och siffran är ändå en uppskattning.
+ */
+export const KRONOR_PER_DOLLAR = 10.5;
+
+/** Under den här gränsen bjuder systemutvecklaren. */
+export const GRATIS_KRONOR = 20;
+
+/** Under den här gränsen är det fortfarande gratis, mot feedback. */
+export const FEEDBACK_KRONOR = 50;
+
+export type Prissteg = 'bjuden' | 'feedback' | 'swish';
+
+export function prisstegFor(kronor: number): Prissteg {
+  if (kronor < GRATIS_KRONOR) {
+    return 'bjuden';
+  }
+  return kronor < FEEDBACK_KRONOR ? 'feedback' : 'swish';
+}
+
+/**
  * Delas av glaslådan och skalet, så att beloppen aldrig kan skilja sig åt.
  * "minst" när något anrop kördes på en modell utan pris i prislistan - summan
- * är då för låg, inte okänd.
+ * är då för låg, inte okänd. Under en krona är avrundningen meningslös, och
+ * "0 kr" skulle se ut som att mätaren står stilla.
  */
 export function formatTotalCost(costUsd: number, complete: boolean): string {
-  const belopp = '$' + costUsd.toFixed(4);
+  const kronor = costUsd * KRONOR_PER_DOLLAR;
+  const belopp = kronor < 1 ? 'under 1 kr' : `≈ ${Math.round(kronor)} kr`;
   return complete ? belopp : 'minst ' + belopp;
 }
 
@@ -70,6 +94,14 @@ export class SessionMeter {
     const cost = this.costUsd();
     return cost === null ? '' : formatTotalCost(cost, this.costComplete());
   });
+
+  readonly costKronor = computed(() => {
+    const cost = this.costUsd();
+    return cost === null ? null : cost * KRONOR_PER_DOLLAR;
+  });
+
+  /** Vilket av de tre prisstegen sessionen ligger i just nu. */
+  readonly prissteg = computed<Prissteg>(() => prisstegFor(this.costKronor() ?? 0));
 
   constructor() {
     const timer = setInterval(() => this.now.set(Date.now()), 10_000);

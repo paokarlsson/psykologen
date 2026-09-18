@@ -1,0 +1,56 @@
+<button
+  #toggleBtn
+  type="button"
+  [class.over-gransen]="meter.prissteg() !== 'bjuden'"
+  (click)="toggleOpen()"
+  [attr.aria-expanded]="isOpen()"
+  aria-controls="pris-panel"
+  [attr.aria-label]="'Taxameter ' + meter.costLabel() + ', visa vad det kostar'"
+>
+  <span class="taxameter-label">Taxameter</span>
+  <span class="amount">{{ meter.costLabel() }}</span>
+</button>
+
+@if (isOpen()) {
+  <div class="panel-backdrop" (click)="close()"></div>
+
+  <section
+    #panel
+    id="pris-panel"
+    aria-label="Taxameter"
+    tabindex="-1"
+    (keydown.escape)="close()"
+  >
+    <header>
+      <h2>Taxameter</h2>
+      <button type="button" (click)="close()" aria-label="Stäng prisinformationen">
+        <app-icon name="x" />
+      </button>
+    </header>
+
+    <p class="price-now">
+      Anropen till AI-tjänsten har hittills kostat
+      <strong>{{ meter.costLabel() }}</strong> i den här sessionen.
+    </p>
+
+    <ul class="price-steps">
+      <li [attr.aria-current]="meter.prissteg() === 'bjuden' ? 'true' : null">
+        <span class="range">Upp till {{ gratisKronor }} kr</span>
+        <span>Systemutvecklaren bjuder.</span>
+      </li>
+      <li [attr.aria-current]="meter.prissteg() === 'feedback' ? 'true' : null">
+        <span class="range">{{ gratisKronor }}–{{ feedbackKronor }} kr</span>
+        <span>Fortfarande gratis, men ge systemutvecklaren feedback som kompensation.</span>
+      </li>
+      <li [attr.aria-current]="meter.prissteg() === 'swish' ? 'true' : null">
+        <span class="range">Över {{ feedbackKronor }} kr</span>
+        <span>Dags att swisha systemutvecklaren.</span>
+      </li>
+    </ul>
+
+    <p class="price-note">
+      Omräknat från leverantörens dollarpris till en fast kurs - siffran är en uppskattning, inte
+      en faktura. Anrop för anrop finns i Glaslådan.
+    </p>
+  </section>
+}

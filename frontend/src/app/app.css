@@ -99,21 +99,17 @@ header nav {
   gap: 0.15rem;
   margin: 0;
   font-size: 0.85rem;
-  opacity: 0.9;
 }
 
+/* Dämpningen ligger på texten, inte på raden. opacity på föräldern skapar en
+   stackningskontext och drar med sig taxameterns panel in i den - panelen
+   blev genomskinlig och backdropen verkningslös. Taxametern är dessutom en
+   knapp och ska inte dämpas. */
 .session-status .time {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-}
-
-.session-status .cost {
-  flex-shrink: 0;
-  /* Linjerar med tiden ovanför i stället för med klockikonen: ikonens bredd
-     plus mellanrummet. */
-  padding-left: calc(1.15em + 0.4rem);
-  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.88);
 }
 
 /* Utloggningsknappen - träffar inte togglarna i app-history/app-settings,
@@ -321,16 +317,6 @@ aside {
   .session-status .time span {
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-
-  .session-status .cost {
-    padding-left: 0;
-  }
-
-  .session-status .cost::before {
-    content: '·';
-    margin-right: var(--space-2);
-    opacity: 0.6;
   }
 
   header .menu-toggle {

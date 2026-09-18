@@ -5,6 +5,7 @@ import { Profile } from './components/profile/profile';
 import { Plan } from './components/plan/plan';
 import { Settings } from './components/settings/settings';
 import { History, TYP_ETIKETT } from './components/history/history';
+import { Taxameter } from './components/taxameter/taxameter';
 import { Trace } from './components/trace/trace';
 import { Login } from './components/login/login';
 import { Icon } from './shared/icon/icon';
@@ -19,7 +20,7 @@ const DRAG_THRESHOLD_PX = 40;
 
 @Component({
   selector: 'app-root',
-  imports: [Chat, Profile, Plan, Settings, History, Trace, Login, Icon],
+  imports: [Chat, Profile, Plan, Settings, History, Trace, Taxameter, Login, Icon],
   templateUrl: './app.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './app.css'
@@ -33,6 +34,7 @@ export class App {
 
   /** Toppbarens verktygsmeny. Railen visar verktygen direkt och rör den inte. */
   readonly menuOpen = signal(false);
+
 
   /**
    * Draghandtaget ska säga något även när underlaget är hopfällt. Ändringslogen
@@ -74,6 +76,7 @@ export class App {
   closeMenu(): void {
     this.menuOpen.set(false);
   }
+
 
   /** Handtaget fäller ut och in. Helskärm når man med knappen bredvid. */
   toggleSheet(): void {
