@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 #
 # Deployar Psykologen på servern. Körs från repo-roten och går att köra om:
-# användardata och certifikat rörs inte.
+# användardata rörs inte.
 #
 # Images byggs i GitHub Actions och hämtas härifrån - droppen bygger ingenting.
+# Proxyn utåt, TLS och domänen ligger i repot drift, som måste vara uppsatt först.
 #
 #   ./deploy.sh              senaste bygget från master
 #   ./deploy.sh <commit-sha> rullar tillbaka till ett tidigare bygge
@@ -27,12 +28,9 @@ env_value() {
 
 # --- Kontroller innan något ändras ------------------------------------------
 
-[[ -f .env ]] || fail ".env saknas. Kopiera .env.example och fyll i DOMAIN och ACME_EMAIL."
+docker network inspect edge >/dev/null 2>&1 ||
+	fail "Nätverket edge saknas. Sätt upp repot drift först (bootstrap.sh)."
 [[ -f backend/.env ]] || fail "backend/.env saknas. Kopiera backend/.env.example och fyll i den."
-
-for key in DOMAIN ACME_EMAIL; do
-	[[ -n "$(env_value .env "$key")" ]] || fail "$key är tomt i .env."
-done
 
 for key in APP_AUTH_USERS_0_USERNAME APP_AUTH_USERS_0_PASSWORDHASH; do
 	[[ -n "$(env_value backend/.env "$key")" ]] || fail "$key är tomt i backend/.env."
@@ -53,9 +51,9 @@ done
 
 # --- Hämta och starta -------------------------------------------------------
 
-# Koden behövs fortfarande på droppen: compose.prod.yaml och Caddyfile läses
-# härifrån. Vid rollback lämnas den orörd, annars hade en gammal image körts
-# mot en nyare Caddyfile.
+# Koden behövs fortfarande på droppen: compose.prod.yaml läses härifrån. Vid
+# rollback lämnas den orörd, annars hade en gammal image körts mot en nyare
+# compose.prod.yaml.
 if [[ "$IMAGE_TAG" == latest ]]; then
 	echo "==> Hämtar senaste koden"
 	git pull --ff-only
@@ -86,9 +84,6 @@ if [[ "${status:-}" != "healthy" ]]; then
 	exit 1
 fi
 
-# Caddy startar bara när backend är frisk och kan behöva en knuff om det tog tid.
-"${COMPOSE[@]}" up -d caddy
-
 echo "==> Städar bort oanvända images"
 docker image prune -f >/dev/null
 
@@ -96,4 +91,4 @@ echo "==> Status"
 "${COMPOSE[@]}" ps
 
 echo
-echo "Klart: https://$(env_value .env DOMAIN)"
+echo "Klart. Domänen står i drift/.env (PSYKOLOGEN_DOMAIN)."

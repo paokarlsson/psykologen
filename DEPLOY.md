@@ -1,16 +1,18 @@
 # Deploy till en DigitalOcean-droplet
 
-Så här kommer Psykologen ut på internet: tre containrar bakom Caddy, som äger
-port 80 och 443 och löser TLS automatiskt.
+Så här kommer Psykologen ut på internet: två containrar bakom den Caddy som
+delar droppen mellan flera appar. Caddy, domänerna och TLS ligger i repot
+[drift](https://github.com/paokarlsson/drift), inte här.
 
 ```
-Internet ──► caddy (80/443, TLS)
-               ├── /api/*  ──► backend  (Spring Boot, ingen port mot hosten)
-               └── /*      ──► frontend (byggd Angular-app, statiska filer)
+Internet ──► caddy (repot drift, 80/443, TLS)
+               ├── /api/*  ──► psykologen-backend  (Spring Boot, ingen port mot hosten)
+               └── /*      ──► psykologen-frontend (byggd Angular-app, statiska filer)
 ```
 
-Backend nås bara över det interna docker-nätverket. Användardata och Caddys
-certifikat ligger i named volumes och överlever både omstart och rebuild.
+Containrarna ansluter till nätverket `edge` och nås där under sina alias.
+Ingen av dem publicerar en port. Användardata ligger i en named volume och
+överlever både omstart och rebuild.
 
 Droppen bygger ingenting. Varje push till `master` bygger backend- och
 frontend-images i GitHub Actions och publicerar dem på GHCR; `deploy.sh` hämtar
@@ -21,34 +23,15 @@ en maskin med minne, och de hör inte hemma på en liten droplet.
 
 ## Del 1: en gång, på en fräsch droplet
 
-### 1. DNS
+### 1. drift först
 
-Peka domänen på droppens IP **innan** du startar något. Let's Encrypt verifierar
-mot domänen, och utan fungerande DNS får du inget certifikat.
+DNS, brandvägg, Docker och Caddy sätts upp av repot drift: följ dess README
+under *Första gången*. Domänen anges där, som `PSYKOLOGEN_DOMAIN` i `drift/.env`.
+Det här repot behöver bara nätverket `edge` som drift skapar.
 
-| Typ | Namn | Värde |
-| --- | --- | --- |
-| A | `@` (eller subdomänen) | droppens IPv4 |
+Kör du psykologen med egen Caddy sedan tidigare, se *Flytt till drift* längst ned.
 
-Kontrollera att det slagit igenom:
-```bash
-dig +short din-doman.se
-```
-
-### 2. Brandvägg
-
-```bash
-sudo ufw allow OpenSSH
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw enable
-sudo ufw status
-```
-
-Öppna ingenting mer. Varken 8080 eller 4200 ska vara nåbara utifrån — i den
-här uppsättningen publicerar backend ingen port mot hosten över huvud taget.
-
-### 3. Hämta koden
+### 2. Hämta koden
 
 ```bash
 cd /opt
@@ -61,7 +44,7 @@ cd psykologen
 (`ssh-keygen -t ed25519 -C "droplet"`, lägg till den publika nyckeln under
 repots Deploy keys på GitHub) och klona över SSH.
 
-### 4. Inloggning mot GHCR
+### 3. Inloggning mot GHCR
 
 Behövs bara om paketen är privata. Publika images går att hämta utan
 inloggning — och först då slipper du också GitHubs kvoter för privata packages
@@ -78,22 +61,11 @@ echo <token> | docker login ghcr.io -u paokarlsson --password-stdin
 
 Inloggningen sparas i `~/.docker/config.json` och behöver inte göras om.
 
-### 5. Konfiguration
+### 4. Konfiguration
 
-Två filer, båda gitignorerade. Uppdelningen finns av ett skäl: Docker Compose
-tolkar `$` i filer den läser själv, och en BCrypt-hash är full av `$`.
-`backend/.env` monteras rakt in i containern och passerar aldrig Compose, så
-hashen kan klistras in precis som den ser ut.
-
-**`.env` i repo-roten** — det Caddy behöver:
-```bash
-cp .env.example .env
-nano .env
-```
-```
-DOMAIN=din-doman.se
-ACME_EMAIL=du@example.com
-```
+En fil, gitignorerad. Den monteras rakt in i containern och passerar aldrig
+Docker Compose, som annars tolkar `$` i filer den läser själv; en BCrypt-hash är
+full av `$`. Hashen kan därför klistras in precis som den ser ut.
 
 **`backend/.env`** — API-nyckel och konton:
 ```bash
@@ -101,7 +73,7 @@ cp backend/.env.example backend/.env
 nano backend/.env
 ```
 
-### 6. Skapa en lösenordshash
+### 5. Skapa en lösenordshash
 
 Låt backend-imagen skriva ut hashen. Ingen Java eller Maven behöver installeras
 på droppen.
@@ -131,21 +103,15 @@ någon annan ledtråd. Fler konton numreras vidare: `APP_AUTH_USERS_1_...`.
 
 Lösenordet i klartext lagras aldrig någonstans.
 
-### 7. Första starten
+### 6. Första starten
 
 ```bash
 ./deploy.sh
 ```
 
 Skriptet kontrollerar konfigurationen, hämtar images, startar och väntar tills
-backend svarar. Certifikatet hämtas automatiskt vid första anropet — det tar
-några sekunder. Följ förloppet med:
-
-```bash
-docker compose -f compose.prod.yaml logs -f caddy
-```
-
-Öppna sedan `https://din-doman.se` och logga in.
+backend svarar. Caddy i drift hittar containrarna så fort de är uppe. Öppna
+sedan domänen och logga in.
 
 ---
 
@@ -164,8 +130,8 @@ Skriptet gör `git pull`, hämtar de nya imagerna, startar om, väntar in
 healthchecken och visar status. Det går att köra hur många gånger som helst —
 användardata och certifikat rörs inte.
 
-Har du ändrat i `.env` eller `backend/.env` räcker det också med `./deploy.sh`;
-`git pull` hoppar över dem eftersom de inte ligger i repot.
+Har du ändrat i `backend/.env` räcker det också med `./deploy.sh`; `git pull`
+hoppar över den eftersom den inte ligger i repot.
 
 Deployar du innan bygget är klart hämtas den föregående imagen, utan att något
 klagar. Kolla Actions först.
@@ -179,9 +145,8 @@ backas med shan som argument:
 ./deploy.sh 9e6ab6a1c2...
 ```
 
-Då lämnas koden på droppen orörd — bara imagerna byts. Skiljer sig `Caddyfile`
-eller `compose.prod.yaml` åt mellan versionerna får du checka ut samma sha
-manuellt. Städjobbet i Actions sparar de tio senaste versionerna, så äldre
+Då lämnas koden på droppen orörd — bara imagerna byts. Skiljer sig
+`compose.prod.yaml` åt mellan versionerna får du checka ut samma sha manuellt. Städjobbet i Actions sparar de tio senaste versionerna, så äldre
 taggar än så kan vara borta.
 
 ---
@@ -191,7 +156,6 @@ taggar än så kan vara borta.
 ```bash
 # Loggar
 docker compose -f compose.prod.yaml logs -f backend
-docker compose -f compose.prod.yaml logs -f caddy
 
 # Status och hälsa
 docker compose -f compose.prod.yaml ps
@@ -206,8 +170,8 @@ docker compose -f compose.prod.yaml down
 ## Backup
 
 Profiler, planer, historik och promptinställningar ligger i volymen
-`psykologen_psykologen-data`. Det är riktigt samtalsinnehåll — ta en kopia då
-och då:
+`psykologen_psykologen-data`. Det är riktigt samtalsinnehåll, och volymen tas
+med i driftens nattliga backup (`drift/backup.sh`). För en kopia för hand:
 
 ```bash
 docker run --rm \
@@ -250,15 +214,33 @@ göra paketen publika — då försvinner kvoten.
 Appen vägrar medvetet starta vid saknad API-nyckel eller trasiga konton och
 säger då vad som fattas.
 
-**Certifikatet hämtas inte.** Kolla i `logs caddy`. Vanligaste orsakerna är att
-DNS inte pekar rätt än, eller att port 80 är stängd — Let's Encrypt behöver den
-för verifieringen, även om sidan sedan kör på 443.
+**Certifikatet hämtas inte, eller sidan svarar 502.** Certifikaten sköts i
+drift, se dess README. 502 betyder att Caddy inte hittar containrarna: kolla att
+de är uppe (`docker compose -f compose.prod.yaml ps`) och anslutna till `edge`.
 
 **Inloggningen säger fel lösenord fast det är rätt.** Kontrollera hashen i
 `backend/.env`: den ska börja med `{bcrypt}$2` och innehålla tre `$`, utan
 citattecken runt.
 
-**Let's Encrypt börjar neka.** Certifikaten ligger i volymen `caddy-data` och
-återanvänds mellan deploys, så det ska inte hända. Radera aldrig den volymen
-för att felsöka något annat — det finns en gräns på fem certifikat per domän
-och vecka.
+## Flytt till drift
+
+En gång, om psykologen körs med egen Caddy från en äldre version av det här
+repot. Sidan är nere någon minut medan Caddy byts.
+
+```bash
+# 1. drift på plats men inte startad: README där, Första gången steg 1–4.
+# 2. Stoppa den gamla Caddyn så att 80 och 443 blir lediga. Före git pull:
+#    den nya compose.prod.yaml känner inte till någon caddy.
+cd /opt/psykologen
+docker compose -f compose.prod.yaml stop caddy
+# 3. Hämta den nya koden först, så att det är nya deploy.sh som körs.
+git pull --ff-only
+./deploy.sh
+# 4. Starta driftens Caddy.
+cd /opt/drift && docker compose up -d
+```
+
+`deploy.sh` kör `up -d --remove-orphans`, så den gamla Caddy-containern tas bort.
+Volymerna `psykologen_caddy-data` och `psykologen_caddy-config` blir kvar och kan
+raderas när allt fungerar: driftens Caddy hämtar ett eget certifikat. Den gamla
+`.env` i repo-roten (`DOMAIN`, `ACME_EMAIL`) behövs inte längre.

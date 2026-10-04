@@ -115,18 +115,20 @@ frontend/   Angular-app
 
 ## Ute på internet
 
-Appen går att köra skarpt bakom Caddy på en enkel server. Se **[DEPLOY.md](DEPLOY.md)**
-för hela gången: DNS, brandvägg, konfiguration och deploy.
+Appen körs skarpt på en droplet som den delar med andra appar. Caddy, TLS och
+domänen ligger i repot [drift](https://github.com/paokarlsson/drift). Se
+**[DEPLOY.md](DEPLOY.md)** för konfiguration och deploy.
 
 ```
-Internet ──► caddy (80/443, TLS)
-               ├── /api/*  ──► backend  (ingen port mot hosten)
-               └── /*      ──► frontend (byggd Angular-app)
+Internet ──► caddy (repot drift, 80/443, TLS)
+               ├── /api/*  ──► psykologen-backend  (ingen port mot hosten)
+               └── /*      ──► psykologen-frontend (byggd Angular-app)
 ```
 
-`compose.prod.yaml` sköter det som skiljer prod från lokal körning: TLS via
-Caddy, `COOKIE_SECURE=true` så sessionscookien aldrig går i klartext, samma
-origin för frontend och `/api`, och en named volume för användardata.
+`compose.prod.yaml` sköter det som skiljer prod från lokal körning:
+`COOKIE_SECURE=true` så sessionscookien aldrig går i klartext, samma origin för
+frontend och `/api` (via Caddy i drift), en minnesgräns för JVM:en och en named
+volume för användardata.
 `compose.yaml` är kvar orörd för lokal utveckling.
 
 Images byggs i GitHub Actions vid varje push till `master` och publiceras på

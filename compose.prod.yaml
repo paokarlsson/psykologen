@@ -5,56 +5,53 @@
 # IMAGE_TAG pekar normalt på latest; sätt den till en commit-sha för att rulla
 # tillbaka.
 #
+# Ingen egen Caddy: proxyn utåt, TLS och domänen ligger i repot drift, som delar
+# droppen mellan flera appar. Caddy där hittar containrarna på nätverket edge under
+# aliasen psykologen-backend och psykologen-frontend.
+#
 # Fristående, inte en override ovanpå compose.yaml: Compose slår ihop ports och
 # volumes i stället för att ersätta dem, så dev-filens "8080:8080" och
 # bind-mountade källkod hade följt med hit.
 
 services:
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-    environment:
-      # Caddy läser variablerna själv i runtime; compose-substitution räcker inte.
-      DOMAIN: ${DOMAIN:?DOMAIN saknas i .env}
-      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL saknas i .env}
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      # Utan volym hämtas nya certifikat vid varje deploy - fem per vecka, sen
-      # nekar Let's Encrypt.
-      - caddy-data:/data
-      - caddy-config:/config
-    depends_on:
-      frontend:
-        condition: service_started
-      backend:
-        condition: service_healthy
-
   backend:
     image: ghcr.io/paokarlsson/psykologen-backend:${IMAGE_TAG:-latest}
     restart: unless-stopped
-    # Inga ports: nås bara av caddy över det interna nätverket.
+    # Inga ports: nås bara av Caddy över edge.
     expose:
       - "8080"
     environment:
       COOKIE_SECURE: "true"
       APP_STORAGE_BASE_DIR: /data/users
+      # Droppen delas med andra appar. Heapen ryms inom mem_limit med marginal för
+      # resten av JVM:en; SerialGC kostar minst minne på en enda kärna.
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=60 -XX:+UseSerialGC"
+    mem_limit: 512m
     volumes:
       # Monteras som fil, inte som environment: då ser Compose aldrig innehållet
       # och kan inte kapa $-tecknen i BCrypt-hasharna.
       - ./backend/.env:/app/.env:ro
       - psykologen-data:/data/users
+    networks:
+      default:
+      edge:
+        # Unika namn på det delade nätet: fler appar har en tjänst som heter backend.
+        aliases: [psykologen-backend]
 
   frontend:
     image: ghcr.io/paokarlsson/psykologen-frontend:${IMAGE_TAG:-latest}
     restart: unless-stopped
     expose:
       - "8080"
+    networks:
+      default:
+      edge:
+        aliases: [psykologen-frontend]
 
 volumes:
-  caddy-data:
-  caddy-config:
   psykologen-data:
+
+networks:
+  # Skapas av drift/bootstrap.sh.
+  edge:
+    external: true
