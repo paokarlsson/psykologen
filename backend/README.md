@@ -1,11 +1,14 @@
 # Psykologen Backend
 
-Spring Boot-backend för Psykologen-applikationen.
+Backend för Psykologen-applikationen, byggd på [Spola](https://github.com/paokarlsson/spola) 0.2.0:
+ett Java 25-ramverk som ersätter Spring och Lombok med vanlig Java-kod. Inga beroenden utöver
+JDK:n och Spola-modulerna i `lib/`.
 
 ## Förutsättningar
 
-- Java 25
-- Maven
+- Java 25 (en JDK, eftersom bygget kompilerar)
+
+Inget byggverktyg behövs. `Build.java` körs direkt av `java`.
 
 ## Konfiguration
 
@@ -19,46 +22,58 @@ Spring Boot-backend för Psykologen-applikationen.
 | `APP_AUTH_USERS_<n>_PASSWORDHASH` | BCrypt-hash, med prefixet `{bcrypt}` |
 | `APP_STORAGE_BASE_DIR` | Var användarnas data hamnar (default `data/users`) |
 | `COOKIE_SECURE` | `true` när appen ligger bakom HTTPS |
+| `TRUSTED_PROXIES` | Valfri. Proxyer vars `X-Forwarded-*` appen litar på, t.ex. `172.30.0.10`. Utan den litar appen på de privata näten, som Spring Boot gjorde |
+
+`.env` läses från katalogen appen startas i. Miljövariabler med samma namn vinner över filen,
+och argument (`--AI_PROVIDER=openai`) vinner över båda. Filen läses som en properties-fil:
+citattecken runt ett värde blir en del av värdet, och `export` framför en rad fungerar inte.
 
 Skapa en lösenordshash:
 ```bash
-mvn spring-boot:run -Dspring-boot.run.arguments=--hash-password=ditt_lösenord
+java Build.java run --hash-password=ditt_lösenord
 ```
+Hashar som Spring skrev (`{bcrypt}$2a$10$...`) fungerar som de är.
 
 ## Starta backend
 
 ```bash
-mvn spring-boot:run
+java Build.java run
 ```
+Backend startar på port 8080.
 
 ## Köra testerna
 
 ```bash
-mvn test
+java Build.java
 ```
-Testerna täcker att API:t kräver inloggning och att två användare inte
-kommer åt varandras profil.
-
-Alternativt:
-```bash
-mvn clean install
-java -jar target/psykologen-1.0-SNAPSHOT.jar
-```
-
-Backend startar på port 8080 (default).
+Kompilerar appen och kör alla tester med `spola.test`. Testerna täcker bland annat att API:t
+kräver inloggning och CSRF-huvudet, att två användare inte kommer åt varandras profil och
+trace, att JSON-svaren har de fält frontenden läser, AI-klienterna mot låtsasservrar (också
+omförsöken vid 529) och att filer som Spring-versionen skrev går att läsa.
 
 ## Bygga för produktion
 
+Dockerfilen kompilerar med `java Build.java compile` och kör appen på modulvägen:
 ```bash
-mvn clean package
+java --module-path lib:out/main --module psykologen/se.olaslab.psykologen.PsykologenApplication
 ```
 
-JAR-filen skapas i `target/` mappen.
+## Struktur
 
-## Teknologier
+```
+Build.java                    bygget: compile, test (standard) och run
+lib/                          Spola 0.2.0, en jar per modul
+src/main/java/module-info.java vilka Spola-moduler appen använder
+src/main/java/se/olaslab/psykologen/
+  PsykologenApplication.java  main: konfigurationen och all wiring, i vanlig Java
+  auth/                       inloggning, sessioner, CSRF och lösenordshashar
+  controller/                 /api/psykologen
+  spolabehov/retry/           omförsök mot AI-API:erna, tills Spola har en motsvarighet
+src/test/java/                tester; AllTests kör alla
+```
 
-- Spring Boot 4.1.1
-- Spring Security (inloggning, CSRF)
-- Java 25
-- Maven
-- Gson för JSON-hantering
+## Uppgradera Spola
+
+Byt jar-filerna i `lib/` mot de från en ny [release](https://github.com/paokarlsson/spola/releases)
+och kör `java Build.java`. Jar-filerna i `lib/` är byggda från taggen `v0.2.0`. Behöver appen
+något som Spring hade gett den men som Spola saknar, se `CLAUDE.md`.

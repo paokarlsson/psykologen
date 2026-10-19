@@ -1,29 +1,41 @@
 package se.olaslab.psykologen.service.ai;
 
+import static spola.json.codec.JsonCodec.field;
+import static spola.json.codec.JsonCodec.optionalField;
+import static spola.json.codec.JsonCodecs.INT;
+import static spola.json.codec.JsonCodecs.STRING;
+import static spola.json.codec.JsonCodecs.list;
+
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.List;
+import java.util.Optional;
 
 import se.olaslab.psykologen.session.ChatMessage;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import se.olaslab.psykologen.session.Role;
+import spola.client.RestClient;
+import spola.json.codec.JsonCodec;
+import spola.util.Lazy;
 
+/** OpenAIs Chat Completions över {@code spola.client}. */
 public class OpenAiClient implements AiClient {
 
+    public static final URI API = URI.create("https://api.openai.com");
+
     private static final String MODEL = "gpt-4o-mini";
-    private static final String API_URL = "https://api.openai.com/v1/chat/completions";
-    private static final Gson gson = new Gson();
-    private static final HttpClient httpClient = HttpClient.newHttpClient();
 
     private final String apiKey;
+    private final Lazy<RestClient> client;
 
     public OpenAiClient(String apiKey) {
+        this(apiKey, API);
+    }
+
+    public OpenAiClient(String apiKey, URI baseUri) {
         this.apiKey = apiKey;
+        this.client = Lazy.of(() -> RestClient.builder()
+                .baseUri(baseUri)
+                .defaultHeader("Authorization", "Bearer " + apiKey)
+                .build());
     }
 
     @Override
@@ -43,47 +55,61 @@ public class OpenAiClient implements AiClient {
 
     @Override
     public AiResponse chat(List<ChatMessage> messages) throws Exception {
-        JsonObject requestBody = new JsonObject();
-        requestBody.addProperty("model", MODEL);
+        var request = new ChatRequest(MODEL, messages.stream()
+                .map(msg -> new Message(msg.role(), msg.content()))
+                .toList());
 
-        JsonArray messagesArray = new JsonArray();
-        for (ChatMessage msg : messages) {
-            JsonObject msgNode = new JsonObject();
-            msgNode.addProperty("role", msg.role().wireValue());
-            msgNode.addProperty("content", msg.content());
-            messagesArray.add(msgNode);
-        }
-        requestBody.add("messages", messagesArray);
+        ChatResponse response = client.get().post("/v1/chat/completions")
+                .json(request, ChatRequest.CODEC)
+                .retrieve(ChatResponse.CODEC);
 
-        String requestBodyStr = gson.toJson(requestBody);
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(API_URL))
-                .header("Authorization", "Bearer " + apiKey)
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(requestBodyStr))
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-        if (response.statusCode() != 200) {
-            throw new RuntimeException("OpenAI API error: " + response.statusCode() + " " + response.body());
-        }
-
-        JsonObject apiResponse = JsonParser.parseString(response.body()).getAsJsonObject();
-        String text = apiResponse.getAsJsonArray("choices").get(0).getAsJsonObject()
-                .getAsJsonObject("message").get("content").getAsString();
-
-        int inputTokens = 0;
-        int outputTokens = 0;
-        JsonElement usage = apiResponse.get("usage");
-        if (usage != null && !usage.isJsonNull()) {
-            JsonObject usageObj = usage.getAsJsonObject();
-            inputTokens = usageObj.get("prompt_tokens").getAsInt();
-            outputTokens = usageObj.get("completion_tokens").getAsInt();
-        }
+        String text = response.choices().get(0).message().content();
+        int inputTokens = response.usage().map(Usage::promptTokens).orElse(0);
+        int outputTokens = response.usage().map(Usage::completionTokens).orElse(0);
 
         // OpenAI-svaret rapporterar ingen cache-uppdelning som mappas mot Anthropics fält.
         return new AiResponse(text, MODEL, inputTokens, outputTokens, 0, 0);
+    }
+
+    record Message(Role role, String content) {
+
+        static final JsonCodec<Message> CODEC = JsonCodec.object(Message::new,
+                field("role", Role.CODEC, Message::role),
+                field("content", STRING, Message::content));
+    }
+
+    record ChatRequest(String model, List<Message> messages) {
+
+        static final JsonCodec<ChatRequest> CODEC = JsonCodec.object(ChatRequest::new,
+                field("model", STRING, ChatRequest::model),
+                field("messages", list(Message.CODEC), ChatRequest::messages));
+    }
+
+    // API:t lägger till medlemmar med tiden: läs bara det appen använder.
+
+    record ResponseMessage(String content) {
+
+        static final JsonCodec<ResponseMessage> CODEC = JsonCodec.object(ResponseMessage::new,
+                field("content", STRING, ResponseMessage::content)).ignoringUnknown();
+    }
+
+    record Choice(ResponseMessage message) {
+
+        static final JsonCodec<Choice> CODEC = JsonCodec.object(Choice::new,
+                field("message", ResponseMessage.CODEC, Choice::message)).ignoringUnknown();
+    }
+
+    record Usage(int promptTokens, int completionTokens) {
+
+        static final JsonCodec<Usage> CODEC = JsonCodec.object(Usage::new,
+                field("prompt_tokens", INT, Usage::promptTokens),
+                field("completion_tokens", INT, Usage::completionTokens)).ignoringUnknown();
+    }
+
+    record ChatResponse(List<Choice> choices, Optional<Usage> usage) {
+
+        static final JsonCodec<ChatResponse> CODEC = JsonCodec.object(ChatResponse::new,
+                field("choices", list(Choice.CODEC), ChatResponse::choices),
+                optionalField("usage", Usage.CODEC, ChatResponse::usage)).ignoringUnknown();
     }
 }

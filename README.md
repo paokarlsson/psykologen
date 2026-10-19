@@ -29,12 +29,15 @@ inte ett försök att bygga något som ska likna verklig terapi.
 ## Hur det fungerar
 
 ```
-Angular (frontend)  →  Spring Boot (backend)  →  OpenAI API
+Angular (frontend)  →  Java på Spola (backend)  →  OpenAI API
 ```
 
 - **Frontend**: Angular. Visar chatten och skickar meddelanden.
-- **Backend**: Spring Boot. Tar emot meddelanden, skickar dem vidare
-  till OpenAI, och returnerar svaret.
+- **Backend**: Java 25 på [Spola](https://github.com/paokarlsson/spola),
+  ett ramverk som ersätter Spring Boot med vanlig Java-kod och inga
+  beroenden utöver JDK:n. Tar emot meddelanden, skickar dem vidare
+  till OpenAI, och returnerar svaret. Tidigare var det Spring Boot;
+  API:t och filerna i `backend/data/` är desamma.
 - **AI:n** styrs av en systemprompt som beskriver vem "Erik" är.
 
 ## Inloggning
@@ -49,7 +52,7 @@ klartext sparas någonstans i projektet.
 **1. Skapa en lösenordshash**
 ```bash
 cd backend
-mvn spring-boot:run -Dspring-boot.run.arguments=--hash-password=ditt_lösenord
+java Build.java run --hash-password=ditt_lösenord
 ```
 Kommandot skriver ut de två raderna du behöver och avslutar.
 
@@ -67,17 +70,18 @@ Saknas konton vägrar backend starta och berättar vad som behöver göras.
 
 ## Kom igång
 
-Du behöver Java 25, Node.js 24 LTS, npm 12, Maven och en API-nyckel
-(Anthropic eller OpenAI).
+Du behöver Java 25 (JDK), Node.js 24 LTS, npm 12 och en API-nyckel
+(Anthropic eller OpenAI). Backend behöver inget byggverktyg: `Build.java`
+körs direkt av `java`.
 
 **1. Starta backend**
 ```bash
 cd backend
 cp .env.example .env   # fyll i API-nyckel och minst ett konto, se "Inloggning" ovan
-mvn spring-boot:run
+java Build.java run
 ```
-`.env` måste ligga i `backend/` — spring-dotenv letar i processens
-working directory, inte i repo-roten.
+`.env` måste ligga i `backend/` — backend läser den från katalogen den
+startas i, inte från repo-roten. Testerna körs med `java Build.java`.
 Backend körs nu på `http://localhost:8080`.
 
 **2. Starta frontend**
@@ -101,7 +105,7 @@ steg 1 ovan, kör sedan
 ```bash
 docker compose up
 ```
-Backend och frontend körs i varsin container (officiella Maven- och
+Backend och frontend körs i varsin container (officiella Temurin- och
 Node-images, ingen egen Dockerfile) med koden volym-mountad, så
 ändringar du gör lokalt speglas direkt in. Port 5005 är öppen för att
 koppla på en JVM-debugger mot backend om du vill.
@@ -109,7 +113,7 @@ koppla på en JVM-debugger mot backend om du vill.
 ## Struktur
 
 ```
-backend/    Spring Boot API
+backend/    Java-API på Spola
 frontend/   Angular-app
 ```
 
@@ -130,8 +134,8 @@ origin för frontend och `/api`, och en named volume för användardata.
 `compose.yaml` är kvar orörd för lokal utveckling.
 
 Images byggs i GitHub Actions vid varje push till `master` och publiceras på
-GHCR. Servern hämtar dem färdiga och bygger ingenting själv — Maven- och
-Angular-byggena är för tunga för en liten droplet.
+GHCR. Servern hämtar dem färdiga och bygger ingenting själv — Angular-bygget
+är för tungt för en liten droplet.
 
 Kvar att göra om appen får mer trafik än en handfull inloggningar:
 
@@ -155,6 +159,8 @@ Kvar att göra om appen får mer trafik än en handfull inloggningar:
 ## Status
 
 Fungerande prototyp, men inte klar. Inloggning och användarseparation
-finns, men någon fullständig säkerhetsgranskning är inte gjord – och
+finns, men någon fullständig säkerhetsgranskning är inte gjord – backend
+bygger på Spola 0.x, vars säkerhetsmoduler inte är granskade av en
+människa – och
 varningen högst upp gäller fortfarande: lägg inte in riktiga
 patientuppgifter här.

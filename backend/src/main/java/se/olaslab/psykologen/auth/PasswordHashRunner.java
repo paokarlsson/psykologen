@@ -1,50 +1,60 @@
 package se.olaslab.psykologen.auth;
 
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.SpringApplication;
-import org.springframework.context.ApplicationContext;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import java.io.PrintStream;
+import java.util.Optional;
+
+import spola.security.PasswordHasher;
 
 /**
  * Skriver ut en lösenordshash till {@code backend/.env}:
  *
  * <pre>
- * mvn spring-boot:run -Dspring-boot.run.arguments=--hash-password=ditt_lösenord
+ * java Build.java run --hash-password=ditt_lösenord
  * </pre>
+ *
+ * <p>Appen startar då inte, så inga konton eller API-nycklar behövs.
  */
-public class PasswordHashRunner implements ApplicationRunner {
+public final class PasswordHashRunner {
 
-    static final String OPTION = "hash-password";
+    static final String OPTION = "--hash-password";
 
-    private final PasswordEncoder passwordEncoder;
-    private final ApplicationContext applicationContext;
-
-    public PasswordHashRunner(PasswordEncoder passwordEncoder, ApplicationContext applicationContext) {
-        this.passwordEncoder = passwordEncoder;
-        this.applicationContext = applicationContext;
+    private PasswordHashRunner() {
     }
 
-    @Override
-    public void run(ApplicationArguments args) {
-        if (!args.containsOption(OPTION)) {
+    /** Lösenordet när appen startades med {@code --hash-password}, annars tomt. */
+    public static Optional<String> requestedPassword(String[] args) {
+        for (String arg : args) {
+            if (arg.equals(OPTION)) {
+                return Optional.of("");
+            }
+            if (arg.startsWith(OPTION + "=")) {
+                return Optional.of(arg.substring(OPTION.length() + 1));
+            }
+        }
+        return Optional.empty();
+    }
+
+    public static void print(String password, PasswordHasher hasher, PrintStream out) {
+        if (password.isBlank()) {
+            out.println("Ange ett lösenord: --hash-password=ditt_lösenord");
             return;
         }
 
-        String password = args.getOptionValues(OPTION).stream().findFirst().orElse("");
-        if (password.isBlank()) {
-            System.out.println("Ange ett lösenord: --hash-password=ditt_lösenord");
-        } else {
-            System.out.println();
-            System.out.println("Klistra in raderna nedan i backend/.env (byt 0 mot nästa lediga nummer");
-            System.out.println("om du redan har konton där, och ditt_användarnamn mot det du vill ha):");
-            System.out.println();
-            System.out.println("APP_AUTH_USERS_0_USERNAME=ditt_användarnamn");
-            System.out.println("APP_AUTH_USERS_0_PASSWORDHASH=" + passwordEncoder.encode(password));
-            System.out.println();
+        String hash;
+        try {
+            hash = hasher.hash(password);
+        } catch (IllegalArgumentException e) {
+            // BCrypt läser bara 72 byte, och längre lösenord avvisas hellre än kortas av i tysthet.
+            out.println("Lösenordet får vara högst 72 byte (UTF-8). Välj ett kortare.");
+            return;
         }
 
-        // Appen startades bara för att skapa en hash, inte för att köra vidare.
-        System.exit(SpringApplication.exit(applicationContext, () -> 0));
+        out.println();
+        out.println("Klistra in raderna nedan i backend/.env (byt 0 mot nästa lediga nummer");
+        out.println("om du redan har konton där, och ditt_användarnamn mot det du vill ha):");
+        out.println();
+        out.println("APP_AUTH_USERS_0_USERNAME=ditt_användarnamn");
+        out.println("APP_AUTH_USERS_0_PASSWORDHASH=" + hash);
+        out.println();
     }
 }

@@ -1,26 +1,39 @@
 package se.olaslab.psykologen.trace;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static spola.test.Assertions.assertEquals;
+import static spola.test.Assertions.assertNotNull;
+import static spola.test.Assertions.assertNull;
+import static spola.test.Assertions.assertThrows;
+import static spola.test.Assertions.assertTrue;
+import static spola.test.Tests.suite;
+import static spola.test.Tests.test;
 
 import java.util.List;
-
-import org.junit.jupiter.api.Test;
 
 import se.olaslab.psykologen.service.ai.AiResponse;
 import se.olaslab.psykologen.session.ChatMessage;
 import se.olaslab.psykologen.session.Role;
+import spola.test.Suite;
 
-class TraceRecorderTest {
+public final class TraceRecorderTest {
+
+    private TraceRecorderTest() {
+    }
+
+    public static Suite tests() {
+        return suite("TraceRecorderTest",
+                test("lyckatAnropSpelasInMedTokensOchKostnad", TraceRecorderTest::lyckatAnropSpelasInMedTokensOchKostnad),
+                test("okandModellGerIngenKostnadIStalletForGissning", TraceRecorderTest::okandModellGerIngenKostnadIStalletForGissning),
+                test("felSpelasInOchKastasVidare", TraceRecorderTest::felSpelasInOchKastasVidare),
+                test("aldreAnropFallerUrNarTaketNas", TraceRecorderTest::aldreAnropFallerUrNarTaketNas),
+                test("sammanfattningenSummerarOchPekarUtAktuellKontext", TraceRecorderTest::sammanfattningenSummerarOchPekarUtAktuellKontext),
+                test("sammanfattningenFlaggarNarPrisSaknas", TraceRecorderTest::sammanfattningenFlaggarNarPrisSaknas));
+    }
 
     private static final List<ChatMessage> SKICKAT =
             List.of(ChatMessage.instruction(Role.USER, "hej"));
 
-    @Test
-    void lyckatAnropSpelasInMedTokensOchKostnad() throws Exception {
+    static void lyckatAnropSpelasInMedTokensOchKostnad() throws Exception {
         TraceRecorder recorder = new TraceRecorder();
 
         recorder.record(LlmCall.SVAR, 3, SKICKAT,
@@ -36,8 +49,7 @@ class TraceRecorderTest {
         assertEquals(0.002, call.costUsd(), 1e-9);
     }
 
-    @Test
-    void okandModellGerIngenKostnadIStalletForGissning() throws Exception {
+    static void okandModellGerIngenKostnadIStalletForGissning() throws Exception {
         TraceRecorder recorder = new TraceRecorder();
 
         recorder.record(LlmCall.SVAR, 1, SKICKAT,
@@ -47,8 +59,7 @@ class TraceRecorderTest {
         assertTrue(recorder.calls().getFirst().error() == null);
     }
 
-    @Test
-    void felSpelasInOchKastasVidare() {
+    static void felSpelasInOchKastasVidare() {
         TraceRecorder recorder = new TraceRecorder();
 
         assertThrows(IllegalStateException.class, () -> recorder.record(LlmCall.PROFIL, 2, SKICKAT,
@@ -64,8 +75,7 @@ class TraceRecorderTest {
         assertEquals(SKICKAT, call.sentMessages());
     }
 
-    @Test
-    void aldreAnropFallerUrNarTaketNas() throws Exception {
+    static void aldreAnropFallerUrNarTaketNas() throws Exception {
         TraceRecorder recorder = new TraceRecorder();
 
         for (int i = 0; i < TraceRecorder.MAX_ANROP + 10; i++) {
@@ -81,8 +91,7 @@ class TraceRecorderTest {
         assertEquals(10, calls.getLast().turn());
     }
 
-    @Test
-    void sammanfattningenSummerarOchPekarUtAktuellKontext() throws Exception {
+    static void sammanfattningenSummerarOchPekarUtAktuellKontext() throws Exception {
         TraceRecorder recorder = new TraceRecorder();
 
         recorder.record(LlmCall.REFLEKTION, 1, SKICKAT,
@@ -100,8 +109,7 @@ class TraceRecorderTest {
         assertEquals(900, summary.currentContextTokens());
     }
 
-    @Test
-    void sammanfattningenFlaggarNarPrisSaknas() throws Exception {
+    static void sammanfattningenFlaggarNarPrisSaknas() throws Exception {
         TraceRecorder recorder = new TraceRecorder();
 
         recorder.record(LlmCall.SVAR, 1, SKICKAT,

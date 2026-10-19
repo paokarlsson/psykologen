@@ -1,13 +1,13 @@
-FROM maven:3.9-eclipse-temurin-25 AS build
+FROM eclipse-temurin:25-jdk-alpine AS build
 
 WORKDIR /build
 
-# pom.xml först: oförändrade beroenden ger ett cachat lager vid om-build.
-COPY pom.xml .
-RUN mvn -B -q dependency:go-offline
-
+# Spola ligger som jar-filer i lib/, så det finns inga beroenden att hämta.
+COPY lib ./lib
+COPY Build.java .
 COPY src ./src
-RUN mvn -B -q clean package -DskipTests
+RUN java Build.java compile \
+    && rm lib/spola.test-*.jar
 
 
 FROM eclipse-temurin:25-jre-alpine
@@ -19,7 +19,8 @@ RUN addgroup -S app && adduser -S -G app app \
     && chown -R app:app /app /data/users
 
 WORKDIR /app
-COPY --from=build --chown=app:app /build/target/*.jar app.jar
+COPY --from=build --chown=app:app /build/lib ./lib
+COPY --from=build --chown=app:app /build/out/main ./main
 
 USER app
 EXPOSE 8080
@@ -27,4 +28,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD wget -q -O /dev/null http://127.0.0.1:8080/actuator/health || exit 1
 
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "--module-path", "/app/lib:/app/main", "--module", "psykologen/se.olaslab.psykologen.PsykologenApplication"]

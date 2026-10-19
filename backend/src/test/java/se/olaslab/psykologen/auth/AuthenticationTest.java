@@ -1,245 +1,179 @@
 package se.olaslab.psykologen.auth;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static spola.test.Assertions.assertEquals;
+import static spola.test.Assertions.assertFalse;
+import static spola.test.Assertions.assertTrue;
+import static spola.test.Tests.suite;
+import static spola.test.Tests.test;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Comparator;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
-import org.springframework.core.env.Environment;
-import org.springframework.mock.web.MockHttpSession;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.web.servlet.MockMvc;
+import se.olaslab.psykologen.Browser;
+import se.olaslab.psykologen.TestApp;
+import spola.test.Suite;
 
-import se.olaslab.psykologen.prompt.PromptStore;
-import se.olaslab.psykologen.service.PsykologenService;
-import se.olaslab.psykologen.service.SessionArtifactUpdater;
-import se.olaslab.psykologen.service.UserSessionRegistry;
-import se.olaslab.psykologen.service.ai.AiClient;
-import se.olaslab.psykologen.service.ai.AiResponse;
-import se.olaslab.psykologen.session.ChatMessage;
-import se.olaslab.psykologen.storage.FileSessionArtifactStore;
-import se.olaslab.psykologen.storage.SessionArtifactStore;
+/** Inloggningen och åtkomsten genom en riktig server, som frontenden använder den. */
+public final class AuthenticationTest {
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@Import(AuthenticationTest.TestBeans.class)
-class AuthenticationTest {
+    private static final String ANNA_PASSWORD = TestApp.ANNA_PASSWORD;
+    private static final String BO_PASSWORD = TestApp.BO_PASSWORD;
 
-    private static final String ANNA_PASSWORD = "annas-hemliga-losen";
-    private static final String BO_PASSWORD = "bosses-hemliga-losen";
+    private static TestApp app;
+    private static URI base;
 
-    private static final Path STORAGE_DIR = createTempStorageDir();
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @DynamicPropertySource
-    static void authProperties(DynamicPropertyRegistry registry) {
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        registry.add("APP_AUTH_USERS_0_USERNAME", () -> "anna");
-        registry.add("APP_AUTH_USERS_0_PASSWORDHASH", () -> "{bcrypt}" + encoder.encode(ANNA_PASSWORD));
-        registry.add("APP_AUTH_USERS_1_USERNAME", () -> "bosse");
-        registry.add("APP_AUTH_USERS_1_PASSWORDHASH", () -> "{bcrypt}" + encoder.encode(BO_PASSWORD));
+    private AuthenticationTest() {
     }
 
-    @Test
-    void skyddadEndpointKraverInloggning() throws Exception {
-        mockMvc.perform(get("/api/psykologen/profile"))
-                .andExpect(status().isUnauthorized());
+    public static Suite tests() {
+        return suite("AuthenticationTest",
+                test("skyddadEndpointKraverInloggning", AuthenticationTest::skyddadEndpointKraverInloggning),
+                test("felLosenordGerUnauthorized", AuthenticationTest::felLosenordGerUnauthorized),
+                test("inloggningFungerarUtanBefintligSession", AuthenticationTest::inloggningFungerarUtanBefintligSession),
+                test("rattLosenordGerInloggadSession", AuthenticationTest::rattLosenordGerInloggadSession),
+                test("inloggningGerNyCsrfTokenOchSessionscookie", AuthenticationTest::inloggningGerNyCsrfTokenOchSessionscookie),
+                test("utloggningAvslutarSessionen", AuthenticationTest::utloggningAvslutarSessionen),
+                test("postUtanCsrfHuvudNekas", AuthenticationTest::postUtanCsrfHuvudNekas),
+                test("femFelforsokSparrarAnvandarnamnet", AuthenticationTest::femFelforsokSparrarAnvandarnamnet),
+                test("healthcheckKraverIngenInloggning", AuthenticationTest::healthcheckKraverIngenInloggning),
+                test("anvandareSerInteVarandrasProfil", AuthenticationTest::anvandareSerInteVarandrasProfil),
+                test("traceKraverInloggning", AuthenticationTest::traceKraverInloggning),
+                test("anvandareSerInteVarandrasTrace", AuthenticationTest::anvandareSerInteVarandrasTrace))
+                .beforeAll(AuthenticationTest::startServer)
+                .afterAll(AuthenticationTest::stopServer);
     }
 
-    @Test
-    void felLosenordGerUnauthorized() throws Exception {
-        mockMvc.perform(post("/api/auth/login")
-                .with(csrf())
-                .contentType("application/json")
-                .content("{\"username\":\"anna\",\"password\":\"fel-losen\"}"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.success").value(false));
+    static void startServer() throws IOException {
+        app = TestApp.start();
+        base = app.base();
     }
 
-    @Test
-    void inloggningFungerarUtanBefintligSession() throws Exception {
-        // Regression: changeSessionId() kastar när ingen session finns.
-        mockMvc.perform(post("/api/auth/login")
-                .with(csrf())
-                .contentType("application/json")
-                .content("{\"username\":\"anna\",\"password\":\"" + ANNA_PASSWORD + "\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("anna"));
+    static void stopServer() throws IOException {
+        app.close();
     }
 
-    @Test
-    void rattLosenordGerInloggadSession() throws Exception {
-        MockHttpSession session = login("anna", ANNA_PASSWORD);
-
-        mockMvc.perform(get("/api/auth/me").session(session))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("anna"));
+    static void skyddadEndpointKraverInloggning() throws Exception {
+        assertEquals(401, new Browser(base).get("/api/psykologen/profile").status());
     }
 
-    @Test
-    void anvandareSerInteVarandrasProfil() throws Exception {
-        MockHttpSession annasSession = login("anna", ANNA_PASSWORD);
-        MockHttpSession bosSession = login("bosse", BO_PASSWORD);
+    static void felLosenordGerUnauthorized() throws Exception {
+        var reply = new Browser(base).login("anna", "fel-losen");
 
-        // Katalogen finns först efter inloggning: PsykologenService tömmer den när
+        assertEquals(401, reply.status());
+        assertFalse(reply.json().bool("success"));
+        assertEquals("Fel användarnamn eller lösenord.", reply.json().string("error"));
+    }
+
+    static void inloggningFungerarUtanBefintligSession() throws Exception {
+        var reply = new Browser(base).login("anna", ANNA_PASSWORD);
+
+        assertEquals(200, reply.status());
+        assertEquals("anna", reply.json().string("username"));
+    }
+
+    static void rattLosenordGerInloggadSession() throws Exception {
+        var browser = new Browser(base);
+        browser.login("anna", ANNA_PASSWORD);
+
+        var me = browser.get("/api/auth/me");
+        assertEquals(200, me.status());
+        assertTrue(me.json().bool("success"));
+        assertEquals("anna", me.json().string("username"));
+    }
+
+    static void inloggningGerNyCsrfTokenOchSessionscookie() throws Exception {
+        var browser = new Browser(base);
+        browser.get("/api/auth/me");
+        String tokenBefore = browser.cookies().get("XSRF-TOKEN");
+
+        var reply = browser.login("anna", ANNA_PASSWORD);
+
+        assertTrue(reply.setCookies().stream().anyMatch(c -> c.startsWith("SESSION=") && c.contains("HttpOnly")
+                && c.contains("SameSite=Lax")), "sessionscookien: " + reply.setCookies());
+        assertTrue(reply.setCookies().stream().anyMatch(c -> c.startsWith("XSRF-TOKEN=") && !c.contains("HttpOnly")),
+                "Angular måste kunna läsa CSRF-cookien: " + reply.setCookies());
+        assertFalse(tokenBefore.equals(browser.cookies().get("XSRF-TOKEN")), "CSRF-token byts vid inloggning");
+    }
+
+    static void utloggningAvslutarSessionen() throws Exception {
+        var browser = new Browser(base);
+        browser.login("anna", ANNA_PASSWORD);
+
+        var logout = browser.post("/api/auth/logout", "{}");
+
+        assertEquals(200, logout.status());
+        assertTrue(logout.json().bool("success"));
+        assertEquals(401, browser.get("/api/auth/me").status());
+    }
+
+    static void postUtanCsrfHuvudNekas() throws Exception {
+        var browser = new Browser(base);
+        browser.login("anna", ANNA_PASSWORD);
+
+        assertEquals(403, browser.postWithoutCsrf("/api/psykologen/reset", "{}").status());
+        assertEquals(200, browser.post("/api/psykologen/reset", "{}").status());
+    }
+
+    static void femFelforsokSparrarAnvandarnamnet() throws Exception {
+        var browser = new Browser(base);
+        for (int i = 0; i < 5; i++) {
+            assertEquals(401, browser.login("gissad", "fel-" + i).status());
+        }
+
+        var locked = browser.login("gissad", "fel-igen");
+
+        assertEquals(429, locked.status());
+        assertTrue(locked.json().string("error").startsWith("För många misslyckade försök."), locked.body());
+    }
+
+    static void healthcheckKraverIngenInloggning() throws Exception {
+        var reply = new Browser(base).get("/actuator/health");
+
+        assertEquals(200, reply.status());
+        assertEquals("UP", reply.json().string("status"));
+    }
+
+    static void anvandareSerInteVarandrasProfil() throws Exception {
+        var anna = new Browser(base);
+        anna.login("anna", ANNA_PASSWORD);
+        var bosse = new Browser(base);
+        bosse.login("bosse", BO_PASSWORD);
+
+        // Katalogen finns först efter första anropet: PsykologenService tömmer den när
         // den skapas, så en profil skriven innan dess vore borta.
-        mockMvc.perform(get("/api/psykologen/profile").session(annasSession)).andExpect(status().isOk());
-        mockMvc.perform(get("/api/psykologen/profile").session(bosSession)).andExpect(status().isOk());
+        assertEquals(200, anna.get("/api/psykologen/profile").status());
+        assertEquals(200, bosse.get("/api/psykologen/profile").status());
 
-        Files.writeString(STORAGE_DIR.resolve("anna").resolve("profile.md"), "Annas privata profil");
+        Files.writeString(app.storageDir().resolve("anna").resolve("profile.md"), "Annas privata profil");
 
-        mockMvc.perform(get("/api/psykologen/profile").session(annasSession))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.profile").value("Annas privata profil"));
-
-        mockMvc.perform(get("/api/psykologen/profile").session(bosSession))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.profile").value("Ingen profil skapad än."));
+        assertEquals("Annas privata profil", anna.get("/api/psykologen/profile").json().string("profile"));
+        assertEquals("Ingen profil skapad än.", bosse.get("/api/psykologen/profile").json().string("profile"));
     }
 
-    @Test
-    void traceKraverInloggning() throws Exception {
-        mockMvc.perform(get("/api/psykologen/trace"))
-                .andExpect(status().isUnauthorized());
+    static void traceKraverInloggning() throws Exception {
+        assertEquals(401, new Browser(base).get("/api/psykologen/trace").status());
     }
 
-    @Test
-    void anvandareSerInteVarandrasTrace() throws Exception {
-        MockHttpSession annasSession = login("anna", ANNA_PASSWORD);
-        MockHttpSession bosSession = login("bosse", BO_PASSWORD);
+    static void anvandareSerInteVarandrasTrace() throws Exception {
+        var anna = new Browser(base);
+        anna.login("anna", ANNA_PASSWORD);
+        var bosse = new Browser(base);
+        bosse.login("bosse", BO_PASSWORD);
 
         // Traceen innehåller hela samtalet i klartext - den får aldrig läcka mellan konton.
-        mockMvc.perform(post("/api/psykologen/message").session(annasSession)
-                .with(csrf())
-                .contentType("application/json")
-                .content("{\"message\":\"Annas hemlighet\"}"))
-                .andExpect(status().isOk());
+        assertEquals(200, anna.post("/api/psykologen/message", "{\"message\":\"Annas hemlighet\"}").status());
 
         // Antalet anrop assertas inte: bakgrundsjobben för profil och plan kan hinna klart
         // eller inte innan traceen läses. Det som spelar roll är vem som ser vad.
-        String annasTrace = mockMvc.perform(get("/api/psykologen/trace").session(annasSession))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.calls").isNotEmpty())
-                .andReturn().getResponse().getContentAsString();
-        assertTrue(annasTrace.contains("Annas hemlighet"),
-                "Annas egen trace ska innehålla det hon skrev");
+        var annasTrace = anna.get("/api/psykologen/trace");
+        assertEquals(200, annasTrace.status());
+        assertFalse(annasTrace.json().array("calls").isEmpty());
+        assertTrue(annasTrace.body().contains("Annas hemlighet"), "Annas egen trace ska innehålla det hon skrev");
 
-        String bosTrace = mockMvc.perform(get("/api/psykologen/trace").session(bosSession))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.summary.callCount").value(0))
-                .andReturn().getResponse().getContentAsString();
-        assertFalse(bosTrace.contains("Annas hemlighet"),
-                "Bosse ska aldrig se Annas samtal");
-    }
-
-    private MockHttpSession login(String username, String password) throws Exception {
-        MockHttpSession session = new MockHttpSession();
-        mockMvc.perform(post("/api/auth/login")
-                .session(session)
-                .with(csrf())
-                .contentType("application/json")
-                .content("{\"username\":\"" + username + "\",\"password\":\"" + password + "\"}"))
-                .andExpect(status().isOk());
-        return session;
-    }
-
-    private static Path createTempStorageDir() {
-        try {
-            return Files.createTempDirectory("psykologen-test");
-        } catch (IOException e) {
-            throw new IllegalStateException("Kunde inte skapa temporär testkatalog", e);
-        }
-    }
-
-    @AfterAll
-    static void removeTempStorage() throws IOException {
-        if (!Files.exists(STORAGE_DIR)) {
-            return;
-        }
-        try (var paths = Files.walk(STORAGE_DIR)) {
-            paths.sorted(Comparator.reverseOrder()).forEach(path -> {
-                try {
-                    Files.deleteIfExists(path);
-                } catch (IOException e) {
-                    // Städning får inte fälla testet
-                }
-            });
-        }
-    }
-
-    @TestConfiguration
-    static class TestBeans {
-
-        @Bean
-        AuthProperties authProperties(Environment environment) {
-            return AuthProperties.fromEnvironment(environment);
-        }
-
-        @Bean
-        LoginAttemptTracker loginAttemptTracker() {
-            return new LoginAttemptTracker();
-        }
-
-        @Bean
-        UserSessionRegistry userSessionRegistry() {
-            AiClient aiClient = new FakeAiClient();
-            // Föranropen körs parallellt med varandra, precis som i appen.
-            ExecutorService executor = Executors.newCachedThreadPool();
-
-            return new UserSessionRegistry(username -> {
-                Path userDir = STORAGE_DIR.resolve(username);
-                SessionArtifactStore artifactStore = new FileSessionArtifactStore(userDir);
-                PromptStore promptStore = new PromptStore(userDir);
-                return new PsykologenService(aiClient, artifactStore,
-                        new SessionArtifactUpdater(aiClient, artifactStore, promptStore, executor),
-                        promptStore, executor);
-            });
-        }
-    }
-
-    private static final class FakeAiClient implements AiClient {
-
-        @Override
-        public String providerName() {
-            return "Fake";
-        }
-
-        @Override
-        public String requiredEnvVar() {
-            return "FAKE_API_KEY";
-        }
-
-        @Override
-        public boolean isConfigured() {
-            return true;
-        }
-
-        @Override
-        public AiResponse chat(List<ChatMessage> messages) {
-            return new AiResponse("Fejkat svar", "fake-modell", 0, 0, 0, 0);
-        }
+        var bosTrace = bosse.get("/api/psykologen/trace");
+        assertEquals(200, bosTrace.status());
+        assertEquals(0, bosTrace.json().object("summary").number("callCount").intValueExact());
+        assertFalse(bosTrace.body().contains("Annas hemlighet"), "Bosse ska aldrig se Annas samtal");
     }
 }

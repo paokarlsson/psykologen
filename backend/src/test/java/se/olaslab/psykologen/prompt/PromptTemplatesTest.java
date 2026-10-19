@@ -1,16 +1,29 @@
 package se.olaslab.psykologen.prompt;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import org.junit.jupiter.api.Test;
+import static spola.test.Assertions.assertEquals;
+import static spola.test.Assertions.assertTrue;
+import static spola.test.Tests.suite;
+import static spola.test.Tests.test;
 
 import se.olaslab.psykologen.intervention.Interventions;
+import spola.test.Suite;
 
-class PromptTemplatesTest {
+public final class PromptTemplatesTest {
 
-    @Test
-    void patientprofilenFyllsIStandardmallen() {
+    private PromptTemplatesTest() {
+    }
+
+    public static Suite tests() {
+        return suite("PromptTemplatesTest",
+                test("patientprofilenFyllsIStandardmallen", PromptTemplatesTest::patientprofilenFyllsIStandardmallen),
+                test("tomProfilGerFallbacktext", PromptTemplatesTest::tomProfilGerFallbacktext),
+                test("reflektionsmallenBerOmEnAndringsloggOchHelaListan", PromptTemplatesTest::reflektionsmallenBerOmEnAndringsloggOchHelaListan),
+                test("oppnaTradarFyllsIStandardmallen", PromptTemplatesTest::oppnaTradarFyllsIStandardmallen),
+                test("tradmallenPararErikssenasteReplikMedPatientensNya", PromptTemplatesTest::tradmallenPararErikssenasteReplikMedPatientensNya),
+                test("aterstaendeTidBlirAldrigNegativ", PromptTemplatesTest::aterstaendeTidBlirAldrigNegativ));
+    }
+
+    static void patientprofilenFyllsIStandardmallen() {
         String renderad = PromptTemplates.erikResponse(
                 PromptStore.defaults().get(PromptStore.ERIK_RESPONSE),
                 "- tanke", "Patienten heter Kim.", "Plan", "", Interventions.DEFAULT, 5.0, 45.0, "hej");
@@ -19,16 +32,14 @@ class PromptTemplatesTest {
         assertTrue(!renderad.contains("{{patientProfile}}"));
     }
 
-    @Test
-    void tomProfilGerFallbacktext() {
+    static void tomProfilGerFallbacktext() {
         String renderad = PromptTemplates.erikResponse("Profil: {{patientProfile}}",
                 "", "", "", "", Interventions.DEFAULT, 5.0, 45.0, "hej");
 
         assertEquals("Profil: Ingen profil än.", renderad);
     }
 
-    @Test
-    void reflektionsmallenBerOmEnAndringsloggOchHelaListan() {
+    static void reflektionsmallenBerOmEnAndringsloggOchHelaListan() {
         String renderad = PromptTemplates.thoughtReflection(
                 PromptStore.defaults().get(PromptStore.THOUGHT_REFLECTION), "jag sover fint", "- sover dåligt");
 
@@ -39,8 +50,7 @@ class PromptTemplatesTest {
         assertTrue(renderad.contains("- sover dåligt"));
     }
 
-    @Test
-    void oppnaTradarFyllsIStandardmallen() {
+    static void oppnaTradarFyllsIStandardmallen() {
         String renderad = PromptTemplates.erikResponse(
                 PromptStore.defaults().get(PromptStore.ERIK_RESPONSE),
                 "", "", "", "- nämnde brodern, bytte ämne", Interventions.DEFAULT, 5.0, 45.0, "hej");
@@ -49,8 +59,7 @@ class PromptTemplatesTest {
         assertTrue(!renderad.contains("{{openThreads}}"));
     }
 
-    @Test
-    void tradmallenPararErikssenasteReplikMedPatientensNya() {
+    static void tradmallenPararErikssenasteReplikMedPatientensNya() {
         String renderad = PromptTemplates.threadsUpdate(
                 PromptStore.defaults().get(PromptStore.THREADS_UPDATE),
                 "- sömnen", "Hur känns det?", "helt okej, förresten min bror...");
@@ -60,8 +69,7 @@ class PromptTemplatesTest {
         assertTrue(renderad.contains("helt okej, förresten min bror..."));
     }
 
-    @Test
-    void aterstaendeTidBlirAldrigNegativ() {
+    static void aterstaendeTidBlirAldrigNegativ() {
         String renderad = PromptTemplates.erikResponse("Kvar: {{remainingMinutes}}",
                 "", "", "", "", Interventions.DEFAULT, 60.0, 45.0, "hej");
 

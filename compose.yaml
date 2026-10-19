@@ -1,16 +1,16 @@
 services:
   backend:
-    image: maven:3.9-eclipse-temurin-25
+    image: eclipse-temurin:25-jdk
     working_dir: /app
     volumes:
       - ./backend:/app
-      - maven-repo:/root/.m2
     ports:
       - "8080:8080"
       - "5005:5005" # JVM debug (jdwp)
     command: >
-      mvn spring-boot:run
-      -Dspring-boot.run.jvmArguments="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+      sh -c "java Build.java compile &&
+      java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+      --module-path lib:out/main --module psykologen/se.olaslab.psykologen.PsykologenApplication"
 
   frontend:
     image: node:24
@@ -23,6 +23,3 @@ services:
       # Dev-proxyn körs i den här containern, så localhost hade pekat på fel maskin.
       - BACKEND_URL=http://backend:8080
     command: sh -c "npm install -g npm@12 && npm install && npm start -- --host 0.0.0.0"
-
-volumes:
-  maven-repo:
