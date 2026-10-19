@@ -34,7 +34,7 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}-${{ matrix.service }}:latest
             ghcr.io/${{ github.repository }}-${{ matrix.service }}:${{ github.sha }}
-          # Utan cache hämtas hela Maven-repot och alla npm-paket varje körning.
+          # Utan cache byggs varje lager om och alla npm-paket hämtas varje körning.
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 

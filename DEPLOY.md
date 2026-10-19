@@ -5,7 +5,7 @@ port 80 och 443 och löser TLS automatiskt.
 
 ```
 Internet ──► caddy (80/443, TLS)
-               ├── /api/*  ──► backend  (Spring Boot, ingen port mot hosten)
+               ├── /api/*  ──► backend  (Java på Spola, ingen port mot hosten)
                └── /*      ──► frontend (byggd Angular-app, statiska filer)
 ```
 
@@ -14,8 +14,8 @@ certifikat ligger i named volumes och överlever både omstart och rebuild.
 
 Droppen bygger ingenting. Varje push till `master` bygger backend- och
 frontend-images i GitHub Actions och publicerar dem på GHCR; `deploy.sh` hämtar
-dem färdiga. Maven- och Angular-byggena är det enda i den här appen som kräver
-en maskin med minne, och de hör inte hemma på en liten droplet.
+dem färdiga. Angular-bygget är det enda i den här appen som kräver en maskin
+med minne, och det hör inte hemma på en liten droplet.
 
 ---
 
@@ -103,20 +103,18 @@ nano backend/.env
 
 ### 6. Skapa en lösenordshash
 
-Låt backend-imagen skriva ut hashen. Ingen Java eller Maven behöver installeras
-på droppen.
+Låt backend-imagen skriva ut hashen. Ingen Java behöver installeras på
+droppen.
 
 ```bash
 docker pull ghcr.io/paokarlsson/psykologen-backend:latest
-docker run --rm -e ANTHROPIC_API_KEY=dummy \
-  ghcr.io/paokarlsson/psykologen-backend:latest --hash-password='ditt lösenord'
+docker run --rm ghcr.io/paokarlsson/psykologen-backend:latest --hash-password='ditt lösenord'
 ```
 
 Det förutsätter att bygget i Actions har körts minst en gång. Har det inte det
 går samma sak att göra på din egen dator med `docker build -t hash ./backend`.
-
-(`ANTHROPIC_API_KEY=dummy` behövs bara för att appen ska starta så långt att
-den hinner skriva ut hashen — den används inte till något.)
+Med `--hash-password` skriver appen bara ut hashen och startar inte, så den
+behöver varken API-nyckel eller konton.
 
 Utskriften ser ut så här:
 ```
@@ -125,8 +123,8 @@ APP_AUTH_USERS_0_PASSWORDHASH={bcrypt}$2a$10$zsJ/Q.w6...
 ```
 
 Klistra in båda raderna i `backend/.env`, byt användarnamnet mot det du vill
-ha, och **sätt inga citattecken runt hashen** — dotenv-läsaren strippar dem
-inte, och en hash med citattecken ger "fel användarnamn eller lösenord" utan
+ha, och **sätt inga citattecken runt hashen** — `.env` läses som en
+properties-fil och citattecknen blir en del av värdet, och en hash med citattecken ger "fel användarnamn eller lösenord" utan
 någon annan ledtråd. Fler konton numreras vidare: `APP_AUTH_USERS_1_...`.
 
 Lösenordet i klartext lagras aldrig någonstans.
@@ -256,7 +254,8 @@ för verifieringen, även om sidan sedan kör på 443.
 
 **Inloggningen säger fel lösenord fast det är rätt.** Kontrollera hashen i
 `backend/.env`: den ska börja med `{bcrypt}$2` och innehålla tre `$`, utan
-citattecken runt.
+citattecken runt. Hashar som Spring-versionen av backend skrev fungerar som de
+är.
 
 **Let's Encrypt börjar neka.** Certifikaten ligger i volymen `caddy-data` och
 återanvänds mellan deploys, så det ska inte hända. Radera aldrig den volymen

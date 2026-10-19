@@ -1,30 +1,39 @@
 package se.olaslab.psykologen.prompt;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static spola.test.Assertions.assertEquals;
+import static spola.test.Assertions.assertFalse;
+import static spola.test.Assertions.assertTrue;
+import static spola.test.Tests.suite;
+import static spola.test.Tests.test;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
+import spola.test.Suite;
 
-class BulletLinesTest {
+public final class BulletLinesTest {
 
-    @Test
-    void bindestreckOchBlankraderStadasBort() {
+    private BulletLinesTest() {
+    }
+
+    public static Suite tests() {
+        return suite("BulletLinesTest",
+                test("bindestreckOchBlankraderStadasBort", BulletLinesTest::bindestreckOchBlankraderStadasBort),
+                test("tomtOchNullGerTomLista", BulletLinesTest::tomtOchNullGerTomLista),
+                test("ingaTraderKannsIgenSomTomtSvar", BulletLinesTest::ingaTraderKannsIgenSomTomtSvar));
+    }
+
+    static void bindestreckOchBlankraderStadasBort() {
         List<String> rader = BulletLines.parse("- första\n\n  - andra  \ntredje\n");
 
         assertEquals(List.of("första", "andra", "tredje"), rader);
     }
 
-    @Test
-    void tomtOchNullGerTomLista() {
+    static void tomtOchNullGerTomLista() {
         assertEquals(List.of(), BulletLines.parse(null));
         assertEquals(List.of(), BulletLines.parse("\n\n"));
     }
 
-    @Test
-    void ingaTraderKannsIgenSomTomtSvar() {
+    static void ingaTraderKannsIgenSomTomtSvar() {
         assertTrue(BulletLines.isEmptyAnswer("Inga öppna trådar."));
         assertTrue(BulletLines.isEmptyAnswer("  Inga förändringar."));
         assertTrue(BulletLines.isEmptyAnswer(null));

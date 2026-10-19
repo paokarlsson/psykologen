@@ -1,5 +1,12 @@
 package se.olaslab.psykologen.prompt;
 
+import static spola.json.codec.JsonCodec.field;
+import static spola.json.codec.JsonCodecs.BOOLEAN;
+import static spola.json.codec.JsonCodecs.DOUBLE;
+import static spola.json.codec.JsonCodecs.STRING;
+import static spola.json.codec.JsonCodecs.map;
+import static spola.json.codec.JsonCodecs.nullable;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -7,8 +14,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import se.olaslab.psykologen.context.ContextStrategies;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
+import spola.json.JsonParseException;
+import spola.json.codec.JsonCodec;
+import spola.json.codec.JsonMappingException;
 
 public class PromptStore {
 
@@ -256,7 +264,6 @@ public class PromptStore {
                 [specifika råd: prioritera, korta ner, eller förbereda avslutning]
                 """);
 
-    private final ObjectMapper mapper = new ObjectMapper();
     private final Path storePath;
     private final Map<String, String> customPrompts;
     private boolean useCustomPrompts;
@@ -385,10 +392,9 @@ public class PromptStore {
 
     private void persist() {
         try {
-            Files.writeString(storePath, mapper.writerWithDefaultPrettyPrinter()
-                    .writeValueAsString(new Persisted(useCustomPrompts, customPrompts,
-                            sessionDurationMinutes, contextStrategy)));
-        } catch (IOException | JacksonException e) {
+            Files.writeString(storePath, Persisted.CODEC.writePretty(new Persisted(useCustomPrompts,
+                    customPrompts, sessionDurationMinutes, contextStrategy)));
+        } catch (IOException | JsonMappingException e) {
             // Att spara promptinställningar ska inte krascha appen
         }
     }
@@ -396,9 +402,9 @@ public class PromptStore {
     private Persisted load() {
         try {
             if (Files.exists(storePath)) {
-                return mapper.readValue(Files.readString(storePath), Persisted.class);
+                return Persisted.CODEC.read(Files.readString(storePath));
             }
-        } catch (IOException | JacksonException e) {
+        } catch (IOException | JsonParseException | JsonMappingException e) {
             // Korrupt fil: kör vidare med standardvärden
         }
         return new Persisted(false, Map.of(), null, null);
@@ -409,5 +415,14 @@ public class PromptStore {
     // saknas på samma sätt i äldre filer och faller då tillbaka på standarden.
     private record Persisted(boolean useCustomPrompts, Map<String, String> customPrompts,
             Double sessionDurationMinutes, String contextStrategy) {
+
+        // Okända fält och saknade fält godtas, som Jackson gjorde: filen kan ha skrivits av en
+        // äldre eller nyare version av appen.
+        static final JsonCodec<Persisted> CODEC = JsonCodec.object(Persisted::new,
+                field("useCustomPrompts", BOOLEAN, Persisted::useCustomPrompts).orElse(false),
+                field("customPrompts", map(STRING), Persisted::customPrompts).orElse(Map.of()),
+                field("sessionDurationMinutes", nullable(DOUBLE), Persisted::sessionDurationMinutes).orElse(null),
+                field("contextStrategy", nullable(STRING), Persisted::contextStrategy).orElse(null))
+                .ignoringUnknown();
     }
 }

@@ -1,8 +1,17 @@
 package se.olaslab.psykologen.trace;
 
+import static spola.json.codec.JsonCodec.field;
+import static spola.json.codec.JsonCodecs.DOUBLE;
+import static spola.json.codec.JsonCodecs.INT;
+import static spola.json.codec.JsonCodecs.LONG;
+import static spola.json.codec.JsonCodecs.STRING;
+import static spola.json.codec.JsonCodecs.list;
+import static spola.json.codec.JsonCodecs.nullable;
+
 import java.util.List;
 
 import se.olaslab.psykologen.session.ChatMessage;
+import spola.json.codec.JsonCodec;
 
 /**
  * Ett enskilt LLM-anrop, så som det faktiskt gick iväg.
@@ -35,4 +44,20 @@ public record LlmCall(
     public static final String PROFIL = "profil";
     public static final String TRADAR = "tradar";
     public static final String PLAN = "plan";
+
+    /** {@code model}, {@code responseText}, {@code costUsd} och {@code error} skrivs som {@code null} när de saknas. */
+    public static final JsonCodec<LlmCall> CODEC = JsonCodec.object(LlmCall::new,
+            field("steg", STRING, LlmCall::steg),
+            field("turn", INT, LlmCall::turn),
+            field("startedAt", LONG, LlmCall::startedAt),
+            field("latencyMs", LONG, LlmCall::latencyMs),
+            field("model", nullable(STRING), LlmCall::model),
+            field("sentMessages", list(ChatMessage.CODEC), LlmCall::sentMessages),
+            field("responseText", nullable(STRING), LlmCall::responseText),
+            field("inputTokens", INT, LlmCall::inputTokens),
+            field("outputTokens", INT, LlmCall::outputTokens),
+            field("cacheReadTokens", INT, LlmCall::cacheReadTokens),
+            field("cacheCreationTokens", INT, LlmCall::cacheCreationTokens),
+            field("costUsd", nullable(DOUBLE), LlmCall::costUsd),
+            field("error", nullable(STRING), LlmCall::error));
 }

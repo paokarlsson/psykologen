@@ -1,96 +1,95 @@
 package se.olaslab.psykologen.auth;
 
-import java.util.HashMap;
-import java.util.Map;
+import static spola.json.codec.JsonCodec.field;
+import static spola.json.codec.JsonCodecs.STRING;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import java.io.IOException;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import spola.http.Response;
+import spola.json.JsonObject;
+import spola.json.codec.JsonCodec;
+import spola.security.AuthResult;
+import spola.security.Authenticator;
+import spola.security.Identity;
+import spola.security.web.WebSecurity;
+import spola.web.Responses;
+import spola.web.RouterBuilder;
+import spola.web.WebRequest;
 
-@RestController
-@RequestMapping("/api/auth")
+/** {@code /api/auth}: inloggning, utloggning och vem som är inloggad. */
 public class AuthController {
 
-    private final AuthenticationManager authenticationManager;
+    private final Authenticator authenticator;
     private final LoginAttemptTracker attemptTracker;
-    private final SecurityContextRepository contextRepository = new HttpSessionSecurityContextRepository();
 
-    public AuthController(AuthenticationManager authenticationManager, LoginAttemptTracker attemptTracker) {
-        this.authenticationManager = authenticationManager;
+    public AuthController(Authenticator authenticator, LoginAttemptTracker attemptTracker) {
+        this.authenticator = authenticator;
         this.attemptTracker = attemptTracker;
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> body,
-            HttpServletRequest request, HttpServletResponse response) {
-        Map<String, Object> result = new HashMap<>();
-        String username = body.getOrDefault("username", "");
-        String password = body.getOrDefault("password", "");
+    public RouterBuilder routes(RouterBuilder routes) {
+        return routes
+                .post("/api/auth/login", this::login)
+                .post("/api/auth/logout", this::logout)
+                .get("/api/auth/me", this::me);
+    }
+
+    Response login(WebRequest request) throws IOException {
+        Login body = request.readJson(Login.CODEC);
+        String username = body.username();
 
         if (attemptTracker.isLocked(username)) {
-            result.put("success", false);
-            result.put("error", "För många misslyckade försök. Försök igen om "
-                    + attemptTracker.minutesRemaining(username) + " minuter.");
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(result);
+            return Responses.json(request, 429, JsonObject.builder()
+                    .put("success", false)
+                    .put("error", "För många misslyckade försök. Försök igen om "
+                            + attemptTracker.minutesRemaining(username) + " minuter.")
+                    .build());
         }
 
-        Authentication authentication;
-        try {
-            authentication = authenticationManager
-                    .authenticate(new UsernamePasswordAuthenticationToken(username, password));
-        } catch (AuthenticationException e) {
-            attemptTracker.recordFailure(username);
-            result.put("success", false);
-            // Samma svar oavsett om användarnamnet finns - annars går konton att kartlägga.
-            result.put("error", "Fel användarnamn eller lösenord.");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(result);
-        }
-
-        // Nytt sessions-id skyddar mot session fixation. changeSessionId() kastar
-        // om ingen session finns, och en session som skapas först nedan är ändå ny.
-        if (request.getSession(false) != null) {
-            request.changeSessionId();
-        }
-
-        SecurityContext context = SecurityContextHolder.createEmptyContext();
-        context.setAuthentication(authentication);
-        SecurityContextHolder.setContext(context);
-        contextRepository.saveContext(context, request, response);
-
-        attemptTracker.recordSuccess(username);
-        result.put("success", true);
-        result.put("username", authentication.getName());
-        return ResponseEntity.ok(result);
+        return switch (authenticator.authenticate(username, body.password())) {
+            case AuthResult.Authenticated(Identity identity) -> {
+                // Nytt sessions-id (skydd mot session fixation) och ny CSRF-token.
+                WebSecurity.login(request, identity);
+                attemptTracker.recordSuccess(username);
+                yield Responses.json(request, 200, JsonObject.builder()
+                        .put("success", true)
+                        .put("username", identity.name())
+                        .build());
+            }
+            case AuthResult.Failed failed -> {
+                attemptTracker.recordFailure(username);
+                // Samma svar oavsett om användarnamnet finns - annars går konton att kartlägga.
+                yield Responses.json(request, 401, JsonObject.builder()
+                        .put("success", false)
+                        .put("error", "Fel användarnamn eller lösenord.")
+                        .build());
+            }
+        };
     }
 
-    @PostMapping("/logout")
-    public ResponseEntity<Map<String, Object>> logout(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            session.invalidate();
-        }
-        SecurityContextHolder.clearContext();
-        return ResponseEntity.ok(Map.of("success", true));
+    Response logout(WebRequest request) {
+        WebSecurity.logout(request);
+        return Responses.json(request, 200, JsonObject.builder().put("success", true).build());
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<Map<String, Object>> me(Authentication authentication) {
-        return ResponseEntity.ok(Map.of("success", true, "username", authentication.getName()));
+    Response me(WebRequest request) {
+        return Responses.json(request, 200, JsonObject.builder()
+                .put("success", true)
+                .put("username", WebSecurity.requireIdentity(request).name())
+                .build());
+    }
+
+    /** Ett saknat fält är en tom sträng och okända fält ignoreras, som i Spring-versionen. */
+    record Login(String username, String password) {
+
+        static final JsonCodec<Login> CODEC = JsonCodec.object(Login::new,
+                field("username", STRING, Login::username).orElse(""),
+                field("password", STRING, Login::password).orElse("")).ignoringUnknown();
+
+        /** Utan lösenordet, så att det aldrig hamnar i en loggrad. */
+        @Override
+        public String toString() {
+            return "Login[username=" + username + "]";
+        }
     }
 }

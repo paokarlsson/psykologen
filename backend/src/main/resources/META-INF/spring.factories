@@ -1,3 +1,0 @@
-org.springframework.boot.diagnostics.FailureAnalyzer=\
-se.olaslab.psykologen.MissingApiKeyFailureAnalyzer,\
-se.olaslab.psykologen.auth.InvalidUsersFailureAnalyzer
