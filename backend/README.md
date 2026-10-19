@@ -62,7 +62,7 @@ java --module-path lib:out/main --module psykologen/se.olaslab.psykologen.Psykol
 
 ```
 Build.java                    bygget: compile, test (standard) och run
-lib/                          Spola 0.2.0, en jar per modul
+lib/                          Spola 0.2.0 från releasen, en jar per modul, och SHA256SUMS
 src/main/java/module-info.java vilka Spola-moduler appen använder
 src/main/java/se/olaslab/psykologen/
   PsykologenApplication.java  main: konfigurationen och all wiring, i vanlig Java
@@ -72,8 +72,27 @@ src/main/java/se/olaslab/psykologen/
 src/test/java/                tester; AllTests kör alla
 ```
 
-## Uppgradera Spola
+## Spola-jarfilerna
 
-Byt jar-filerna i `lib/` mot de från en ny [release](https://github.com/paokarlsson/spola/releases)
-och kör `java Build.java`. Jar-filerna i `lib/` är byggda från taggen `v0.2.0`. Behöver appen
-något som Spring hade gett den men som Spola saknar, se `CLAUDE.md`.
+Jar-filerna i `lib/` är hämtade från Spolas
+[release v0.2.0](https://github.com/paokarlsson/spola/releases/tag/v0.2.0), och `lib/SHA256SUMS`
+är releasens kontrollsummor för dem. De ligger i repot så att bygget fungerar utan nätverk och en
+uppgradering syns i diffen. Kontrollera dem med:
+```bash
+cd lib && sha256sum -c SHA256SUMS
+```
+
+En ny version hämtas så här (byt `v`), och sedan körs `java Build.java`:
+```bash
+v=0.3.0; base=https://github.com/paokarlsson/spola/releases/download/v$v
+modules="http json validation web config util security security.web client test"
+cd lib && rm -f spola.*.jar SHA256SUMS
+curl -fsSL "$base/SHA256SUMS" -o release.sums
+for m in $modules; do
+  curl -fsSLO "$base/spola.$m-$v.jar"
+  grep " spola.$m-$v.jar\$" release.sums >> SHA256SUMS
+done
+rm release.sums && sha256sum -c SHA256SUMS
+```
+Uppdatera också versionen i `CLAUDE.md`. Behöver appen något som Spring hade gett den men som
+Spola saknar, se `CLAUDE.md`.

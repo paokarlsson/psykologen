@@ -7,7 +7,7 @@ COPY lib ./lib
 COPY Build.java .
 COPY src ./src
 RUN java Build.java compile \
-    && rm lib/spola.test-*.jar
+    && rm lib/spola.test-*.jar lib/SHA256SUMS
 
 
 FROM eclipse-temurin:25-jre-alpine
