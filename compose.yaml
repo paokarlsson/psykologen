@@ -12,6 +12,16 @@ services:
       java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
       --module-path lib:out/main --module psykologen/se.olaslab.psykologen.PsykologenApplication"
 
+  # Skapar en lösenordshash till backend/.env: docker compose run --rm hash-password 'ditt_lösenord'
+  # Profilen gör att den inte startar med docker compose up.
+  hash-password:
+    image: eclipse-temurin:25-jdk
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    profiles: ["tools"]
+    entrypoint: ["sh", "-c", "exec java Build.java run --hash-password=\"$$1\"", "hash-password"]
+
   frontend:
     image: node:24
     working_dir: /app

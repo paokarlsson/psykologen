@@ -54,7 +54,11 @@ klartext sparas någonstans i projektet.
 cd backend
 java Build.java run --hash-password=ditt_lösenord
 ```
-Kommandot skriver ut de två raderna du behöver och avslutar.
+Kommandot skriver ut de två raderna du behöver och avslutar. Utan Java lokalt
+går det via Docker, från repo-roten:
+```bash
+docker compose run --rm hash-password 'ditt_lösenord'
+```
 
 **2. Lägg in kontot i `backend/.env`**
 ```
