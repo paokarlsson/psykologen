@@ -12,10 +12,14 @@ produktion står i `README.md`, `backend/README.md` och `DEPLOY.md`.
 Projektet bygger på [Spola](https://github.com/paokarlsson/spola) 0.2.0, ett
 Java 25-ramverk som ersätter Spring och Lombok med explicit kod och bara JDK:n.
 
-- Läs `framework/MONSTER.md` i Spola innan du skriver infrastruktur. Där står vilka moduler som
-  finns, hur ett Spola-API ser ut och vad som hör hemma i Spola.
-- Spola-modulerna ligger som jar-filer i `backend/lib/` och används på modulvägen
-  (`requires spola.web;` i `backend/src/main/java/module-info.java`).
+- Läs [`framework/MONSTER.md`](https://github.com/paokarlsson/spola/blob/main/framework/MONSTER.md)
+  i Spola innan du skriver infrastruktur. Där står vilka moduler som finns, hur ett Spola-API ser
+  ut och vad som hör hemma i Spola.
+- Spola-modulerna hämtas av `backend/Build.java` från Spolas release till `backend/lib/` och
+  används på modulvägen (`requires spola.web;` i `backend/src/main/java/module-info.java`).
+  Bara `backend/lib/SHA256SUMS` är incheckad; den bestämmer moduler, version och
+  kontrollsummor. Checka aldrig in jar-filerna. Uppgradera med `java Build.java upgrade <version>`
+  (se `backend/README.md`).
 - Lägg inte till Spring, Lombok eller andra bibliotek för sådant som Spring eller Lombok
   hade gett projektet. Använd Spola, eller beställ det (se nedan).
 - Inga annoteringar utöver JDK:ns, ingen reflektion för wiring och ingen classpath-scanning.
@@ -30,7 +34,8 @@ Om projektet behöver något som Spring eller Lombok har men Spola saknar:
 2. Det viktigaste i behovet är användningsfallet, alltså koden du vill kunna skriva.
 3. Bygg under tiden en minimal lösning i projektet, i Spolas stil, i ett eget paket
    (`se.olaslab.psykologen.spolabehov.<namn>`). Den ska vara lätt att byta ut.
-4. När Spola har släppt modulen: uppdatera jar-filerna i `backend/lib/`, byt ut den lokala
+4. När Spola har släppt modulen: `java Build.java upgrade <version>` i `backend/` (och lägg till
+   modulens rad i `lib/SHA256SUMS` om den är ny), byt ut den lokala
    lösningen och ta bort paketet.
 
 Det som bara gäller det här projektet, till exempel affärsregler och klienter för ett visst

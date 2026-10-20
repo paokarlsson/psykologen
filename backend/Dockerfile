@@ -2,12 +2,14 @@ FROM eclipse-temurin:25-jdk-alpine AS build
 
 WORKDIR /build
 
-# Spola ligger som jar-filer i lib/, så det finns inga beroenden att hämta.
-COPY lib ./lib
+# Spola-jarfilerna hämtas i ett eget lager, som bara byggs om när Build.java eller
+# lib/SHA256SUMS ändras. Ändrad källkod hämtar dem alltså inte igen.
 COPY Build.java .
+COPY lib/SHA256SUMS ./lib/
+RUN java Build.java fetch
 COPY src ./src
 RUN java Build.java compile \
-    && rm lib/spola.test-*.jar
+    && rm lib/spola.test-*.jar lib/SHA256SUMS
 
 
 FROM eclipse-temurin:25-jre-alpine

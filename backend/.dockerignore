@@ -16,3 +16,4 @@ history.json
 Dockerfile
 .dockerignore
 README.md
+lib/*.jar

@@ -2,13 +2,14 @@
 
 Backend för Psykologen-applikationen, byggd på [Spola](https://github.com/paokarlsson/spola) 0.2.0:
 ett Java 25-ramverk som ersätter Spring och Lombok med vanlig Java-kod. Inga beroenden utöver
-JDK:n och Spola-modulerna i `lib/`.
+JDK:n och Spola-modulerna, som `Build.java` hämtar till `lib/`.
 
 ## Förutsättningar
 
 - Java 25 (en JDK, eftersom bygget kompilerar)
 
-Inget byggverktyg behövs. `Build.java` körs direkt av `java`.
+Inget byggverktyg behövs. `Build.java` körs direkt av `java`. Första bygget behöver nätverk för
+att hämta Spola-jarfilerna (se nedan).
 
 ## Konfiguration
 
@@ -61,8 +62,8 @@ java --module-path lib:out/main --module psykologen/se.olaslab.psykologen.Psykol
 ## Struktur
 
 ```
-Build.java                    bygget: compile, test (standard) och run
-lib/                          Spola 0.2.0, en jar per modul
+Build.java                    bygget: compile, test (standard), run, fetch och upgrade
+lib/SHA256SUMS                vilka Spola-moduler och vilken version; jar-filerna hämtas hit
 src/main/java/module-info.java vilka Spola-moduler appen använder
 src/main/java/se/olaslab/psykologen/
   PsykologenApplication.java  main: konfigurationen och all wiring, i vanlig Java
@@ -72,8 +73,24 @@ src/main/java/se/olaslab/psykologen/
 src/test/java/                tester; AllTests kör alla
 ```
 
-## Uppgradera Spola
+## Spola-jarfilerna
 
-Byt jar-filerna i `lib/` mot de från en ny [release](https://github.com/paokarlsson/spola/releases)
-och kör `java Build.java`. Jar-filerna i `lib/` är byggda från taggen `v0.2.0`. Behöver appen
-något som Spring hade gett den men som Spola saknar, se `CLAUDE.md`.
+Bara `lib/SHA256SUMS` är incheckad. Den listar de Spola-moduler appen använder, med version och
+kontrollsumma från Spolas [release](https://github.com/paokarlsson/spola/releases/tag/v0.2.0).
+Alla kommandon i `Build.java` hämtar först de jar-filer som saknas i `lib/` från releasen och
+kontrollerar dem mot summorna. Stämmer en fil inte avbryts bygget. Jar-filerna är gitignorerade,
+och en hämtning görs bara när en fil saknas eller har ändrats. Utan bygget:
+```bash
+java Build.java fetch
+```
+
+Byt till en annan release (summorna tas från releasens `SHA256SUMS`):
+```bash
+java Build.java upgrade 0.3.0
+```
+Det skriver om `lib/SHA256SUMS` och hämtar de nya filerna, så uppgraderingen syns i diffen som
+nya versioner och summor. Ska appen använda en modul till, lägg till dess rad från releasens
+`SHA256SUMS` i `lib/SHA256SUMS`.
+
+Uppdatera också versionen i `CLAUDE.md`. Behöver appen något som Spring hade gett den men som
+Spola saknar, se `CLAUDE.md`.
