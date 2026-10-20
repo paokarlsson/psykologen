@@ -157,7 +157,7 @@ export class Chat implements OnInit, AfterViewInit {
 
   private describeError(error: HttpErrorResponse): string {
     if (error.status === 0) {
-      return 'Kan inte nå backend. Kontrollera att den är startad (t.ex. "cd backend && mvn spring-boot:run" eller "docker compose up").';
+      return 'Kan inte nå backend. Kontrollera att den är startad (t.ex. "cd backend && java Build.java run" eller "docker compose up").';
     }
     return `Backend svarade med ett fel (${error.status}). Försök igen om en stund.`;
   }

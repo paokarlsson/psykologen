@@ -1,7 +1,9 @@
 frontend/node_modules
 frontend/.angular
 frontend/dist
-backend/target
+backend/out
+# Spola-jarfilerna hämtas av Build.java. Bara backend/lib/SHA256SUMS är incheckad.
+backend/lib/*.jar
 
 # Per-användarens samtalsdata (profil, plan, historik, promptar)
 backend/data

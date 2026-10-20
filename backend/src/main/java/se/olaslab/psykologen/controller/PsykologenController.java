@@ -1,22 +1,74 @@
 package se.olaslab.psykologen.controller;
 
-import java.util.HashMap;
+import static spola.json.codec.JsonCodec.field;
+import static spola.json.codec.JsonCodecs.BOOLEAN;
+import static spola.json.codec.JsonCodecs.DOUBLE;
+import static spola.json.codec.JsonCodecs.STRING;
+import static spola.json.codec.JsonCodecs.list;
+import static spola.json.codec.JsonCodecs.map;
+import static spola.json.codec.JsonCodecs.nullable;
+
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
-
+import se.olaslab.psykologen.prompt.PromptSettings;
 import se.olaslab.psykologen.service.PsykologenService;
 import se.olaslab.psykologen.service.UserSessionRegistry;
 import se.olaslab.psykologen.session.ChatMessage;
 import se.olaslab.psykologen.storage.HistoryEntry;
+import se.olaslab.psykologen.trace.LlmCall;
 import se.olaslab.psykologen.trace.TraceSummary;
+import spola.http.Response;
+import spola.json.JsonNull;
+import spola.json.JsonNumber;
+import spola.json.JsonObject;
+import spola.json.JsonString;
+import spola.json.JsonValue;
+import spola.json.codec.JsonCodec;
+import spola.security.web.WebSecurity;
+import spola.web.Responses;
+import spola.web.RouterBuilder;
+import spola.web.WebRequest;
 
-@RestController
-@RequestMapping("/api/psykologen")
+/** {@code /api/psykologen}: samtalet, artefakterna, traceen och inställningarna för den inloggade användaren. */
 public class PsykologenController {
+
+    private static final String BASE = "/api/psykologen";
+
+    private static final JsonCodec<List<ChatMessage>> CONVERSATION = list(ChatMessage.CODEC);
+    private static final JsonCodec<List<HistoryEntry>> HISTORY = list(HistoryEntry.CODEC);
+    private static final JsonCodec<List<LlmCall>> CALLS = list(LlmCall.CODEC);
+    private static final JsonCodec<List<String>> LINES = list(STRING);
+
+    // Kropparna läses som i Spring-versionen: okända fält ignoreras och ett saknat fält är null.
+
+    record MessageBody(String message) {
+        static final JsonCodec<MessageBody> CODEC = JsonCodec.object(MessageBody::new,
+                field("message", nullable(STRING), MessageBody::message).orElse(null)).ignoringUnknown();
+    }
+
+    record PromptKey(String key) {
+        static final JsonCodec<PromptKey> CODEC = JsonCodec.object(PromptKey::new,
+                field("key", nullable(STRING), PromptKey::key).orElse(null)).ignoringUnknown();
+    }
+
+    record Enabled(Boolean enabled) {
+        static final JsonCodec<Enabled> CODEC = JsonCodec.object(Enabled::new,
+                field("enabled", nullable(BOOLEAN), Enabled::enabled).orElse(null)).ignoringUnknown();
+    }
+
+    record Strategy(String strategy) {
+        static final JsonCodec<Strategy> CODEC = JsonCodec.object(Strategy::new,
+                field("strategy", nullable(STRING), Strategy::strategy).orElse(null)).ignoringUnknown();
+    }
+
+    record Minutes(Double minutes) {
+        static final JsonCodec<Minutes> CODEC = JsonCodec.object(Minutes::new,
+                field("minutes", nullable(DOUBLE), Minutes::minutes).orElse(null)).ignoringUnknown();
+    }
+
+    private static final JsonCodec<Map<String, String>> PROMPT_UPDATES = map(STRING);
 
     private final UserSessionRegistry registry;
 
@@ -24,8 +76,26 @@ public class PsykologenController {
         this.registry = registry;
     }
 
-    private PsykologenService serviceFor(Authentication auth) {
-        return registry.forUser(auth.getName());
+    public RouterBuilder routes(RouterBuilder routes) {
+        return routes
+                .post(BASE + "/start", this::startConversation)
+                .post(BASE + "/message", this::sendMessage)
+                .get(BASE + "/conversation", this::getConversation)
+                .get(BASE + "/profile", this::getProfile)
+                .get(BASE + "/plan", this::getPlan)
+                .get(BASE + "/history", this::getHistory)
+                .get(BASE + "/trace", this::getTrace)
+                .post(BASE + "/reset", this::resetSession)
+                .get(BASE + "/settings/prompts", this::getPromptSettings)
+                .put(BASE + "/settings/prompts", this::updatePrompts)
+                .post(BASE + "/settings/prompts/reset", this::resetPrompts)
+                .put(BASE + "/settings/custom-prompts-enabled", this::setCustomPromptsEnabled)
+                .put(BASE + "/settings/context-strategy", this::setContextStrategy)
+                .put(BASE + "/settings/session-duration", this::setSessionDuration);
+    }
+
+    private PsykologenService serviceFor(WebRequest request) {
+        return registry.forUser(WebSecurity.requireIdentity(request).name());
     }
 
     /**
@@ -35,254 +105,187 @@ public class PsykologenController {
      * i stället för i en egen pollning - /trace bär hela prompthistoriken och
      * är alldeles för tung att hämta för ett belopp.
      */
-    private void addTiming(Map<String, Object> response, PsykologenService service) {
-        response.put("elapsedMinutes", service.elapsedMinutes());
-        response.put("sessionDurationMinutes", service.getSessionDurationMinutes());
-
+    private static JsonObject.Builder addTiming(JsonObject.Builder response, PsykologenService service) {
         TraceSummary trace = service.getTraceSummary();
-        response.put("costUsd", trace.totalCostUsd());
-        response.put("costComplete", trace.costComplete());
+        return response
+                .put("elapsedMinutes", JsonNumber.of(service.elapsedMinutes()))
+                .put("sessionDurationMinutes", JsonNumber.of(service.getSessionDurationMinutes()))
+                .put("costUsd", JsonNumber.of(trace.totalCostUsd()))
+                .put("costComplete", trace.costComplete());
     }
 
-    @PostMapping("/start")
-    public ResponseEntity<Map<String, Object>> startConversation(Authentication auth) {
-        Map<String, Object> response = new HashMap<>();
+    Response startConversation(WebRequest request) {
         try {
-            PsykologenService service = serviceFor(auth);
+            PsykologenService service = serviceFor(request);
             String opening = service.startConversation();
-            response.put("success", true);
-            response.put("message", opening);
-            response.put("role", "erik");
-            addTiming(response, service);
-            return ResponseEntity.ok(response);
+            return ok(request, addTiming(success()
+                    .put("message", opening)
+                    .put("role", "erik"), service));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return failure(request, e);
         }
     }
 
-    @PostMapping("/message")
-    public ResponseEntity<Map<String, Object>> sendMessage(Authentication auth,
-            @RequestBody Map<String, String> request) {
-        Map<String, Object> response = new HashMap<>();
+    Response sendMessage(WebRequest request) throws IOException {
+        String userInput = request.readJson(MessageBody.CODEC).message();
         try {
-            String userInput = request.get("message");
             if (userInput == null || userInput.trim().isEmpty()) {
-                response.put("success", false);
-                response.put("error", "Message cannot be empty");
-                return ResponseEntity.badRequest().body(response);
+                return failure(request, "Message cannot be empty");
             }
 
-            PsykologenService service = serviceFor(auth);
+            PsykologenService service = serviceFor(request);
             String erikResponse = service.processMessage(userInput);
-            response.put("success", true);
-            response.put("message", erikResponse);
-            response.put("role", "erik");
-            addTiming(response, service);
+            JsonObject.Builder response = addTiming(success()
+                    .put("message", erikResponse)
+                    .put("role", "erik"), service);
 
             if (erikResponse.contains("KLAR FÖR SKRIVNING")) {
                 response.put("sessionComplete", true);
             }
 
-            return ResponseEntity.ok(response);
+            return ok(request, response);
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return failure(request, e);
         }
     }
 
-    @GetMapping("/conversation")
-    public ResponseEntity<Map<String, Object>> getConversation(Authentication auth) {
-        Map<String, Object> response = new HashMap<>();
+    Response getConversation(WebRequest request) {
         try {
-            PsykologenService service = serviceFor(auth);
-            List<ChatMessage> conversation = service.getConversation();
-            response.put("success", true);
-            response.put("conversation", conversation);
-            addTiming(response, service);
-            return ResponseEntity.ok(response);
+            PsykologenService service = serviceFor(request);
+            return ok(request, addTiming(success()
+                    .put("conversation", CONVERSATION.encode(service.getConversation())), service));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return failure(request, e);
         }
     }
 
-    @GetMapping("/profile")
-    public ResponseEntity<Map<String, Object>> getProfile(Authentication auth) {
-        Map<String, Object> response = new HashMap<>();
+    Response getProfile(WebRequest request) {
         try {
-            String profile = serviceFor(auth).getProfile();
-            response.put("success", true);
-            response.put("profile", profile);
-            return ResponseEntity.ok(response);
+            return ok(request, success().put("profile", serviceFor(request).getProfile()));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return failure(request, e);
         }
     }
 
-    @GetMapping("/plan")
-    public ResponseEntity<Map<String, Object>> getPlan(Authentication auth) {
-        Map<String, Object> response = new HashMap<>();
+    Response getPlan(WebRequest request) {
         try {
-            String plan = serviceFor(auth).getPlan();
-            response.put("success", true);
-            response.put("plan", plan);
-            return ResponseEntity.ok(response);
+            return ok(request, success().put("plan", serviceFor(request).getPlan()));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return failure(request, e);
         }
     }
 
-    @GetMapping("/history")
-    public ResponseEntity<Map<String, Object>> getHistory(Authentication auth) {
-        Map<String, Object> response = new HashMap<>();
+    Response getHistory(WebRequest request) {
         try {
-            List<HistoryEntry> history = serviceFor(auth).getHistory();
-            response.put("success", true);
-            response.put("history", history);
-            return ResponseEntity.ok(response);
+            return ok(request, success().put("history", HISTORY.encode(serviceFor(request).getHistory())));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return failure(request, e);
         }
     }
 
-    @GetMapping("/trace")
-    public ResponseEntity<Map<String, Object>> getTrace(Authentication auth) {
-        Map<String, Object> response = new HashMap<>();
+    Response getTrace(WebRequest request) {
         try {
-            PsykologenService service = serviceFor(auth);
-            response.put("success", true);
-            response.put("calls", service.getTrace());
-            response.put("thoughts", service.getThoughts());
-            response.put("openThreads", service.getOpenThreads());
-            response.put("summary", service.getTraceSummary());
-            return ResponseEntity.ok(response);
+            PsykologenService service = serviceFor(request);
+            return ok(request, success()
+                    .put("calls", CALLS.encode(service.getTrace()))
+                    .put("thoughts", LINES.encode(service.getThoughts()))
+                    .put("openThreads", LINES.encode(service.getOpenThreads()))
+                    .put("summary", TraceSummary.CODEC.encode(service.getTraceSummary())));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return failure(request, e);
         }
     }
 
-    @PostMapping("/reset")
-    public ResponseEntity<Map<String, Object>> resetSession(Authentication auth) {
-        Map<String, Object> response = new HashMap<>();
+    Response resetSession(WebRequest request) {
         try {
-            serviceFor(auth).resetSession();
-            response.put("success", true);
-            return ResponseEntity.ok(response);
+            serviceFor(request).resetSession();
+            return ok(request, success());
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return failure(request, e);
         }
     }
 
-    @GetMapping("/settings/prompts")
-    public ResponseEntity<Map<String, Object>> getPromptSettings(Authentication auth) {
-        Map<String, Object> response = new HashMap<>();
+    Response getPromptSettings(WebRequest request) {
         try {
-            response.putAll(serviceFor(auth).getPromptSettings());
-            response.put("success", true);
-            return ResponseEntity.ok(response);
+            JsonObject settings = (JsonObject) PromptSettings.CODEC.encode(serviceFor(request).getPromptSettings());
+            JsonObject.Builder response = JsonObject.builder();
+            settings.members().forEach(response::put);
+            return ok(request, response.put("success", true));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return failure(request, e);
         }
     }
 
-    @PutMapping("/settings/prompts")
-    public ResponseEntity<Map<String, Object>> updatePrompts(Authentication auth,
-            @RequestBody Map<String, String> updates) {
-        Map<String, Object> response = new HashMap<>();
+    Response updatePrompts(WebRequest request) throws IOException {
+        Map<String, String> updates = request.readJson(PROMPT_UPDATES);
         try {
-            serviceFor(auth).updatePrompts(updates);
-            response.put("success", true);
-            return ResponseEntity.ok(response);
+            serviceFor(request).updatePrompts(updates);
+            return ok(request, success());
         } catch (IllegalArgumentException e) {
-            response.put("success", false);
-            response.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return failure(request, e);
         }
     }
 
-    @PostMapping("/settings/prompts/reset")
-    public ResponseEntity<Map<String, Object>> resetPrompts(Authentication auth,
-            @RequestBody(required = false) Map<String, String> body) {
-        Map<String, Object> response = new HashMap<>();
-        String key = body == null ? null : body.get("key");
+    Response resetPrompts(WebRequest request) throws IOException {
+        // Kroppen är valfri: utan den återställs alla promptar.
+        String key = request.contentType().isPresent() ? request.readJson(PromptKey.CODEC).key() : null;
         if (key == null || key.isBlank()) {
-            serviceFor(auth).resetAllPrompts();
+            serviceFor(request).resetAllPrompts();
         } else {
-            serviceFor(auth).resetPrompt(key);
+            serviceFor(request).resetPrompt(key);
         }
-        response.put("success", true);
-        return ResponseEntity.ok(response);
+        return ok(request, success());
     }
 
-    @PutMapping("/settings/custom-prompts-enabled")
-    public ResponseEntity<Map<String, Object>> setCustomPromptsEnabled(Authentication auth,
-            @RequestBody Map<String, Boolean> body) {
-        Map<String, Object> response = new HashMap<>();
-        boolean enabled = Boolean.TRUE.equals(body.get("enabled"));
-        serviceFor(auth).setCustomPromptsEnabled(enabled);
-        response.put("success", true);
-        response.put("enabled", enabled);
-        return ResponseEntity.ok(response);
+    Response setCustomPromptsEnabled(WebRequest request) throws IOException {
+        boolean enabled = Boolean.TRUE.equals(request.readJson(Enabled.CODEC).enabled());
+        serviceFor(request).setCustomPromptsEnabled(enabled);
+        return ok(request, success().put("enabled", enabled));
     }
 
-    @PutMapping("/settings/context-strategy")
-    public ResponseEntity<Map<String, Object>> setContextStrategy(Authentication auth,
-            @RequestBody Map<String, String> body) {
-        Map<String, Object> response = new HashMap<>();
+    Response setContextStrategy(WebRequest request) throws IOException {
+        String id = request.readJson(Strategy.CODEC).strategy();
         try {
-            String id = body.get("strategy");
             if (id == null || id.isBlank()) {
-                response.put("success", false);
-                response.put("error", "Fältet 'strategy' saknas.");
-                return ResponseEntity.badRequest().body(response);
+                return failure(request, "Fältet 'strategy' saknas.");
             }
-            serviceFor(auth).setContextStrategy(id);
-            response.put("success", true);
-            response.put("contextStrategy", id);
-            return ResponseEntity.ok(response);
+            serviceFor(request).setContextStrategy(id);
+            return ok(request, success().put("contextStrategy", id));
         } catch (IllegalArgumentException e) {
-            response.put("success", false);
-            response.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return failure(request, e);
         }
     }
 
-    @PutMapping("/settings/session-duration")
-    public ResponseEntity<Map<String, Object>> setSessionDuration(Authentication auth,
-            @RequestBody Map<String, Double> body) {
-        Map<String, Object> response = new HashMap<>();
+    Response setSessionDuration(WebRequest request) throws IOException {
+        Double minutes = request.readJson(Minutes.CODEC).minutes();
         try {
-            Double minutes = body.get("minutes");
             if (minutes == null) {
-                response.put("success", false);
-                response.put("error", "Fältet 'minutes' saknas.");
-                return ResponseEntity.badRequest().body(response);
+                return failure(request, "Fältet 'minutes' saknas.");
             }
-            serviceFor(auth).setSessionDurationMinutes(minutes);
-            response.put("success", true);
-            response.put("sessionDurationMinutes", minutes);
-            return ResponseEntity.ok(response);
+            serviceFor(request).setSessionDurationMinutes(minutes);
+            return ok(request, success().put("sessionDurationMinutes", JsonNumber.of(minutes)));
         } catch (IllegalArgumentException e) {
-            response.put("success", false);
-            response.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return failure(request, e);
         }
     }
 
+    private static JsonObject.Builder success() {
+        return JsonObject.builder().put("success", true);
+    }
+
+    private static Response ok(WebRequest request, JsonObject.Builder response) {
+        return Responses.json(request, 200, response.build());
+    }
+
+    private static Response failure(WebRequest request, Exception e) {
+        return failure(request, e.getMessage());
+    }
+
+    private static Response failure(WebRequest request, String error) {
+        JsonValue message = error == null ? JsonNull.INSTANCE : JsonString.of(error);
+        return Responses.json(request, 400, JsonObject.builder()
+                .put("success", false)
+                .put("error", message)
+                .build());
+    }
 }

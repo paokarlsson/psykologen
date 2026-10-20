@@ -1,113 +1,76 @@
 package se.olaslab.psykologen.auth;
 
-import java.io.IOException;
+import java.time.Duration;
+import java.time.InstantSource;
+import java.util.Map;
+import java.util.Set;
 
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.factory.PasswordEncoderFactories;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfFilter;
-import org.springframework.security.web.csrf.CsrfToken;
-import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
-import org.springframework.web.filter.OncePerRequestFilter;
+import spola.security.Authenticator;
+import spola.security.BCryptPasswordHasher;
+import spola.security.InMemoryUserStore;
+import spola.security.PasswordHasher;
+import spola.security.User;
+import spola.security.web.AccessRule;
+import spola.security.web.Csrf;
+import spola.security.web.RequestMatcher;
+import spola.security.web.WebSecurity;
+import spola.web.SessionOptions;
+import spola.web.Sessions;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+/** Inloggningen med session, CSRF-skyddet för Angular och vilka vägar som är öppna. */
+public final class SecurityConfig {
 
-@Configuration
-public class SecurityConfig {
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
-    }
-
-    @Bean
-    public UserDetailsService userDetailsService(AuthProperties properties, ApplicationArguments arguments) {
-        // --hash-password startar appen enbart för att skriva ut en hash - då finns
-        // ännu inget konto att kräva.
-        if (arguments.containsOption(PasswordHashRunner.OPTION)) {
-            return new InMemoryUserDetailsManager();
-        }
-
-        properties.validate();
-
-        InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
-        for (AuthProperties.User configured : properties.getUsers()) {
-            UserDetails user = User.withUsername(configured.username())
-                    .password(configured.passwordHash())
-                    .roles("USER")
-                    .build();
-            manager.createUser(user);
-        }
-        return manager;
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
-        return configuration.getAuthenticationManager();
-    }
-
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        CsrfTokenRequestAttributeHandler csrfHandler = new CsrfTokenRequestAttributeHandler();
-
-        http
-                .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .csrfTokenRequestHandler(csrfHandler))
-                .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
-                .authorizeHttpRequests(requests -> requests
-                        .requestMatchers("/api/auth/login", "/api/auth/logout").permitAll()
-                        // Dockers healthcheck har ingen session. Proxyn skickar bara
-                        // /api/* hit, så vägen syns aldrig utifrån.
-                        .requestMatchers("/actuator/health").permitAll()
-                        .anyRequest().authenticated())
-                // Session fixation hanteras i AuthController: sessionFixation() gäller
-                // Spring Securitys egna inloggningsfilter, som är avstängda nedan.
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-                // Ett API: oinloggad begäran ska ge 401, inte en redirect till en
-                // inloggningssida som inte finns här.
-                .exceptionHandling(handling -> handling
-                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
-                .formLogin(form -> form.disable())
-                .httpBasic(basic -> basic.disable())
-                .logout(logout -> logout.disable());
-
-        return http.build();
+    private SecurityConfig() {
     }
 
     /**
-     * Spring Security genererar CSRF-token först när någon läser den, och
-     * {@link CookieCsrfTokenRepository} sätter cookien i samma stund. Utan det här
-     * filtret får frontend aldrig någon cookie, och varje POST/PUT svarar 403.
+     * Verifierar {@code {bcrypt}}-hasharna i {@code backend/.env}, också de som Spring skrev, och
+     * gör nya i samma format. Kostnad 10, som Springs standard.
      */
-    private static final class CsrfCookieFilter extends OncePerRequestFilter {
+    public static PasswordHasher passwordHasher() {
+        return PasswordHasher.delegating("bcrypt", Map.of("bcrypt", BCryptPasswordHasher.defaults()));
+    }
 
-        @Override
-        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-                FilterChain filterChain) throws ServletException, IOException {
-            CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
-            if (csrfToken != null) {
-                csrfToken.getToken();
-            }
-            filterChain.doFilter(request, response);
+    public static Authenticator authenticator(AuthProperties properties, PasswordHasher hasher) {
+        InMemoryUserStore users = new InMemoryUserStore();
+        for (AuthProperties.User configured : properties.getUsers()) {
+            users.add(new User(configured.username(), configured.passwordHash(), Set.of("USER"), true));
         }
+        return Authenticator.of(users, hasher);
+    }
+
+    /**
+     * Sessionerna: 30 minuter utan aktivitet, {@code HttpOnly} och {@code SameSite=Lax}.
+     *
+     * <p>Med {@code secure} (COOKIE_SECURE=true, som compose.prod.yaml sätter) heter cookien
+     * {@code __Host-SESSION} och har {@code Secure} på varje svar. Då beror det inte på att
+     * proxyhuvudena från Caddy går fram, och en annan underdomän kan inte sätta cookien åt oss.
+     * Utan {@code secure} heter den {@code SESSION}, så att den fungerar över
+     * {@code http://localhost} under utveckling.
+     */
+    public static Sessions sessions(boolean secure, InstantSource clock) {
+        return Sessions.inMemory(SessionOptions.DEFAULT
+                .withIdleTimeout(Duration.ofMinutes(30))
+                .withCookieName(secure ? "__Host-SESSION" : "SESSION")
+                .withCookie(cookie -> cookie.secure(secure)), clock);
+    }
+
+    /**
+     * Inloggning, utloggning och Dockers healthcheck är öppna, allt annat kräver inloggning.
+     * Varje anrop som ändrar något kräver CSRF-huvudet: Angular läser cookien
+     * {@code XSRF-TOKEN} och skickar tillbaka den i {@code X-XSRF-TOKEN}. En oinloggad begäran
+     * får 401, aldrig en redirect, eftersom det här är ett API.
+     */
+    public static WebSecurity security(Sessions sessions, boolean secure) {
+        return WebSecurity.builder()
+                .sessions(sessions)
+                .csrf(Csrf.cookie().withCookie(cookie -> cookie.secure(secure)))
+                .rule(RequestMatcher.exactly("/api/auth/login"), AccessRule.permitAll())
+                .rule(RequestMatcher.exactly("/api/auth/logout"), AccessRule.permitAll())
+                // Dockers healthcheck har ingen session. Proxyn skickar bara /api/* hit, så
+                // vägen syns aldrig utifrån.
+                .rule(RequestMatcher.exactly("/actuator/health"), AccessRule.permitAll())
+                .rule(RequestMatcher.anyRequest(), AccessRule.authenticated())
+                .build();
     }
 }

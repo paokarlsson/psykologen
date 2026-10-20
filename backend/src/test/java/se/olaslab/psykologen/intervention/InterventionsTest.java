@@ -1,38 +1,47 @@
 package se.olaslab.psykologen.intervention;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static spola.test.Assertions.assertEquals;
+import static spola.test.Assertions.assertSame;
+import static spola.test.Assertions.assertTrue;
+import static spola.test.Tests.suite;
+import static spola.test.Tests.test;
 
-import org.junit.jupiter.api.Test;
+import spola.test.Suite;
 
-class InterventionsTest {
+public final class InterventionsTest {
 
-    @Test
-    void rentIdMatchar() {
+    private InterventionsTest() {
+    }
+
+    public static Suite tests() {
+        return suite("InterventionsTest",
+                test("rentIdMatchar", InterventionsTest::rentIdMatchar),
+                test("idIEnMeningMatchar", InterventionsTest::idIEnMeningMatchar),
+                test("versalerOchRadbrytningarSpelarIngenRoll", InterventionsTest::versalerOchRadbrytningarSpelarIngenRoll),
+                test("okantSvarFallerTillbakaPaOppenFraga", InterventionsTest::okantSvarFallerTillbakaPaOppenFraga),
+                test("katalogenListasMedIdOchNarGreppetPassar", InterventionsTest::katalogenListasMedIdOchNarGreppetPassar));
+    }
+
+    static void rentIdMatchar() {
         assertEquals("spegling", Interventions.match("spegling").id());
     }
 
-    @Test
-    void idIEnMeningMatchar() {
+    static void idIEnMeningMatchar() {
         // En liten modell packar gärna in valet i en mening trots instruktionen.
         assertEquals("skalfraga", Interventions.match("Jag väljer skalfraga här.").id());
     }
 
-    @Test
-    void versalerOchRadbrytningarSpelarIngenRoll() {
+    static void versalerOchRadbrytningarSpelarIngenRoll() {
         assertEquals("undantag", Interventions.match("\nUNDANTAG\n").id());
     }
 
-    @Test
-    void okantSvarFallerTillbakaPaOppenFraga() {
+    static void okantSvarFallerTillbakaPaOppenFraga() {
         assertSame(Interventions.DEFAULT, Interventions.match("motiverande samtal"));
         assertSame(Interventions.DEFAULT, Interventions.match(""));
         assertSame(Interventions.DEFAULT, Interventions.match(null));
     }
 
-    @Test
-    void katalogenListasMedIdOchNarGreppetPassar() {
+    static void katalogenListasMedIdOchNarGreppetPassar() {
         String lista = Interventions.asPromptList();
 
         for (Intervention intervention : Interventions.all()) {

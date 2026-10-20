@@ -1,21 +1,34 @@
 package se.olaslab.psykologen.context;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static spola.test.Assertions.assertEquals;
+import static spola.test.Assertions.assertSame;
+import static spola.test.Assertions.assertTrue;
+import static spola.test.Tests.suite;
+import static spola.test.Tests.test;
 
 import java.util.List;
 import java.util.Optional;
-
-import org.junit.jupiter.api.Test;
 
 import se.olaslab.psykologen.session.ChatMessage;
 import se.olaslab.psykologen.session.ConversationSession;
 import se.olaslab.psykologen.session.Role;
 import se.olaslab.psykologen.storage.HistoryEntry;
 import se.olaslab.psykologen.storage.SessionArtifactStore;
+import spola.test.Suite;
 
-class ContextStrategyTest {
+public final class ContextStrategyTest {
+
+    private ContextStrategyTest() {
+    }
+
+    public static Suite tests() {
+        return suite("ContextStrategyTest",
+                test("fullHistorikGerSammaSomTidigareBeteende", ContextStrategyTest::fullHistorikGerSammaSomTidigareBeteende),
+                test("fonstretBehallerSystempromptenOchDeSenasteReplikerna", ContextStrategyTest::fonstretBehallerSystempromptenOchDeSenasteReplikerna),
+                test("profilstrateginErsatterHistorikenMedProfilen", ContextStrategyTest::profilstrateginErsatterHistorikenMedProfilen),
+                test("profilstrateginKlararEnTomProfil", ContextStrategyTest::profilstrateginKlararEnTomProfil),
+                test("okantIdFallerTillbakaPaStandard", ContextStrategyTest::okantIdFallerTillbakaPaStandard));
+    }
 
     /** Session med systemprompt, öppning och tre utbyten - sista användarrepliken obesvarad. */
     private static ConversationSession sessionMedSamtal() {
@@ -33,8 +46,7 @@ class ContextStrategyTest {
         return messages.get(index).content();
     }
 
-    @Test
-    void fullHistorikGerSammaSomTidigareBeteende() {
+    static void fullHistorikGerSammaSomTidigareBeteende() {
         ConversationSession session = sessionMedSamtal();
         SessionArtifactStore store = new TomStore();
 
@@ -45,8 +57,7 @@ class ContextStrategyTest {
         assertEquals(8, byggd.size());
     }
 
-    @Test
-    void fonstretBehallerSystempromptenOchDeSenasteReplikerna() {
+    static void fonstretBehallerSystempromptenOchDeSenasteReplikerna() {
         ConversationSession session = sessionMedSamtal();
 
         List<ChatMessage> byggd = new SlidingWindowStrategy().build(session, new TomStore());
@@ -60,8 +71,7 @@ class ContextStrategyTest {
         assertTrue(byggd.stream().noneMatch(m -> "Hej, hur mår du?".equals(m.content())));
     }
 
-    @Test
-    void profilstrateginErsatterHistorikenMedProfilen() {
+    static void profilstrateginErsatterHistorikenMedProfilen() {
         ConversationSession session = sessionMedSamtal();
 
         List<ChatMessage> byggd = new ProfileStrategy().build(session, new StoreMedProfil("Patienten sover dåligt."));
@@ -75,8 +85,7 @@ class ContextStrategyTest {
         assertEquals("svar 3", byggd.getLast().content());
     }
 
-    @Test
-    void profilstrateginKlararEnTomProfil() {
+    static void profilstrateginKlararEnTomProfil() {
         ConversationSession session = sessionMedSamtal();
 
         List<ChatMessage> byggd = new ProfileStrategy().build(session, new TomStore());
@@ -87,8 +96,7 @@ class ContextStrategyTest {
         assertEquals(Role.USER, byggd.get(1).role());
     }
 
-    @Test
-    void okantIdFallerTillbakaPaStandard() {
+    static void okantIdFallerTillbakaPaStandard() {
         assertSame(ContextStrategies.byId(FullHistoryStrategy.ID).getClass(),
                 ContextStrategies.byId("finns-inte").getClass());
         assertTrue(!ContextStrategies.exists("finns-inte"));

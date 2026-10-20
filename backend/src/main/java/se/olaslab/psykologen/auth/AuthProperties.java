@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.springframework.core.env.Environment;
+import spola.config.Config;
 
 public class AuthProperties {
 
@@ -19,14 +19,14 @@ public class AuthProperties {
         this.users = List.copyOf(users);
     }
 
-    public static AuthProperties fromEnvironment(Environment env) {
+    public static AuthProperties fromConfig(Config config) {
         List<User> found = new ArrayList<>();
         for (int i = 0;; i++) {
-            String username = env.getProperty("APP_AUTH_USERS_" + i + "_USERNAME");
+            String username = config.get("APP_AUTH_USERS_" + i + "_USERNAME").orElse(null);
             if (username == null) {
                 break;
             }
-            found.add(new User(username, env.getProperty("APP_AUTH_USERS_" + i + "_PASSWORDHASH")));
+            found.add(new User(username, config.get("APP_AUTH_USERS_" + i + "_PASSWORDHASH").orElse(null)));
         }
         return new AuthProperties(found);
     }

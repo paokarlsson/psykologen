@@ -1,13 +1,28 @@
 package se.olaslab.psykologen.session;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static spola.test.Assertions.assertEquals;
+import static spola.test.Assertions.assertTrue;
+import static spola.test.Tests.suite;
+import static spola.test.Tests.test;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
+import spola.test.Suite;
 
-class ConversationSessionTest {
+public final class ConversationSessionTest {
+
+    private ConversationSessionTest() {
+    }
+
+    public static Suite tests() {
+        return suite("ConversationSessionTest",
+                test("revideringErsatterHelaTankelistan", ConversationSessionTest::revideringErsatterHelaTankelistan),
+                test("tomRevideringBehallerDeGamlaTankarna", ConversationSessionTest::tomRevideringBehallerDeGamlaTankarna),
+                test("nullRevideringBehallerDeGamlaTankarna", ConversationSessionTest::nullRevideringBehallerDeGamlaTankarna),
+                test("senasteErikRepliknArAldreAnDenNyaAnvandarrepliken", ConversationSessionTest::senasteErikRepliknArAldreAnDenNyaAnvandarrepliken),
+                test("senasteErikRepliknArTomFoereOppningen", ConversationSessionTest::senasteErikRepliknArTomFoereOppningen),
+                test("gamlaFormatetLaggerFortfarandeTillTankar", ConversationSessionTest::gamlaFormatetLaggerFortfarandeTillTankar));
+    }
 
     private static ConversationSession sessionMedTankar() {
         ConversationSession session = new ConversationSession("Du är Erik.");
@@ -15,8 +30,7 @@ class ConversationSessionTest {
         return session;
     }
 
-    @Test
-    void revideringErsatterHelaTankelistan() {
+    static void revideringErsatterHelaTankelistan() {
         ConversationSession session = sessionMedTankar();
 
         session.replaceThoughts("- verkar stressad, troligen jobbet\n- nämnde brodern i förbifarten");
@@ -27,8 +41,7 @@ class ConversationSessionTest {
         assertTrue(session.thoughts().stream().noneMatch(t -> t.contains("sover dåligt")));
     }
 
-    @Test
-    void tomRevideringBehallerDeGamlaTankarna() {
+    static void tomRevideringBehallerDeGamlaTankarna() {
         ConversationSession session = sessionMedTankar();
 
         session.replaceThoughts("   \n\n");
@@ -36,8 +49,7 @@ class ConversationSessionTest {
         assertEquals(List.of("sover dåligt", "verkar stressad"), session.thoughts());
     }
 
-    @Test
-    void nullRevideringBehallerDeGamlaTankarna() {
+    static void nullRevideringBehallerDeGamlaTankarna() {
         ConversationSession session = sessionMedTankar();
 
         session.replaceThoughts(null);
@@ -45,8 +57,7 @@ class ConversationSessionTest {
         assertEquals(2, session.thoughts().size());
     }
 
-    @Test
-    void senasteErikRepliknArAldreAnDenNyaAnvandarrepliken() {
+    static void senasteErikRepliknArAldreAnDenNyaAnvandarrepliken() {
         ConversationSession session = new ConversationSession("Du är Erik.");
         session.addAssistantMessage("Hej, hur mår du?");
         session.addUserMessage("sådär faktiskt");
@@ -55,13 +66,11 @@ class ConversationSessionTest {
         assertEquals("Hej, hur mår du?", session.lastAgentMessage());
     }
 
-    @Test
-    void senasteErikRepliknArTomFoereOppningen() {
+    static void senasteErikRepliknArTomFoereOppningen() {
         assertEquals("", new ConversationSession("Du är Erik.").lastAgentMessage());
     }
 
-    @Test
-    void gamlaFormatetLaggerFortfarandeTillTankar() {
+    static void gamlaFormatetLaggerFortfarandeTillTankar() {
         ConversationSession session = sessionMedTankar();
 
         session.addThoughtLines("- ny observation");

@@ -11,9 +11,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-import tools.jackson.core.JacksonException;
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.ObjectMapper;
+import spola.json.JsonParseException;
+import spola.json.codec.JsonCodec;
+import spola.json.codec.JsonCodecs;
+import spola.json.codec.JsonMappingException;
 
 public class FileSessionArtifactStore implements SessionArtifactStore {
 
@@ -22,7 +23,8 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
     private final Path threadsPath;
     private final Path historyPath;
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private static final JsonCodec<List<HistoryEntry>> HISTORY = JsonCodecs.list(HistoryEntry.CODEC);
+
     private final Object historyLock = new Object();
 
     public FileSessionArtifactStore(Path baseDir) {
@@ -73,8 +75,8 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
             List<HistoryEntry> entries = new ArrayList<>(readHistoryUnlocked());
             entries.add(entry);
             try {
-                Files.writeString(historyPath, mapper.writeValueAsString(entries));
-            } catch (IOException | JacksonException e) {
+                Files.writeString(historyPath, HISTORY.write(entries));
+            } catch (IOException | JsonMappingException e) {
                 // Historikloggning får aldrig krascha samtalet
             }
         }
@@ -92,10 +94,9 @@ public class FileSessionArtifactStore implements SessionArtifactStore {
     private List<HistoryEntry> readHistoryUnlocked() {
         try {
             if (Files.exists(historyPath)) {
-                return mapper.readValue(Files.readString(historyPath), new TypeReference<List<HistoryEntry>>() {
-                });
+                return HISTORY.read(Files.readString(historyPath));
             }
-        } catch (IOException | JacksonException e) {
+        } catch (IOException | JsonParseException | JsonMappingException e) {
             // Korrupt fil: kör vidare med tom historik
         }
         return List.of();

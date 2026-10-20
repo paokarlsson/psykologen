@@ -1,7 +1,6 @@
 package se.olaslab.psykologen.service;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -14,6 +13,7 @@ import se.olaslab.psykologen.intervention.Intervention;
 import se.olaslab.psykologen.intervention.Interventions;
 import se.olaslab.psykologen.prompt.BulletLines;
 import se.olaslab.psykologen.prompt.ChangelogResponse;
+import se.olaslab.psykologen.prompt.PromptSettings;
 import se.olaslab.psykologen.prompt.PromptStore;
 import se.olaslab.psykologen.prompt.PromptTemplates;
 import se.olaslab.psykologen.service.ai.AiClient;
@@ -53,21 +53,18 @@ public class PsykologenService {
         artifactStore.clear();
     }
 
-    public Map<String, Object> getPromptSettings() {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("useCustomPrompts", promptStore.isUseCustomPrompts());
-        result.put("prompts", promptStore.currentValues());
-        result.put("defaults", PromptStore.defaults());
-        result.put("sessionDurationMinutes", promptStore.getSessionDurationMinutes());
-        result.put("defaultSessionDurationMinutes", PromptStore.DEFAULT_SESSION_DURATION_MINUTES);
-        result.put("contextStrategy", promptStore.getContextStrategy());
-        result.put("contextStrategies", ContextStrategies.all().stream()
-                .map(strategy -> Map.of(
-                        "id", strategy.id(),
-                        "label", strategy.label(),
-                        "description", strategy.description()))
-                .toList());
-        return result;
+    public PromptSettings getPromptSettings() {
+        return new PromptSettings(
+                promptStore.isUseCustomPrompts(),
+                promptStore.currentValues(),
+                PromptStore.defaults(),
+                promptStore.getSessionDurationMinutes(),
+                PromptStore.DEFAULT_SESSION_DURATION_MINUTES,
+                promptStore.getContextStrategy(),
+                ContextStrategies.all().stream()
+                        .map(strategy -> new PromptSettings.StrategyOption(
+                                strategy.id(), strategy.label(), strategy.description()))
+                        .toList());
     }
 
     public void setContextStrategy(String id) {

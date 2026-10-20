@@ -1,4 +1,4 @@
-target/
+out/
 
 .env
 .env.example
@@ -16,3 +16,4 @@ history.json
 Dockerfile
 .dockerignore
 README.md
+lib/*.jar
