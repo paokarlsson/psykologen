@@ -85,8 +85,34 @@ header nav {
   font-size: 0.85rem;
 }
 
-.tools p > .label {
-  opacity: 0.85;
+/* Kontot som en chip: rund avatar i samma glas som headerns knappar, och
+   namnet bredvid. Långa namn kapas i stället för att trycka ut railen. */
+.account {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.avatar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.account .label {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-weight: 600;
 }
 
 /* Sessionsstatusen: nedräkningen och taxametern. I ikonrailen finns ingen
