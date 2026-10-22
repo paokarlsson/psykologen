@@ -65,7 +65,12 @@
       </nav>
 
       <p>
-        <span class="label">{{ auth.user() }}</span>
+        <!-- I ikonrailen viker namnet undan och avataren står ensam - då får
+             namnet finnas kvar som tooltip. -->
+        <span class="account" [attr.title]="auth.user()">
+          <span class="avatar"><app-icon name="user" /></span>
+          <span class="label">{{ auth.user() }}</span>
+        </span>
         <button type="button" (click)="logout()" aria-label="Logga ut">
           <app-icon name="power" />
           <span class="label">Logga ut</span>
