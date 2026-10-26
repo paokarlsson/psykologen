@@ -1,6 +1,6 @@
 # Psykologen Backend
 
-Backend för Psykologen-applikationen, byggd på [Spola](https://github.com/paokarlsson/spola) 0.2.0:
+Backend för Psykologen-applikationen, byggd på [Spola](https://github.com/paokarlsson/spola) 0.3.0:
 ett Java 25-ramverk som ersätter Spring och Lombok med vanlig Java-kod. Inga beroenden utöver
 JDK:n och Spola-modulerna, som `Build.java` hämtar till `lib/`.
 
@@ -76,7 +76,7 @@ src/test/java/                tester; AllTests kör alla
 ## Spola-jarfilerna
 
 Bara `lib/SHA256SUMS` är incheckad. Den listar de Spola-moduler appen använder, med version och
-kontrollsumma från Spolas [release](https://github.com/paokarlsson/spola/releases/tag/v0.2.0).
+kontrollsumma från Spolas [release](https://github.com/paokarlsson/spola/releases/tag/v0.3.0).
 Alla kommandon i `Build.java` hämtar först de jar-filer som saknas i `lib/` från releasen och
 kontrollerar dem mot summorna. Stämmer en fil inte avbryts bygget. Jar-filerna är gitignorerade,
 och en hämtning görs bara när en fil saknas eller har ändrats. Utan bygget:

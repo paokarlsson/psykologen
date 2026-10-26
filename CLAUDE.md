@@ -9,7 +9,7 @@ produktion står i `README.md`, `backend/README.md` och `DEPLOY.md`.
 
 ## Spola
 
-Projektet bygger på [Spola](https://github.com/paokarlsson/spola) 0.2.0, ett
+Projektet bygger på [Spola](https://github.com/paokarlsson/spola) 0.3.0, ett
 Java 25-ramverk som ersätter Spring och Lombok med explicit kod och bara JDK:n.
 
 - Läs [`framework/MONSTER.md`](https://github.com/paokarlsson/spola/blob/main/framework/MONSTER.md)
